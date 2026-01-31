@@ -6,12 +6,14 @@ import java.util.List;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.options.Option;
 
 import com.pragma.archetype.application.generator.EntityGenerator;
 import com.pragma.archetype.application.usecase.GenerateEntityUseCaseImpl;
 import com.pragma.archetype.domain.model.EntityConfig;
+import com.pragma.archetype.domain.model.ProjectConfig;
 import com.pragma.archetype.domain.port.in.GenerateEntityUseCase;
 import com.pragma.archetype.domain.port.in.GenerateEntityUseCase.GenerationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
@@ -57,12 +59,13 @@ public class GenerateEntityTask extends DefaultTask {
     return fields;
   }
 
-  @Option(option = "packageName", description = "Package name (e.g., com.company.domain.model)")
+  @Option(option = "packageName", description = "Package name (optional, auto-detected from .cleanarch.yml)")
   public void setPackageName(String packageName) {
     this.packageName = packageName;
   }
 
   @Input
+  @Optional
   public String getPackageName() {
     return packageName;
   }
@@ -95,24 +98,34 @@ public class GenerateEntityTask extends DefaultTask {
       // 1. Validate inputs
       validateInputs();
 
-      // 2. Parse fields
+      // 2. Resolve package name (auto-detect if not provided)
+      String resolvedPackageName = resolvePackageName();
+
+      // 3. Parse fields
       List<EntityConfig.EntityField> entityFields = parseFields(fields);
 
-      // 3. Create configuration
+      // 4. Filter out 'id' field if hasId is true (to avoid duplication)
+      if (hasId) {
+        entityFields = entityFields.stream()
+            .filter(field -> !field.name().equalsIgnoreCase("id"))
+            .toList();
+      }
+
+      // 5. Create configuration
       EntityConfig config = EntityConfig.builder()
           .name(entityName)
           .fields(entityFields)
           .hasId(hasId)
           .idType(idType)
-          .packageName(packageName)
+          .packageName(resolvedPackageName)
           .build();
 
-      // 4. Setup dependencies
+      // 5. Setup dependencies
       FileSystemPort fileSystemPort = new LocalFileSystemAdapter();
       ConfigurationPort configurationPort = new YamlConfigurationAdapter();
       TemplateRepository templateRepository = createTemplateRepository();
 
-      // 5. Setup use case
+      // 6. Setup use case
       EntityValidator validator = new EntityValidator(fileSystemPort, configurationPort);
       EntityGenerator generator = new EntityGenerator(templateRepository, fileSystemPort);
       GenerateEntityUseCase useCase = new GenerateEntityUseCaseImpl(
@@ -155,10 +168,29 @@ public class GenerateEntityTask extends DefaultTask {
       throw new IllegalArgumentException(
           "Entity fields are required. Use --fields=name:String,email:String");
     }
+  }
 
-    if (packageName.isBlank()) {
+  /**
+   * Resolves package name from .cleanarch.yml if not provided.
+   */
+  private String resolvePackageName() {
+    // If packageName is provided, use it
+    if (packageName != null && !packageName.isBlank()) {
+      return packageName;
+    }
+
+    // Otherwise, read from .cleanarch.yml
+    try {
+      ConfigurationPort configurationPort = new YamlConfigurationAdapter();
+      Path projectPath = getProject().getProjectDir().toPath();
+      ProjectConfig projectConfig = configurationPort.readConfiguration(projectPath)
+          .orElseThrow(() -> new IllegalArgumentException(".cleanarch.yml not found"));
+
+      // For hexagonal-single, entities go in domain.model
+      return projectConfig.basePackage() + ".domain.model";
+    } catch (Exception e) {
       throw new IllegalArgumentException(
-          "Package name is required. Use --packageName=com.company.domain.model");
+          "Could not auto-detect package name. Please provide --packageName or ensure .cleanarch.yml exists", e);
     }
   }
 

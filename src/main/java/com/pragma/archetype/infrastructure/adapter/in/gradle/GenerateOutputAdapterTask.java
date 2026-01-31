@@ -6,12 +6,14 @@ import java.util.List;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.options.Option;
 
 import com.pragma.archetype.application.generator.AdapterGenerator;
 import com.pragma.archetype.application.usecase.GenerateAdapterUseCaseImpl;
 import com.pragma.archetype.domain.model.AdapterConfig;
+import com.pragma.archetype.domain.model.ProjectConfig;
 import com.pragma.archetype.domain.port.in.GenerateAdapterUseCase;
 import com.pragma.archetype.domain.port.in.GenerateAdapterUseCase.GenerationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
@@ -69,12 +71,13 @@ public class GenerateOutputAdapterTask extends DefaultTask {
     return type;
   }
 
-  @Option(option = "packageName", description = "Package name (e.g., com.company.infrastructure.driven-adapters.redis)")
+  @Option(option = "packageName", description = "Package name (optional, auto-detected from .cleanarch.yml)")
   public void setPackageName(String packageName) {
     this.packageName = packageName;
   }
 
   @Input
+  @Optional
   public String getPackageName() {
     return packageName;
   }
@@ -97,21 +100,24 @@ public class GenerateOutputAdapterTask extends DefaultTask {
       // 1. Validate inputs
       validateInputs();
 
-      // 2. Parse adapter type
+      // 2. Resolve package name (auto-detect if not provided)
+      String resolvedPackageName = resolvePackageName(type);
+
+      // 3. Parse adapter type
       AdapterConfig.AdapterType adapterType = parseAdapterType(type);
 
-      // 3. Parse methods (if provided)
+      // 4. Parse methods (if provided)
       List<AdapterConfig.AdapterMethod> adapterMethods = new ArrayList<>();
       if (!methods.isBlank()) {
         adapterMethods = parseMethods(methods);
       }
 
-      // 4. Create configuration
+      // 5. Create configuration
       AdapterConfig config = AdapterConfig.builder()
           .name(adapterName)
           .entityName(entityName)
           .type(adapterType)
-          .packageName(packageName)
+          .packageName(resolvedPackageName)
           .methods(adapterMethods)
           .build();
 
@@ -163,10 +169,30 @@ public class GenerateOutputAdapterTask extends DefaultTask {
       throw new IllegalArgumentException(
           "Entity name is required. Use --entity=User");
     }
+  }
 
-    if (packageName.isBlank()) {
+  /**
+   * Resolves package name from .cleanarch.yml if not provided.
+   */
+  private String resolvePackageName(String adapterType) {
+    // If packageName is provided, use it
+    if (packageName != null && !packageName.isBlank()) {
+      return packageName;
+    }
+
+    // Otherwise, read from .cleanarch.yml
+    try {
+      ConfigurationPort configurationPort = new YamlConfigurationAdapter();
+      Path projectPath = getProject().getProjectDir().toPath();
+      ProjectConfig projectConfig = configurationPort.readConfiguration(projectPath)
+          .orElseThrow(() -> new IllegalArgumentException(".cleanarch.yml not found"));
+
+      // For hexagonal-single, driven adapters go in
+      // infrastructure.drivenadapters.{type}
+      return projectConfig.basePackage() + ".infrastructure.drivenadapters." + adapterType.toLowerCase();
+    } catch (Exception e) {
       throw new IllegalArgumentException(
-          "Package name is required. Use --packageName=com.company.infrastructure.driven-adapters.redis");
+          "Could not auto-detect package name. Please provide --packageName or ensure .cleanarch.yml exists", e);
     }
   }
 

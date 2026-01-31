@@ -173,7 +173,7 @@ public class InitCleanArchTask extends DefaultTask {
         .architecture(ArchitectureType.valueOf(architecture.toUpperCase().replace('-', '_')))
         .paradigm(Paradigm.valueOf(paradigm.toUpperCase()))
         .framework(Framework.valueOf(framework.toUpperCase()))
-        .pluginVersion("0.1.0-SNAPSHOT")
+        .pluginVersion("0.1.15-SNAPSHOT")
         .build();
   }
 

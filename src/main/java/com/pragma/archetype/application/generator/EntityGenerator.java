@@ -48,7 +48,7 @@ public class EntityGenerator {
 
     // Generate entity file
     String entityContent = templateRepository.processTemplate(
-        "components/entity/Entity.java.ftl",
+        "frameworks/spring/reactive/domain/Entity.java.ftl",
         context);
 
     fileSystemPort.createDirectory(entityPath.getParent());
@@ -77,7 +77,16 @@ public class EntityGenerator {
     context.put("entityName", entityConfig.name());
     context.put("hasId", entityConfig.hasId());
     context.put("idType", entityConfig.idType());
-    context.put("fields", entityConfig.fields());
+
+    // Convert fields to Maps for Freemarker
+    List<Map<String, Object>> fieldMaps = new ArrayList<>();
+    for (EntityConfig.EntityField field : entityConfig.fields()) {
+      Map<String, Object> fieldMap = new HashMap<>();
+      fieldMap.put("name", field.name());
+      fieldMap.put("type", field.type());
+      fieldMaps.add(fieldMap);
+    }
+    context.put("fields", fieldMaps);
 
     // Helper flags
     context.put("needsUUID", entityConfig.idType().equals("UUID"));

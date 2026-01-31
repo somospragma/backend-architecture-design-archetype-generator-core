@@ -6,11 +6,13 @@ import java.util.List;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.options.Option;
 
 import com.pragma.archetype.application.generator.UseCaseGenerator;
 import com.pragma.archetype.application.usecase.GenerateUseCaseUseCaseImpl;
+import com.pragma.archetype.domain.model.ProjectConfig;
 import com.pragma.archetype.domain.model.UseCaseConfig;
 import com.pragma.archetype.domain.port.in.GenerateUseCaseUseCase;
 import com.pragma.archetype.domain.port.in.GenerateUseCaseUseCase.GenerationResult;
@@ -58,12 +60,13 @@ public class GenerateUseCaseTask extends DefaultTask {
     return methods;
   }
 
-  @Option(option = "packageName", description = "Package name (e.g., com.company.domain.port.in)")
+  @Option(option = "packageName", description = "Package name (optional, auto-detected from .cleanarch.yml)")
   public void setPackageName(String packageName) {
     this.packageName = packageName;
   }
 
   @Input
+  @Optional
   public String getPackageName() {
     return packageName;
   }
@@ -96,13 +99,16 @@ public class GenerateUseCaseTask extends DefaultTask {
       // 1. Validate inputs
       validateInputs();
 
-      // 2. Parse methods
+      // 2. Resolve package name (auto-detect if not provided)
+      String resolvedPackageName = resolvePackageName();
+
+      // 3. Parse methods
       List<UseCaseConfig.UseCaseMethod> useCaseMethods = parseMethods(methods);
 
-      // 3. Create configuration
+      // 4. Create configuration
       UseCaseConfig config = UseCaseConfig.builder()
           .name(useCaseName)
-          .packageName(packageName)
+          .packageName(resolvedPackageName)
           .methods(useCaseMethods)
           .generatePort(generatePort)
           .generateImpl(generateImpl)
@@ -156,10 +162,29 @@ public class GenerateUseCaseTask extends DefaultTask {
       throw new IllegalArgumentException(
           "Methods are required. Use --methods=execute:User:userId:String");
     }
+  }
 
-    if (packageName.isBlank()) {
+  /**
+   * Resolves package name from .cleanarch.yml if not provided.
+   */
+  private String resolvePackageName() {
+    // If packageName is provided, use it
+    if (packageName != null && !packageName.isBlank()) {
+      return packageName;
+    }
+
+    // Otherwise, read from .cleanarch.yml
+    try {
+      ConfigurationPort configurationPort = new YamlConfigurationAdapter();
+      Path projectPath = getProject().getProjectDir().toPath();
+      ProjectConfig projectConfig = configurationPort.readConfiguration(projectPath)
+          .orElseThrow(() -> new IllegalArgumentException(".cleanarch.yml not found"));
+
+      // For hexagonal-single, use cases go in domain.port.in
+      return projectConfig.basePackage() + ".domain.port.in";
+    } catch (Exception e) {
       throw new IllegalArgumentException(
-          "Package name is required. Use --packageName=com.company.domain.port.in");
+          "Could not auto-detect package name. Please provide --packageName or ensure .cleanarch.yml exists", e);
     }
   }
 
