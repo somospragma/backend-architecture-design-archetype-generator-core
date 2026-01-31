@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.pragma"
-version = "0.1.3-SNAPSHOT"
+version = "0.1.15-SNAPSHOT"
 
 java {
     toolchain {

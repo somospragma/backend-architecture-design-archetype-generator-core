@@ -234,8 +234,8 @@ public class ProjectGenerator {
                                 fileSystemPort.createDirectory(basePath.resolve("application/usecase"));
 
                                 // Infrastructure layer
-                                fileSystemPort.createDirectory(basePath.resolve("infrastructure/adapter/in/rest"));
-                                fileSystemPort.createDirectory(basePath.resolve("infrastructure/adapter/out"));
+                                fileSystemPort.createDirectory(basePath.resolve("infrastructure/entry-points/rest"));
+                                fileSystemPort.createDirectory(basePath.resolve("infrastructure/driven-adapters"));
                                 fileSystemPort.createDirectory(basePath.resolve("infrastructure/config"));
 
                                 // Add .gitkeep files to preserve empty directories
@@ -252,10 +252,10 @@ public class ProjectGenerator {
                                                 basePath.resolve("application/usecase/.gitkeep"),
                                                 ""));
                                 files.add(GeneratedFile.create(
-                                                basePath.resolve("infrastructure/adapter/in/rest/.gitkeep"),
+                                                basePath.resolve("infrastructure/entry-points/rest/.gitkeep"),
                                                 ""));
                                 files.add(GeneratedFile.create(
-                                                basePath.resolve("infrastructure/adapter/out/.gitkeep"),
+                                                basePath.resolve("infrastructure/driven-adapters/.gitkeep"),
                                                 ""));
                                 files.add(GeneratedFile.create(
                                                 basePath.resolve("infrastructure/config/.gitkeep"),
@@ -268,7 +268,8 @@ public class ProjectGenerator {
                                 fileSystemPort.createDirectory(basePath.resolve("core/application/port"));
 
                                 // Infrastructure layer
-                                fileSystemPort.createDirectory(basePath.resolve("infrastructure/adapter"));
+                                fileSystemPort.createDirectory(basePath.resolve("infrastructure/entry-points"));
+                                fileSystemPort.createDirectory(basePath.resolve("infrastructure/driven-adapters"));
                                 fileSystemPort.createDirectory(basePath.resolve("infrastructure/config"));
 
                                 // Add .gitkeep files

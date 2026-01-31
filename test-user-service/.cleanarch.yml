@@ -1,0 +1,3 @@
+project: {name: test-user-service, basePackage: com.pragma.user, pluginVersion: 0.1.0-SNAPSHOT,
+  createdAt: '2026-01-31T12:06:43.843334'}
+architecture: {type: hexagonal-single, paradigm: reactive, framework: spring}

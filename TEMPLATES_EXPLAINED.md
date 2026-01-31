@@ -325,7 +325,7 @@ src/main/java/com/company/payment/
    templates/frameworks/quarkus/reactive/adapters/output/redis/Adapter.java.ftl
 
 3. Genera en la ubicación que define la arquitectura:
-   src/main/java/com/company/payment/infrastructure/adapter/out/redis/
+   src/main/java/com/company/payment/infrastructure/driven-adapters/redis/
    └── PaymentCacheRedisAdapter.java  # ← Con código de Quarkus
 ```
 

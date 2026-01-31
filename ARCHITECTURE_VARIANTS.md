@@ -883,13 +883,13 @@ payment-service/
 #### Single Module
 ```
 Genera en:
-infrastructure/adapter/out/kafka/PaymentEventsKafkaProducer.java
+infrastructure/driven-adapters/kafka/PaymentEventsKafkaProducer.java
 ```
 
 #### Multi Module
 ```
 Genera en:
-infrastructure/src/main/java/.../infrastructure/adapter/out/kafka/PaymentEventsKafkaProducer.java
+infrastructure/src/main/java/.../infrastructure/driven-adapters/kafka/PaymentEventsKafkaProducer.java
 ```
 
 #### Multi Module Granular

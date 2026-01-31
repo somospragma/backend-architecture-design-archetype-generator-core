@@ -181,7 +181,7 @@
 - [ ] Kafka
 - [ ] Tests
 
-**Entregable**: Soporte para múltiples frameworks y arquitecturas
+**Entregable**: Soporte para múltiples frameworks y arquitecturas, documentaciòn de cada adptador y template en docusaurus
 
 ---
 

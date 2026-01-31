@@ -4,6 +4,9 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 
 import com.pragma.archetype.infrastructure.adapter.in.gradle.GenerateEntityTask;
+import com.pragma.archetype.infrastructure.adapter.in.gradle.GenerateInputAdapterTask;
+import com.pragma.archetype.infrastructure.adapter.in.gradle.GenerateOutputAdapterTask;
+import com.pragma.archetype.infrastructure.adapter.in.gradle.GenerateUseCaseTask;
 import com.pragma.archetype.infrastructure.adapter.in.gradle.InitCleanArchTask;
 
 /**
@@ -20,26 +23,31 @@ public class CleanArchPlugin implements Plugin<Project> {
       task.setDescription("Initialize a clean architecture project");
     });
 
-    project.getTasks().register("initCleanArch2", InitCleanArchTask.class, task -> {
-      task.setGroup("clean architecture");
-      task.setDescription("Initialize a clean architecture project");
-    });
-
-    project.getTasks().register("initCleanArch3", InitCleanArchTask.class, task -> {
-      task.setGroup("clean architecture");
-      task.setDescription("Initialize a clean architecture project");
-    });
-
     // Register generateEntity task
-    project.getTasks().register("taskEntityTest", GenerateEntityTask.class, task -> {
+    project.getTasks().register("generateEntity", GenerateEntityTask.class, task -> {
       task.setGroup("clean architecture");
       task.setDescription("Generate a domain entity");
     });
 
+    // Register generateUseCase task
+    project.getTasks().register("generateUseCase", GenerateUseCaseTask.class, task -> {
+      task.setGroup("clean architecture");
+      task.setDescription("Generate a use case (port and implementation)");
+    });
+
+    // Register generateOutputAdapter task
+    project.getTasks().register("generateOutputAdapter", GenerateOutputAdapterTask.class, task -> {
+      task.setGroup("clean architecture");
+      task.setDescription("Generate an output adapter (Redis, MongoDB, etc.)");
+    });
+
+    // Register generateInputAdapter task
+    project.getTasks().register("generateInputAdapter", GenerateInputAdapterTask.class, task -> {
+      task.setGroup("clean architecture");
+      task.setDescription("Generate an input adapter (REST controller, GraphQL resolver, etc.)");
+    });
+
     // Future tasks will be registered here:
-    // - generateUseCase
-    // - generateOutputAdapter
-    // - generateInputAdapter
     // - listComponents
   }
 }

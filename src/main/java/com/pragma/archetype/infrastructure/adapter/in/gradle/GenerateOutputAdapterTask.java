@@ -1,0 +1,242 @@
+package com.pragma.archetype.infrastructure.adapter.in.gradle;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.gradle.api.DefaultTask;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.options.Option;
+
+import com.pragma.archetype.application.generator.AdapterGenerator;
+import com.pragma.archetype.application.usecase.GenerateAdapterUseCaseImpl;
+import com.pragma.archetype.domain.model.AdapterConfig;
+import com.pragma.archetype.domain.port.in.GenerateAdapterUseCase;
+import com.pragma.archetype.domain.port.in.GenerateAdapterUseCase.GenerationResult;
+import com.pragma.archetype.domain.port.out.ConfigurationPort;
+import com.pragma.archetype.domain.port.out.FileSystemPort;
+import com.pragma.archetype.domain.port.out.TemplateRepository;
+import com.pragma.archetype.domain.service.AdapterValidator;
+import com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter;
+import com.pragma.archetype.infrastructure.adapter.out.filesystem.LocalFileSystemAdapter;
+import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTemplateRepository;
+
+/**
+ * Gradle task for generating output adapters (driven adapters: Redis, MongoDB,
+ * etc.).
+ * 
+ * Usage:
+ * ./gradlew generateOutputAdapter --name=UserRepository
+ * --entity=User --type=redis
+ * --packageName=com.pragma.infrastructure.driven-adapters.redis
+ */
+public class GenerateOutputAdapterTask extends DefaultTask {
+
+  private String adapterName = "";
+  private String entityName = "";
+  private String type = "redis";
+  private String packageName = "";
+  private String methods = "";
+
+  @Option(option = "name", description = "Adapter name (e.g., UserRepository, ProductCache)")
+  public void setAdapterName(String adapterName) {
+    this.adapterName = adapterName;
+  }
+
+  @Input
+  public String getAdapterName() {
+    return adapterName;
+  }
+
+  @Option(option = "entity", description = "Entity name (e.g., User, Product)")
+  public void setEntityName(String entityName) {
+    this.entityName = entityName;
+  }
+
+  @Input
+  public String getEntityName() {
+    return entityName;
+  }
+
+  @Option(option = "type", description = "Adapter type: redis, mongodb, postgresql, rest-client, kafka (default: redis)")
+  public void setType(String type) {
+    this.type = type;
+  }
+
+  @Input
+  public String getType() {
+    return type;
+  }
+
+  @Option(option = "packageName", description = "Package name (e.g., com.company.infrastructure.driven-adapters.redis)")
+  public void setPackageName(String packageName) {
+    this.packageName = packageName;
+  }
+
+  @Input
+  public String getPackageName() {
+    return packageName;
+  }
+
+  @Option(option = "methods", description = "Custom methods (optional, format: methodName:ReturnType:param1:Type1)")
+  public void setMethods(String methods) {
+    this.methods = methods;
+  }
+
+  @Input
+  public String getMethods() {
+    return methods;
+  }
+
+  @TaskAction
+  public void generateAdapter() {
+    getLogger().lifecycle("Generating {} adapter: {}", type, adapterName);
+
+    try {
+      // 1. Validate inputs
+      validateInputs();
+
+      // 2. Parse adapter type
+      AdapterConfig.AdapterType adapterType = parseAdapterType(type);
+
+      // 3. Parse methods (if provided)
+      List<AdapterConfig.AdapterMethod> adapterMethods = new ArrayList<>();
+      if (!methods.isBlank()) {
+        adapterMethods = parseMethods(methods);
+      }
+
+      // 4. Create configuration
+      AdapterConfig config = AdapterConfig.builder()
+          .name(adapterName)
+          .entityName(entityName)
+          .type(adapterType)
+          .packageName(packageName)
+          .methods(adapterMethods)
+          .build();
+
+      // 5. Setup dependencies
+      FileSystemPort fileSystemPort = new LocalFileSystemAdapter();
+      ConfigurationPort configurationPort = new YamlConfigurationAdapter();
+      TemplateRepository templateRepository = createTemplateRepository();
+
+      // 6. Setup use case
+      AdapterValidator validator = new AdapterValidator(fileSystemPort, configurationPort);
+      AdapterGenerator generator = new AdapterGenerator(templateRepository, fileSystemPort);
+      GenerateAdapterUseCase useCase = new GenerateAdapterUseCaseImpl(
+          validator,
+          generator,
+          configurationPort,
+          fileSystemPort);
+
+      // 7. Execute use case
+      Path projectPath = getProject().getProjectDir().toPath();
+      GenerationResult result = useCase.execute(projectPath, config);
+
+      // 8. Handle result
+      if (result.success()) {
+        getLogger().lifecycle("✓ Adapter generated successfully!");
+        getLogger().lifecycle("  Generated {} file(s)", result.generatedFiles().size());
+        result.generatedFiles().forEach(file -> getLogger().lifecycle("    - {}", file.path()));
+      } else {
+        getLogger().error("✗ Failed to generate adapter:");
+        result.errors().forEach(error -> getLogger().error("  - {}", error));
+        throw new RuntimeException("Adapter generation failed");
+      }
+
+    } catch (Exception e) {
+      getLogger().error("✗ Error generating adapter: {}", e.getMessage());
+      throw new RuntimeException("Adapter generation failed", e);
+    }
+  }
+
+  /**
+   * Validates task inputs.
+   */
+  private void validateInputs() {
+    if (adapterName.isBlank()) {
+      throw new IllegalArgumentException(
+          "Adapter name is required. Use --name=UserRepository");
+    }
+
+    if (entityName.isBlank()) {
+      throw new IllegalArgumentException(
+          "Entity name is required. Use --entity=User");
+    }
+
+    if (packageName.isBlank()) {
+      throw new IllegalArgumentException(
+          "Package name is required. Use --packageName=com.company.infrastructure.driven-adapters.redis");
+    }
+  }
+
+  /**
+   * Parses adapter type string.
+   */
+  private AdapterConfig.AdapterType parseAdapterType(String typeStr) {
+    return switch (typeStr.toLowerCase()) {
+      case "redis" -> AdapterConfig.AdapterType.REDIS;
+      case "mongodb", "mongo" -> AdapterConfig.AdapterType.MONGODB;
+      case "postgresql", "postgres" -> AdapterConfig.AdapterType.POSTGRESQL;
+      case "rest-client", "rest" -> AdapterConfig.AdapterType.REST_CLIENT;
+      case "kafka" -> AdapterConfig.AdapterType.KAFKA;
+      default -> throw new IllegalArgumentException(
+          "Invalid adapter type: " + typeStr + ". Valid values: redis, mongodb, postgresql, rest-client, kafka");
+    };
+  }
+
+  /**
+   * Parses method string into AdapterMethod list.
+   * Format: "methodName:ReturnType:param1:Type1|method2:ReturnType2"
+   */
+  private List<AdapterConfig.AdapterMethod> parseMethods(String methodsStr) {
+    List<AdapterConfig.AdapterMethod> result = new ArrayList<>();
+
+    String[] methodDefinitions = methodsStr.split("\\|");
+    for (String methodDef : methodDefinitions) {
+      String[] parts = methodDef.trim().split(":");
+      if (parts.length < 2) {
+        throw new IllegalArgumentException(
+            "Invalid method format: " + methodDef + ". Expected format: methodName:ReturnType[:param1:Type1]");
+      }
+
+      String methodName = parts[0].trim();
+      String returnType = parts[1].trim();
+      List<AdapterConfig.MethodParameter> parameters = new ArrayList<>();
+
+      // Parse parameters if present
+      if (parts.length > 2) {
+        for (int i = 2; i < parts.length; i += 2) {
+          if (i + 1 < parts.length) {
+            String paramName = parts[i].trim();
+            String paramType = parts[i + 1].trim();
+            parameters.add(new AdapterConfig.MethodParameter(paramName, paramType));
+          }
+        }
+      }
+
+      result.add(new AdapterConfig.AdapterMethod(methodName, returnType, parameters));
+    }
+
+    return result;
+  }
+
+  /**
+   * Creates template repository.
+   */
+  private TemplateRepository createTemplateRepository() {
+    // Try to find templates in project directory first (for development)
+    Path projectDir = getProject().getProjectDir().toPath();
+    Path localTemplates = projectDir
+        .resolve("../../backend-architecture-design-archetype-generator-templates/templates").normalize();
+
+    if (java.nio.file.Files.exists(localTemplates)) {
+      getLogger().info("Using local templates from: {}", localTemplates.toAbsolutePath());
+      return new FreemarkerTemplateRepository(localTemplates);
+    }
+
+    // Fall back to embedded templates (in JAR)
+    getLogger().info("Using embedded templates");
+    return new FreemarkerTemplateRepository("embedded");
+  }
+}

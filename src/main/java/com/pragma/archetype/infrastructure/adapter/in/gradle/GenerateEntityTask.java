@@ -31,20 +31,20 @@ import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTempla
  */
 public class GenerateEntityTask extends DefaultTask {
 
-  private String name = "";
+  private String entityName = "";
   private String fields = "";
   private String packageName = "";
   private boolean hasId = true;
   private String idType = "String";
 
   @Option(option = "name", description = "Entity name (e.g., User, Product)")
-  public void setName(String name) {
-    this.name = name;
+  public void setEntityName(String entityName) {
+    this.entityName = entityName;
   }
 
   @Input
-  public String getName() {
-    return name;
+  public String getEntityName() {
+    return entityName;
   }
 
   @Option(option = "fields", description = "Entity fields (format: name:type,email:String,age:Integer)")
@@ -89,7 +89,7 @@ public class GenerateEntityTask extends DefaultTask {
 
   @TaskAction
   public void generateEntity() {
-    getLogger().lifecycle("Generating entity: {}", name);
+    getLogger().lifecycle("Generating entity: {}", entityName);
 
     try {
       // 1. Validate inputs
@@ -100,7 +100,7 @@ public class GenerateEntityTask extends DefaultTask {
 
       // 3. Create configuration
       EntityConfig config = EntityConfig.builder()
-          .name(name)
+          .name(entityName)
           .fields(entityFields)
           .hasId(hasId)
           .idType(idType)
@@ -146,19 +146,19 @@ public class GenerateEntityTask extends DefaultTask {
    * Validates task inputs.
    */
   private void validateInputs() {
-    if (name == null || name.isBlank()) {
+    if (entityName.isBlank()) {
       throw new IllegalArgumentException(
           "Entity name is required. Use --name=User");
     }
 
-    if (fields == null || fields.isBlank()) {
+    if (fields.isBlank()) {
       throw new IllegalArgumentException(
           "Entity fields are required. Use --fields=name:String,email:String");
     }
 
-    if (packageName == null || packageName.isBlank()) {
+    if (packageName.isBlank()) {
       throw new IllegalArgumentException(
-          "Package name is required. Use --package=com.company.domain.model");
+          "Package name is required. Use --packageName=com.company.domain.model");
     }
   }
 

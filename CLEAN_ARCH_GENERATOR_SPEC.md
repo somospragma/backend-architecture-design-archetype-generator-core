@@ -142,8 +142,8 @@ structure:
       out: domain/port/out
   infrastructure:
     adapters:
-      in: infrastructure/adapter/in
-      out: infrastructure/adapter/out
+      entry-points: infrastructure/entry-points
+      driven-adapters: infrastructure/driven-adapters
     config: infrastructure/config
 
 dependencies:
@@ -1340,7 +1340,7 @@ class RedisAdapterGenerator(
         val code = templateEngine.process(templatePath, data)
         
         return GeneratedFile(
-            path = "${config.outputPath}/infrastructure/adapter/out/redis/${params.name}RedisAdapter.java",
+            path = "${config.outputPath}/infrastructure/driven-adapters/redis/${params.name}RedisAdapter.java",
             content = code
         )
     }

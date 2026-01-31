@@ -796,13 +796,4 @@ Abierto para extensión, cerrado para modificación:
 - [ ] Matriz de compatibilidad
 
 ### Para Proyectos Generados
-- [ ] Arquitectura limpia (hexagonal u onion)
-- [ ] Separación de capas
-- [ ] Puertos e interfaces
-- [ ] Tests espejados
-- [ ] README con instrucciones
-
----
-
-**Creado:** 2026-01-31  
-**Versión:** 1.0
+- [ ] Arquitectura li
