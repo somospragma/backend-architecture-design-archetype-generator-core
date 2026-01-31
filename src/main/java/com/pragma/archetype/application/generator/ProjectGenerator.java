@@ -200,6 +200,26 @@ public class ProjectGenerator {
                                 mainClassPath,
                                 applicationClassContent));
 
+                // Generate BeanConfiguration class (Spring dependency injection config)
+                String architecturePath = "architectures/"
+                                + config.architecture().name().toLowerCase().replace('_', '-');
+
+                String beanConfigContent = templateRepository.processTemplate(
+                                architecturePath + "/project/BeanConfiguration.java.ftl",
+                                context);
+
+                Path configPath = projectPath
+                                .resolve("src/main/java")
+                                .resolve(config.basePackage().replace('.', '/'))
+                                .resolve("infrastructure/config")
+                                .resolve("BeanConfiguration.java");
+
+                fileSystemPort.createDirectory(configPath.getParent());
+
+                files.add(GeneratedFile.create(
+                                configPath,
+                                beanConfigContent));
+
                 return files;
         }
 

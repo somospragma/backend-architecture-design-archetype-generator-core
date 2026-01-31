@@ -91,6 +91,8 @@ public class EntityGenerator {
     // Helper flags
     context.put("needsUUID", entityConfig.idType().equals("UUID"));
     context.put("needsLocalDateTime", hasLocalDateTimeField(entityConfig.fields()));
+    context.put("needsBigDecimal", hasBigDecimalField(entityConfig.fields()));
+    context.put("needsLocalDate", hasLocalDateField(entityConfig.fields()));
 
     return context;
   }
@@ -127,5 +129,21 @@ public class EntityGenerator {
   private boolean hasLocalDateTimeField(List<EntityConfig.EntityField> fields) {
     return fields.stream()
         .anyMatch(f -> f.type().equals("LocalDateTime"));
+  }
+
+  /**
+   * Checks if any field is BigDecimal type.
+   */
+  private boolean hasBigDecimalField(List<EntityConfig.EntityField> fields) {
+    return fields.stream()
+        .anyMatch(f -> f.type().equals("BigDecimal"));
+  }
+
+  /**
+   * Checks if any field is LocalDate type.
+   */
+  private boolean hasLocalDateField(List<EntityConfig.EntityField> fields) {
+    return fields.stream()
+        .anyMatch(f -> f.type().equals("LocalDate"));
   }
 }
