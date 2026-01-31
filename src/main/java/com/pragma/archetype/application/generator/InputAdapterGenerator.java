@@ -61,11 +61,13 @@ public class InputAdapterGenerator {
   }
 
   private String getControllerTemplate(InputAdapterConfig.InputAdapterType type) {
+    // New structure:
+    // frameworks/spring/reactive/adapters/entry-points/{type}/Controller.java.ftl
     return switch (type) {
-      case REST -> "components/input-adapter/RestController.java.ftl";
-      case GRAPHQL -> "components/input-adapter/GraphQLResolver.java.ftl";
-      case GRPC -> "components/input-adapter/GrpcService.java.ftl";
-      case WEBSOCKET -> "components/input-adapter/WebSocketHandler.java.ftl";
+      case REST -> "frameworks/spring/reactive/adapters/entry-points/rest/Controller.java.ftl";
+      case GRAPHQL -> "frameworks/spring/reactive/adapters/entry-points/graphql/Resolver.java.ftl";
+      case GRPC -> "frameworks/spring/reactive/adapters/entry-points/grpc/Service.java.ftl";
+      case WEBSOCKET -> "frameworks/spring/reactive/adapters/entry-points/websocket/Handler.java.ftl";
     };
   }
 

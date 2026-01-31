@@ -70,8 +70,8 @@ public class AdapterGenerator {
   }
 
   private GeneratedFile generateMapper(Path projectPath, AdapterConfig config, Map<String, Object> data) {
-    // Process mapper template
-    String content = templateRepository.processTemplate("components/adapter/EntityMapper.java.ftl", data);
+    // Process mapper template with new structure
+    String content = templateRepository.processTemplate(getMapperTemplate(), data);
 
     // Calculate file path:
     // infrastructure/adapter/out/{type}/mapper/{Entity}Mapper.java
@@ -103,22 +103,32 @@ public class AdapterGenerator {
   }
 
   private String getAdapterTemplate(AdapterConfig.AdapterType type) {
+    // New structure:
+    // frameworks/spring/reactive/adapters/driven-adapters/{type}/Adapter.java.ftl
     return switch (type) {
-      case REDIS -> "components/adapter/RedisAdapter.java.ftl";
-      case MONGODB -> "components/adapter/MongoAdapter.java.ftl";
-      case POSTGRESQL -> "components/adapter/PostgresAdapter.java.ftl";
-      case REST_CLIENT -> "components/adapter/RestClientAdapter.java.ftl";
-      case KAFKA -> "components/adapter/KafkaAdapter.java.ftl";
+      case REDIS -> "frameworks/spring/reactive/adapters/driven-adapters/redis/Adapter.java.ftl";
+      case MONGODB -> "frameworks/spring/reactive/adapters/driven-adapters/mongodb/Adapter.java.ftl";
+      case POSTGRESQL -> "frameworks/spring/reactive/adapters/driven-adapters/postgresql/Adapter.java.ftl";
+      case REST_CLIENT -> "frameworks/spring/reactive/adapters/driven-adapters/rest-client/Adapter.java.ftl";
+      case KAFKA -> "frameworks/spring/reactive/adapters/driven-adapters/kafka/Adapter.java.ftl";
     };
   }
 
   private String getDataEntityTemplate(AdapterConfig.AdapterType type) {
+    // New structure:
+    // frameworks/spring/reactive/adapters/driven-adapters/{type}/Entity.java.ftl
     return switch (type) {
-      case REDIS -> "components/adapter/RedisEntity.java.ftl";
-      case MONGODB -> "components/adapter/MongoEntity.java.ftl";
-      case POSTGRESQL -> "components/adapter/PostgresEntity.java.ftl";
-      default -> "components/adapter/DataEntity.java.ftl";
+      case REDIS -> "frameworks/spring/reactive/adapters/driven-adapters/redis/Entity.java.ftl";
+      case MONGODB -> "frameworks/spring/reactive/adapters/driven-adapters/mongodb/Entity.java.ftl";
+      case POSTGRESQL -> "frameworks/spring/reactive/adapters/driven-adapters/postgresql/Entity.java.ftl";
+      default -> "frameworks/spring/reactive/adapters/driven-adapters/generic/Entity.java.ftl";
     };
+  }
+
+  private String getMapperTemplate() {
+    // New structure:
+    // frameworks/spring/reactive/adapters/driven-adapters/generic/Mapper.java.ftl
+    return "frameworks/spring/reactive/adapters/driven-adapters/generic/Mapper.java.ftl";
   }
 
   private Map<String, Object> prepareTemplateData(AdapterConfig config) {

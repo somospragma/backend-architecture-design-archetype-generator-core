@@ -50,8 +50,8 @@ public class UseCaseGenerator {
   }
 
   private GeneratedFile generatePort(Path projectPath, UseCaseConfig config, Map<String, Object> data) {
-    // Process template
-    String content = templateRepository.processTemplate("components/usecase/UseCasePort.java.ftl", data);
+    // Process template with new structure
+    String content = templateRepository.processTemplate("frameworks/spring/reactive/usecase/InputPort.java.ftl", data);
 
     // Calculate file path: domain/port/in/{UseCaseName}UseCase.java
     String packagePath = config.packageName().replace('.', '/');
@@ -72,8 +72,8 @@ public class UseCaseGenerator {
     // Update data with implementation package
     data.put("implPackage", implPackage);
 
-    // Process template
-    String content = templateRepository.processTemplate("components/usecase/UseCaseImpl.java.ftl", data);
+    // Process template with new structure
+    String content = templateRepository.processTemplate("frameworks/spring/reactive/usecase/UseCase.java.ftl", data);
 
     // Calculate file path: application/usecase/{UseCaseName}UseCaseImpl.java
     String packagePath = implPackage.replace('.', '/');
