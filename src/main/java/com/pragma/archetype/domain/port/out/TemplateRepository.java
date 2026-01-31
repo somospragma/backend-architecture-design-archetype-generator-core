@@ -1,8 +1,6 @@
 package com.pragma.archetype.domain.port.out;
 
-import com.pragma.archetype.domain.model.ArchitectureType;
-import com.pragma.archetype.domain.model.Framework;
-import com.pragma.archetype.domain.model.Paradigm;
+import java.util.Map;
 
 /**
  * Port for accessing and processing templates.
@@ -29,15 +27,15 @@ public interface TemplateRepository {
   }
 
   /**
-   * Loads and processes a template with the given data.
+   * Loads and processes a template with the given context.
    *
    * @param templatePath path to the template file
-   * @param data         data to be used in template processing
+   * @param context      context data for template processing
    * @return processed template content
    * @throws TemplateNotFoundException   if template is not found
    * @throws TemplateProcessingException if template processing fails
    */
-  String processTemplate(String templatePath, Object data);
+  String processTemplate(String templatePath, Map<String, Object> context);
 
   /**
    * Checks if a template exists.
@@ -48,17 +46,11 @@ public interface TemplateRepository {
   boolean templateExists(String templatePath);
 
   /**
-   * Gets the template path for a specific architecture and framework.
+   * Gets the raw content of a template without processing.
    *
-   * @param architecture the architecture type
-   * @param framework    the framework
-   * @param paradigm     the paradigm
-   * @param templateName the template name
-   * @return the full template path
+   * @param templatePath path to the template file
+   * @return raw template content
+   * @throws TemplateNotFoundException if template is not found
    */
-  String getTemplatePath(
-      ArchitectureType architecture,
-      Framework framework,
-      Paradigm paradigm,
-      String templateName);
+  String getTemplateContent(String templatePath);
 }

@@ -57,6 +57,14 @@ public interface FileSystemPort {
   boolean exists(Path path);
 
   /**
+   * Checks if a directory exists.
+   *
+   * @param path the directory path
+   * @return true if exists and is a directory, false otherwise
+   */
+  boolean directoryExists(Path path);
+
+  /**
    * Checks if a directory is empty (only contains Gradle files).
    *
    * @param path the directory path
