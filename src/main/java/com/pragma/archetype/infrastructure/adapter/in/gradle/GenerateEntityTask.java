@@ -1,0 +1,214 @@
+package com.pragma.archetype.infrastructure.adapter.in.gradle;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.gradle.api.DefaultTask;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.options.Option;
+
+import com.pragma.archetype.application.generator.EntityGenerator;
+import com.pragma.archetype.application.usecase.GenerateEntityUseCaseImpl;
+import com.pragma.archetype.domain.model.EntityConfig;
+import com.pragma.archetype.domain.port.in.GenerateEntityUseCase;
+import com.pragma.archetype.domain.port.in.GenerateEntityUseCase.GenerationResult;
+import com.pragma.archetype.domain.port.out.ConfigurationPort;
+import com.pragma.archetype.domain.port.out.FileSystemPort;
+import com.pragma.archetype.domain.port.out.TemplateRepository;
+import com.pragma.archetype.domain.service.EntityValidator;
+import com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter;
+import com.pragma.archetype.infrastructure.adapter.out.filesystem.LocalFileSystemAdapter;
+import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTemplateRepository;
+
+/**
+ * Gradle task for generating domain entities.
+ * 
+ * Usage:
+ * ./gradlew generateEntity --name=User
+ * --fields=name:String,email:String,age:Integer
+ */
+public class GenerateEntityTask extends DefaultTask {
+
+  private String name = "";
+  private String fields = "";
+  private String packageName = "";
+  private boolean hasId = true;
+  private String idType = "String";
+
+  @Option(option = "name", description = "Entity name (e.g., User, Product)")
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  @Input
+  public String getName() {
+    return name;
+  }
+
+  @Option(option = "fields", description = "Entity fields (format: name:type,email:String,age:Integer)")
+  public void setFields(String fields) {
+    this.fields = fields;
+  }
+
+  @Input
+  public String getFields() {
+    return fields;
+  }
+
+  @Option(option = "packageName", description = "Package name (e.g., com.company.domain.model)")
+  public void setPackageName(String packageName) {
+    this.packageName = packageName;
+  }
+
+  @Input
+  public String getPackageName() {
+    return packageName;
+  }
+
+  @Option(option = "hasId", description = "Whether entity has an ID field (default: true)")
+  public void setHasId(boolean hasId) {
+    this.hasId = hasId;
+  }
+
+  @Input
+  public boolean getHasId() {
+    return hasId;
+  }
+
+  @Option(option = "idType", description = "ID field type: String, Long, UUID (default: String)")
+  public void setIdType(String idType) {
+    this.idType = idType;
+  }
+
+  @Input
+  public String getIdType() {
+    return idType;
+  }
+
+  @TaskAction
+  public void generateEntity() {
+    getLogger().lifecycle("Generating entity: {}", name);
+
+    try {
+      // 1. Validate inputs
+      validateInputs();
+
+      // 2. Parse fields
+      List<EntityConfig.EntityField> entityFields = parseFields(fields);
+
+      // 3. Create configuration
+      EntityConfig config = EntityConfig.builder()
+          .name(name)
+          .fields(entityFields)
+          .hasId(hasId)
+          .idType(idType)
+          .packageName(packageName)
+          .build();
+
+      // 4. Setup dependencies
+      FileSystemPort fileSystemPort = new LocalFileSystemAdapter();
+      ConfigurationPort configurationPort = new YamlConfigurationAdapter();
+      TemplateRepository templateRepository = createTemplateRepository();
+
+      // 5. Setup use case
+      EntityValidator validator = new EntityValidator(fileSystemPort, configurationPort);
+      EntityGenerator generator = new EntityGenerator(templateRepository, fileSystemPort);
+      GenerateEntityUseCase useCase = new GenerateEntityUseCaseImpl(
+          validator,
+          generator,
+          configurationPort,
+          fileSystemPort);
+
+      // 6. Execute use case
+      Path projectPath = getProject().getProjectDir().toPath();
+      GenerationResult result = useCase.execute(projectPath, config);
+
+      // 7. Handle result
+      if (result.success()) {
+        getLogger().lifecycle("✓ Entity generated successfully!");
+        getLogger().lifecycle("  Generated {} file(s)", result.generatedFiles().size());
+        result.generatedFiles().forEach(file -> getLogger().lifecycle("    - {}", file.path()));
+      } else {
+        getLogger().error("✗ Failed to generate entity:");
+        result.errors().forEach(error -> getLogger().error("  - {}", error));
+        throw new RuntimeException("Entity generation failed");
+      }
+
+    } catch (Exception e) {
+      getLogger().error("✗ Error generating entity: {}", e.getMessage());
+      throw new RuntimeException("Entity generation failed", e);
+    }
+  }
+
+  /**
+   * Validates task inputs.
+   */
+  private void validateInputs() {
+    if (name == null || name.isBlank()) {
+      throw new IllegalArgumentException(
+          "Entity name is required. Use --name=User");
+    }
+
+    if (fields == null || fields.isBlank()) {
+      throw new IllegalArgumentException(
+          "Entity fields are required. Use --fields=name:String,email:String");
+    }
+
+    if (packageName == null || packageName.isBlank()) {
+      throw new IllegalArgumentException(
+          "Package name is required. Use --package=com.company.domain.model");
+    }
+  }
+
+  /**
+   * Parses field string into EntityField list.
+   * Format: "name:String,email:String,age:Integer"
+   */
+  private List<EntityConfig.EntityField> parseFields(String fieldsStr) {
+    List<EntityConfig.EntityField> result = new ArrayList<>();
+
+    String[] fieldPairs = fieldsStr.split(",");
+    for (String pair : fieldPairs) {
+      String[] parts = pair.trim().split(":");
+      if (parts.length != 2) {
+        throw new IllegalArgumentException(
+            "Invalid field format: " + pair + ". Expected format: name:type");
+      }
+
+      String fieldName = parts[0].trim();
+      String fieldType = parts[1].trim();
+      boolean nullable = false;
+
+      // Check for nullable marker (e.g., "name:String?")
+      if (fieldType.endsWith("?")) {
+        nullable = true;
+        fieldType = fieldType.substring(0, fieldType.length() - 1);
+      }
+
+      result.add(new EntityConfig.EntityField(fieldName, fieldType, nullable));
+    }
+
+    return result;
+  }
+
+  /**
+   * Creates template repository.
+   */
+  private TemplateRepository createTemplateRepository() {
+    // Try to find templates in project directory first (for development)
+    Path projectDir = getProject().getProjectDir().toPath();
+    Path localTemplates = projectDir
+        .resolve("../../backend-architecture-design-archetype-generator-templates/templates").normalize();
+
+    if (java.nio.file.Files.exists(localTemplates)) {
+      getLogger().info("Using local templates from: {}", localTemplates.toAbsolutePath());
+      return new FreemarkerTemplateRepository(localTemplates);
+    }
+
+    // Fall back to embedded templates (in JAR)
+    getLogger().info("Using embedded templates");
+    return new FreemarkerTemplateRepository("embedded");
+  }
+}
