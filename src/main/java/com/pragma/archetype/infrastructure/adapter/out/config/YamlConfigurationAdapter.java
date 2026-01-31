@@ -15,6 +15,8 @@ import com.pragma.archetype.domain.model.ArchitectureType;
 import com.pragma.archetype.domain.model.Framework;
 import com.pragma.archetype.domain.model.Paradigm;
 import com.pragma.archetype.domain.model.ProjectConfig;
+import com.pragma.archetype.domain.model.TemplateConfig;
+import com.pragma.archetype.domain.model.TemplateMode;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 
 /**
@@ -83,6 +85,64 @@ public class YamlConfigurationAdapter implements ConfigurationPort {
     } catch (IOException e) {
       throw new RuntimeException("Failed to delete configuration file: " + configFile, e);
     }
+  }
+
+  /**
+   * Reads template configuration from .cleanarch.yml
+   *
+   * @param projectPath path to project
+   * @return template configuration or default if not specified
+   */
+  public TemplateConfig readTemplateConfiguration(Path projectPath) {
+    Path configFile = projectPath.resolve(CONFIG_FILE_NAME);
+
+    if (!Files.exists(configFile)) {
+      return TemplateConfig.defaultConfig();
+    }
+
+    try {
+      String content = Files.readString(configFile);
+      Map<String, Object> data = yaml.load(content);
+
+      // Check if templates section exists
+      @SuppressWarnings("unchecked")
+      Map<String, Object> templatesSection = (Map<String, Object>) data.get("templates");
+
+      if (templatesSection == null) {
+        return TemplateConfig.defaultConfig();
+      }
+
+      return parseTemplateConfig(templatesSection);
+
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to read configuration file: " + configFile, e);
+    }
+  }
+
+  /**
+   * Parses template configuration from YAML map.
+   */
+  private TemplateConfig parseTemplateConfig(Map<String, Object> templatesSection) {
+    String mode = (String) templatesSection.get("mode");
+    String repository = (String) templatesSection.get("repository");
+    String branch = (String) templatesSection.get("branch");
+    String version = (String) templatesSection.get("version");
+    String localPath = (String) templatesSection.get("localPath");
+    Boolean cache = (Boolean) templatesSection.get("cache");
+
+    TemplateMode templateMode = TemplateMode.PRODUCTION;
+    if ("developer".equalsIgnoreCase(mode)) {
+      templateMode = TemplateMode.DEVELOPER;
+    }
+
+    return new TemplateConfig(
+        templateMode,
+        repository != null ? repository
+            : "https://github.com/somospragma/backend-architecture-design-archetype-generator-templates",
+        branch != null ? branch : "main",
+        version,
+        localPath,
+        cache != null ? cache : true);
   }
 
   /**

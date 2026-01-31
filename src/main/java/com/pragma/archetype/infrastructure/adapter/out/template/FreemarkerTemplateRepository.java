@@ -7,7 +7,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
+import com.pragma.archetype.domain.model.TemplateConfig;
+import com.pragma.archetype.domain.port.out.HttpClientPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
+import com.pragma.archetype.infrastructure.adapter.out.http.OkHttpClientAdapter;
 
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -15,7 +18,11 @@ import freemarker.template.TemplateException;
 
 /**
  * Adapter for template processing using Freemarker.
- * Can load templates from local filesystem or remote repository.
+ * Supports loading templates from:
+ * - Local filesystem (developer mode with localPath)
+ * - Remote GitHub repository (production mode or developer mode with
+ * repository)
+ * - Embedded resources (fallback)
  */
 public class FreemarkerTemplateRepository implements TemplateRepository {
 
@@ -29,8 +36,9 @@ public class FreemarkerTemplateRepository implements TemplateRepository {
   }
 
   private final Configuration freemarkerConfig;
-
   private final Path templatesBasePath;
+  private final TemplateConfig templateConfig;
+  private final GitHubTemplateDownloader downloader;
 
   /**
    * Creates a repository with templates from local filesystem.
@@ -39,6 +47,32 @@ public class FreemarkerTemplateRepository implements TemplateRepository {
    */
   public FreemarkerTemplateRepository(Path templatesBasePath) {
     this.templatesBasePath = templatesBasePath;
+    this.templateConfig = null;
+    this.downloader = null;
+    this.freemarkerConfig = createFreemarkerConfiguration();
+  }
+
+  /**
+   * Creates a repository with template configuration.
+   * Supports local path, remote repository, or embedded templates.
+   *
+   * @param templateConfig template configuration
+   */
+  public FreemarkerTemplateRepository(TemplateConfig templateConfig) {
+    this.templateConfig = templateConfig;
+
+    // If local mode, use local path
+    if (templateConfig.isLocalMode()) {
+      this.templatesBasePath = Paths.get(templateConfig.localPath());
+      this.downloader = null;
+    } else {
+      // Remote mode - use downloader
+      this.templatesBasePath = null;
+      HttpClientPort httpClient = new OkHttpClientAdapter();
+      TemplateCache cache = new TemplateCache();
+      this.downloader = new GitHubTemplateDownloader(httpClient, cache);
+    }
+
     this.freemarkerConfig = createFreemarkerConfiguration();
   }
 
@@ -52,6 +86,8 @@ public class FreemarkerTemplateRepository implements TemplateRepository {
     // For now, assume templates are in a local directory
     // In future phases, we'll download from GitHub
     this.templatesBasePath = Paths.get("templates");
+    this.templateConfig = null;
+    this.downloader = null;
     this.freemarkerConfig = createFreemarkerConfiguration();
   }
 
@@ -80,56 +116,81 @@ public class FreemarkerTemplateRepository implements TemplateRepository {
 
   @Override
   public boolean templateExists(String templatePath) {
-    Path fullPath = templatesBasePath.resolve(templatePath);
-    return Files.exists(fullPath);
+    // Check local filesystem first
+    if (templatesBasePath != null) {
+      Path fullPath = templatesBasePath.resolve(templatePath);
+      if (Files.exists(fullPath)) {
+        return true;
+      }
+    }
+
+    // Check remote if configured
+    if (downloader != null && templateConfig != null) {
+      try {
+        return downloader.templateExists(templateConfig, templatePath);
+      } catch (Exception e) {
+        // Continue to check embedded
+      }
+    }
+
+    // Check embedded resources
+    var resource = getClass().getClassLoader().getResourceAsStream("templates/" + templatePath);
+    return resource != null;
   }
 
   @Override
   public String getTemplateContent(String templatePath) {
-    try {
-      Path fullPath = templatesBasePath.resolve(templatePath);
-      return Files.readString(fullPath);
-    } catch (IOException e) {
-      throw new TemplateProcessingException(
-          "Failed to read template: " + templatePath,
-          e);
+    // Try local filesystem first
+    if (templatesBasePath != null) {
+      try {
+        Path fullPath = templatesBasePath.resolve(templatePath);
+        if (Files.exists(fullPath)) {
+          return Files.readString(fullPath);
+        }
+      } catch (IOException e) {
+        // Continue to try other methods
+      }
     }
+
+    // Try remote download if configured
+    if (downloader != null && templateConfig != null) {
+      try {
+        return downloader.downloadTemplate(templateConfig, templatePath);
+      } catch (Exception e) {
+        // Continue to try embedded
+      }
+    }
+
+    // Try embedded resources as fallback
+    try {
+      var resource = getClass().getClassLoader().getResourceAsStream("templates/" + templatePath);
+      if (resource != null) {
+        return new String(resource.readAllBytes());
+      }
+    } catch (IOException e) {
+      // Fall through to exception
+    }
+
+    throw new TemplateProcessingException(
+        "Template not found: " + templatePath,
+        null);
+  }
+
+  /**
+   * Gets the downloader instance (for testing or cache management).
+   */
+  public GitHubTemplateDownloader getDownloader() {
+    return downloader;
   }
 
   /**
    * Gets a Freemarker template.
    */
   private Template getTemplate(String templatePath) throws IOException {
-    // For embedded templates, we need to handle the path differently
-    if (isEmbeddedTemplate(templatePath)) {
-      return loadEmbeddedTemplate(templatePath);
-    }
+    // Get template content from appropriate source
+    String content = getTemplateContent(templatePath);
 
-    // For file-based templates
-    return freemarkerConfig.getTemplate(templatePath);
-  }
-
-  /**
-   * Checks if template is embedded in the JAR.
-   */
-  private boolean isEmbeddedTemplate(String templatePath) {
-    // Check if template exists in filesystem first
-    Path fullPath = templatesBasePath.resolve(templatePath);
-    return !Files.exists(fullPath);
-  }
-
-  /**
-   * Loads template from classpath (embedded in JAR).
-   */
-  private Template loadEmbeddedTemplate(String templatePath) throws IOException {
-    // Try to load from classpath
-    var resource = getClass().getClassLoader().getResourceAsStream("templates/" + templatePath);
-
-    if (resource == null) {
-      throw new IOException("Template not found: " + templatePath);
-    }
-
-    String content = new String(resource.readAllBytes());
+    // Create template from string content
     return new Template(templatePath, content, freemarkerConfig);
   }
 
@@ -140,8 +201,8 @@ public class FreemarkerTemplateRepository implements TemplateRepository {
     Configuration config = new Configuration(Configuration.VERSION_2_3_32);
 
     try {
-      // Set template directory
-      if (Files.exists(templatesBasePath)) {
+      // Set template directory if using local filesystem
+      if (templatesBasePath != null && Files.exists(templatesBasePath)) {
         config.setDirectoryForTemplateLoading(templatesBasePath.toFile());
       }
 

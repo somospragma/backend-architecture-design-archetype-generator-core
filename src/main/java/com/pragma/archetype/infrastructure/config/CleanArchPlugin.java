@@ -3,11 +3,13 @@ package com.pragma.archetype.infrastructure.config;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 
+import com.pragma.archetype.infrastructure.adapter.in.gradle.ClearTemplateCacheTask;
 import com.pragma.archetype.infrastructure.adapter.in.gradle.GenerateEntityTask;
 import com.pragma.archetype.infrastructure.adapter.in.gradle.GenerateInputAdapterTask;
 import com.pragma.archetype.infrastructure.adapter.in.gradle.GenerateOutputAdapterTask;
 import com.pragma.archetype.infrastructure.adapter.in.gradle.GenerateUseCaseTask;
 import com.pragma.archetype.infrastructure.adapter.in.gradle.InitCleanArchTask;
+import com.pragma.archetype.infrastructure.adapter.in.gradle.UpdateTemplatesTask;
 
 /**
  * Gradle plugin for Clean Architecture Generator.
@@ -45,6 +47,18 @@ public class CleanArchPlugin implements Plugin<Project> {
     project.getTasks().register("generateInputAdapter", GenerateInputAdapterTask.class, task -> {
       task.setGroup("clean architecture");
       task.setDescription("Generate an input adapter (REST controller, GraphQL resolver, etc.)");
+    });
+
+    // Register updateTemplates task
+    project.getTasks().register("updateTemplates", UpdateTemplatesTask.class, task -> {
+      task.setGroup("clean architecture");
+      task.setDescription("Update templates by clearing cache and forcing re-download");
+    });
+
+    // Register clearTemplateCache task
+    project.getTasks().register("clearTemplateCache", ClearTemplateCacheTask.class, task -> {
+      task.setGroup("clean architecture");
+      task.setDescription("Clear the local template cache");
     });
 
     // Future tasks will be registered here:
