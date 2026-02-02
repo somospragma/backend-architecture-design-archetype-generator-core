@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.pragma.archetype.domain.model.ArchitectureType;
 import com.pragma.archetype.domain.model.GeneratedFile;
 import com.pragma.archetype.domain.model.ProjectConfig;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
@@ -41,16 +42,29 @@ public class ProjectGenerator {
                 // 2. Generate base project structure
                 generatedFiles.addAll(generateBaseStructure(projectPath, config, context));
 
-                // 3. Generate framework-specific files
-                generatedFiles.addAll(generateFrameworkFiles(projectPath, config, context));
+                // 3. Check if multi-module architecture
+                boolean isMultiModule = isMultiModuleArchitecture(config.architecture());
 
-                // 4. Generate architecture-specific structure
-                generatedFiles.addAll(generateArchitectureStructure(projectPath, config, context));
+                if (isMultiModule) {
+                        // 3a. Generate multi-module structure
+                        generatedFiles.addAll(generateMultiModuleStructure(projectPath, config, context));
+                } else {
+                        // 3b. Generate single-module structure
+                        generatedFiles.addAll(generateFrameworkFiles(projectPath, config, context));
+                        generatedFiles.addAll(generateArchitectureStructure(projectPath, config, context));
+                }
 
-                // 5. Write all files to disk
+                // 4. Write all files to disk
                 fileSystemPort.writeFiles(generatedFiles);
 
                 return generatedFiles;
+        }
+
+        /**
+         * Checks if the architecture is multi-module.
+         */
+        private boolean isMultiModuleArchitecture(ArchitectureType architecture) {
+                return architecture.isMultiModule();
         }
 
         /**
@@ -70,7 +84,7 @@ public class ProjectGenerator {
                 context.put("packagePath", config.basePackage().replace('.', '/'));
 
                 // Architecture info
-                context.put("architecture", config.architecture().name().toLowerCase());
+                context.put("architecture", config.architecture().getValue());
                 context.put("architectureType", config.architecture());
 
                 // Paradigm info
@@ -116,7 +130,7 @@ public class ProjectGenerator {
 
                 // Get base templates for the architecture
                 String architecturePath = "architectures/"
-                                + config.architecture().name().toLowerCase().replace('_', '-');
+                                + config.architecture().getValue();
 
                 // Generate build.gradle.kts
                 String buildGradleContent = templateRepository.processTemplate(
@@ -202,7 +216,7 @@ public class ProjectGenerator {
 
                 // Generate BeanConfiguration class (Spring dependency injection config)
                 String architecturePath = "architectures/"
-                                + config.architecture().name().toLowerCase().replace('_', '-');
+                                + config.architecture().getValue();
 
                 String beanConfigContent = templateRepository.processTemplate(
                                 architecturePath + "/project/BeanConfiguration.java.ftl",
@@ -339,5 +353,185 @@ public class ProjectGenerator {
                 }
 
                 return result.toString();
+        }
+
+        /**
+         * Generates multi-module project structure.
+         * Creates separate modules with their own build files and source directories.
+         *
+         * @param projectPath the project root path
+         * @param config      the project configuration
+         * @param context     the template context
+         * @return list of generated files
+         */
+        private List<GeneratedFile> generateMultiModuleStructure(
+                        Path projectPath,
+                        ProjectConfig config,
+                        Map<String, Object> context) {
+
+                List<GeneratedFile> files = new ArrayList<>();
+
+                String architecturePath = "architectures/"
+                                + config.architecture().getValue();
+
+                // For hexagonal-multi: domain, application, infrastructure
+                if (config.architecture() == ArchitectureType.HEXAGONAL_MULTI) {
+                        files.addAll(generateDomainModule(projectPath, config, context, architecturePath));
+                        files.addAll(generateApplicationModule(projectPath, config, context, architecturePath));
+                        files.addAll(generateInfrastructureModule(projectPath, config, context, architecturePath));
+                }
+
+                return files;
+        }
+
+        /**
+         * Generates the domain module for multi-module architecture.
+         */
+        private List<GeneratedFile> generateDomainModule(
+                        Path projectPath,
+                        ProjectConfig config,
+                        Map<String, Object> context,
+                        String architecturePath) {
+
+                List<GeneratedFile> files = new ArrayList<>();
+                Path domainPath = projectPath.resolve("domain");
+
+                // Generate domain/build.gradle.kts
+                String buildGradleContent = templateRepository.processTemplate(
+                                architecturePath + "/modules/domain/build.gradle.kts.ftl",
+                                context);
+                files.add(GeneratedFile.create(
+                                domainPath.resolve("build.gradle.kts"),
+                                buildGradleContent));
+
+                // Create domain package structure
+                Path domainSrcPath = domainPath
+                                .resolve("src/main/java")
+                                .resolve(config.basePackage().replace('.', '/'))
+                                .resolve("domain");
+
+                fileSystemPort.createDirectory(domainSrcPath.resolve("model"));
+                fileSystemPort.createDirectory(domainSrcPath.resolve("port/in"));
+                fileSystemPort.createDirectory(domainSrcPath.resolve("port/out"));
+
+                // Add .gitkeep files
+                files.add(GeneratedFile.create(domainSrcPath.resolve("model/.gitkeep"), ""));
+                files.add(GeneratedFile.create(domainSrcPath.resolve("port/in/.gitkeep"), ""));
+                files.add(GeneratedFile.create(domainSrcPath.resolve("port/out/.gitkeep"), ""));
+
+                return files;
+        }
+
+        /**
+         * Generates the application module for multi-module architecture.
+         */
+        private List<GeneratedFile> generateApplicationModule(
+                        Path projectPath,
+                        ProjectConfig config,
+                        Map<String, Object> context,
+                        String architecturePath) {
+
+                List<GeneratedFile> files = new ArrayList<>();
+                Path applicationPath = projectPath.resolve("application");
+
+                // Generate application/build.gradle.kts
+                String buildGradleContent = templateRepository.processTemplate(
+                                architecturePath + "/modules/application/build.gradle.kts.ftl",
+                                context);
+                files.add(GeneratedFile.create(
+                                applicationPath.resolve("build.gradle.kts"),
+                                buildGradleContent));
+
+                // Create application package structure
+                Path applicationSrcPath = applicationPath
+                                .resolve("src/main/java")
+                                .resolve(config.basePackage().replace('.', '/'))
+                                .resolve("application");
+
+                fileSystemPort.createDirectory(applicationSrcPath.resolve("usecase"));
+
+                // Add .gitkeep file
+                files.add(GeneratedFile.create(applicationSrcPath.resolve("usecase/.gitkeep"), ""));
+
+                return files;
+        }
+
+        /**
+         * Generates the infrastructure module for multi-module architecture.
+         */
+        private List<GeneratedFile> generateInfrastructureModule(
+                        Path projectPath,
+                        ProjectConfig config,
+                        Map<String, Object> context,
+                        String architecturePath) {
+
+                List<GeneratedFile> files = new ArrayList<>();
+                Path infrastructurePath = projectPath.resolve("infrastructure");
+
+                // Generate infrastructure/build.gradle.kts
+                String buildGradleContent = templateRepository.processTemplate(
+                                architecturePath + "/modules/infrastructure/build.gradle.kts.ftl",
+                                context);
+                files.add(GeneratedFile.create(
+                                infrastructurePath.resolve("build.gradle.kts"),
+                                buildGradleContent));
+
+                // Create infrastructure package structure
+                Path infrastructureSrcPath = infrastructurePath
+                                .resolve("src/main/java")
+                                .resolve(config.basePackage().replace('.', '/'))
+                                .resolve("infrastructure");
+
+                fileSystemPort.createDirectory(infrastructureSrcPath.resolve("entrypoints/rest"));
+                fileSystemPort.createDirectory(infrastructureSrcPath.resolve("drivenadapters"));
+                fileSystemPort.createDirectory(infrastructureSrcPath.resolve("config"));
+
+                // Add .gitkeep files
+                files.add(GeneratedFile.create(infrastructureSrcPath.resolve("entrypoints/rest/.gitkeep"), ""));
+                files.add(GeneratedFile.create(infrastructureSrcPath.resolve("drivenadapters/.gitkeep"), ""));
+
+                // Generate application.yml
+                String frameworkPath = "frameworks/" + config.framework().name().toLowerCase() + "/"
+                                + config.paradigm().name().toLowerCase() + "/project";
+
+                String applicationYmlContent = templateRepository.processTemplate(
+                                frameworkPath + "/application.yml.ftl",
+                                context);
+
+                Path resourcesPath = infrastructurePath.resolve("src/main/resources");
+                fileSystemPort.createDirectory(resourcesPath);
+
+                files.add(GeneratedFile.create(
+                                resourcesPath.resolve("application.yml"),
+                                applicationYmlContent));
+
+                // Generate main Application class
+                String applicationClassContent = templateRepository.processTemplate(
+                                frameworkPath + "/Application.java.ftl",
+                                context);
+
+                String applicationClassName = toPascalCase(config.name()) + "Application.java";
+                Path mainClassPath = infrastructureSrcPath
+                                .resolve("config")
+                                .resolve(applicationClassName);
+
+                files.add(GeneratedFile.create(
+                                mainClassPath,
+                                applicationClassContent));
+
+                // Generate BeanConfiguration class
+                String beanConfigContent = templateRepository.processTemplate(
+                                architecturePath + "/project/BeanConfiguration.java.ftl",
+                                context);
+
+                Path configPath = infrastructureSrcPath
+                                .resolve("config")
+                                .resolve("BeanConfiguration.java");
+
+                files.add(GeneratedFile.create(
+                                configPath,
+                                beanConfigContent));
+
+                return files;
         }
 }

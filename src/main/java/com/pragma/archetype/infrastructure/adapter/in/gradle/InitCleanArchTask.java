@@ -15,6 +15,7 @@ import com.pragma.archetype.domain.model.ArchitectureType;
 import com.pragma.archetype.domain.model.Framework;
 import com.pragma.archetype.domain.model.Paradigm;
 import com.pragma.archetype.domain.model.ProjectConfig;
+import com.pragma.archetype.domain.model.TemplateConfig;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
@@ -179,23 +180,43 @@ public class InitCleanArchTask extends DefaultTask {
 
   /**
    * Creates template repository.
-   * For now, uses local templates from the plugin resources.
-   * In future, will download from GitHub.
+   * Reads configuration from .cleanarch.yml or uses environment variables.
+   * Falls back to local development path if available.
    */
   private TemplateRepository createTemplateRepository() {
-    // Try to find templates in project directory first (for development)
-    // Use project directory as base, not current working directory
     Path projectDir = getProject().getProjectDir().toPath();
-    Path localTemplates = projectDir
-        .resolve("../../backend-architecture-design-archetype-generator-templates/templates").normalize();
+    YamlConfigurationAdapter configAdapter = new YamlConfigurationAdapter();
 
-    if (Files.exists(localTemplates)) {
-      getLogger().info("Using local templates from: {}", localTemplates.toAbsolutePath());
-      return new FreemarkerTemplateRepository(localTemplates);
+    // 1. Check for .cleanarch.yml configuration (highest priority)
+    if (configAdapter.configurationExists(projectDir)) {
+      TemplateConfig templateConfig = configAdapter.readTemplateConfiguration(projectDir);
+
+      if (templateConfig.isLocalMode()) {
+        Path localPath = Path.of(templateConfig.localPath());
+        if (Files.exists(localPath)) {
+          getLogger().lifecycle("✓ Using local templates from .cleanarch.yml: {}", localPath.toAbsolutePath());
+          return new FreemarkerTemplateRepository(localPath);
+        } else {
+          getLogger().error("✗ Template localPath in .cleanarch.yml does not exist: {}", localPath);
+          throw new RuntimeException("Template path not found: " + localPath);
+        }
+      }
     }
 
-    // Fall back to embedded templates (in JAR)
-    getLogger().info("Using embedded templates");
+    // 2. Try to auto-detect local templates (for plugin development only)
+    Path autoDetectPath = projectDir
+        .resolve("../../backend-architecture-design-archetype-generator-templates/templates")
+        .normalize();
+
+    if (Files.exists(autoDetectPath)) {
+      getLogger().lifecycle("✓ Auto-detected local templates (development mode): {}", autoDetectPath.toAbsolutePath());
+      getLogger()
+          .lifecycle("  Tip: Configure templates.localPath in .cleanarch.yml for explicit control");
+      return new FreemarkerTemplateRepository(autoDetectPath);
+    }
+
+    // 3. Fall back to embedded templates (in JAR) - production mode
+    getLogger().lifecycle("✓ Using embedded templates from plugin JAR (production mode)");
     return new FreemarkerTemplateRepository("embedded");
   }
 }
