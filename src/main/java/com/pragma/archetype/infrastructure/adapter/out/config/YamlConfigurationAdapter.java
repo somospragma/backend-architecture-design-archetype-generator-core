@@ -163,6 +163,7 @@ public class YamlConfigurationAdapter implements ConfigurationPort {
     String architectureType = (String) architecture.get("type");
     String paradigm = (String) architecture.get("paradigm");
     String framework = (String) architecture.get("framework");
+    Boolean adaptersAsModules = (Boolean) architecture.get("adaptersAsModules");
 
     return ProjectConfig.builder()
         .name(name)
@@ -172,6 +173,7 @@ public class YamlConfigurationAdapter implements ConfigurationPort {
         .framework(Framework.valueOf(framework.toUpperCase()))
         .pluginVersion(pluginVersion)
         .createdAt(LocalDateTime.parse(createdAtStr, DATE_FORMATTER))
+        .adaptersAsModules(adaptersAsModules != null && adaptersAsModules)
         .build();
   }
 
@@ -194,6 +196,7 @@ public class YamlConfigurationAdapter implements ConfigurationPort {
     architecture.put("type", config.architecture().name().toLowerCase().replace('_', '-'));
     architecture.put("paradigm", config.paradigm().name().toLowerCase());
     architecture.put("framework", config.framework().name().toLowerCase());
+    architecture.put("adaptersAsModules", config.adaptersAsModules());
     data.put("architecture", architecture);
 
     return data;

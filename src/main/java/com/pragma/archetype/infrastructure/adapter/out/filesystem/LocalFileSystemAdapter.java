@@ -107,4 +107,28 @@ public class LocalFileSystemAdapter implements FileSystemPort {
           e);
     }
   }
+
+  @Override
+  public String readFile(Path path) {
+    try {
+      return Files.readString(path);
+    } catch (IOException e) {
+      throw new FileWriteException(
+          "Failed to read file: " + path,
+          e);
+    }
+  }
+
+  @Override
+  public void appendToFile(Path path, String content) {
+    try {
+      String existingContent = readFile(path);
+      String newContent = existingContent + content;
+      Files.writeString(path, newContent);
+    } catch (IOException e) {
+      throw new FileWriteException(
+          "Failed to append to file: " + path,
+          e);
+    }
+  }
 }

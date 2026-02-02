@@ -61,6 +61,70 @@ public class ProjectGenerator {
         }
 
         /**
+         * Updates settings.gradle.kts to include a new module.
+         * Reads the file, adds the include statement if not present, and writes back.
+         *
+         * @param projectPath the project root path
+         * @param modulePath  the module path (e.g.,
+         *                    "infrastructure:entry-points:rest-api")
+         */
+        public void addModuleToSettings(Path projectPath, String modulePath) {
+                Path settingsFile = projectPath.resolve("settings.gradle.kts");
+
+                if (!fileSystemPort.exists(settingsFile)) {
+                        throw new RuntimeException("settings.gradle.kts not found");
+                }
+
+                String content = fileSystemPort.readFile(settingsFile);
+                String includeStatement = "include(\"" + modulePath + "\")";
+
+                // Check if already included
+                if (content.contains(includeStatement)) {
+                        return; // Already included
+                }
+
+                // Add the include statement at the end
+                String newContent = content.trim() + "\n" + includeStatement + "\n";
+                fileSystemPort.writeFile(GeneratedFile.create(settingsFile, newContent));
+        }
+
+        /**
+         * Updates a module's build.gradle.kts to add a dependency.
+         * Reads the file, adds the dependency if not present, and writes back.
+         *
+         * @param projectPath    the project root path
+         * @param modulePath     the module path (e.g., "application/app-service")
+         * @param dependencyPath the dependency module path (e.g.,
+         *                       ":infrastructure:entry-points:rest-api")
+         */
+        public void addDependencyToModule(Path projectPath, String modulePath, String dependencyPath) {
+                Path buildFile = projectPath.resolve(modulePath).resolve("build.gradle.kts");
+
+                if (!fileSystemPort.exists(buildFile)) {
+                        throw new RuntimeException("build.gradle.kts not found for module: " + modulePath);
+                }
+
+                String content = fileSystemPort.readFile(buildFile);
+                String dependencyStatement = "    implementation(project(\"" + dependencyPath + "\"))";
+
+                // Check if already added
+                if (content.contains(dependencyStatement)) {
+                        return; // Already added
+                }
+
+                // Find the dependencies block and add the dependency
+                if (content.contains("dependencies {")) {
+                        // Add after "dependencies {"
+                        String newContent = content.replace(
+                                        "dependencies {",
+                                        "dependencies {\n" + dependencyStatement);
+                        fileSystemPort.writeFile(GeneratedFile.create(buildFile, newContent));
+                } else {
+                        throw new RuntimeException("dependencies block not found in build.gradle.kts");
+                }
+        }
+
+        /**
          * Checks if the architecture is multi-module.
          */
         private boolean isMultiModuleArchitecture(ArchitectureType architecture) {
@@ -381,6 +445,11 @@ public class ProjectGenerator {
                         files.addAll(generateInfrastructureModule(projectPath, config, context, architecturePath));
                 }
 
+                // For hexagonal-multi-granular: domain modules + app-service
+                if (config.architecture() == ArchitectureType.HEXAGONAL_MULTI_GRANULAR) {
+                        files.addAll(generateGranularStructure(projectPath, config, context, architecturePath));
+                }
+
                 return files;
         }
 
@@ -534,4 +603,190 @@ public class ProjectGenerator {
 
                 return files;
         }
+
+        /**
+         * Generates granular multi-module structure.
+         * Creates domain modules (model, ports, usecase) and app-service module.
+         * Infrastructure adapters are created dynamically when generating adapters.
+         */
+        private List<GeneratedFile> generateGranularStructure(
+                        Path projectPath,
+                        ProjectConfig config,
+                        Map<String, Object> context,
+                        String architecturePath) {
+
+                List<GeneratedFile> files = new ArrayList<>();
+
+                // Create organizing folders (not Gradle modules)
+                fileSystemPort.createDirectory(projectPath.resolve("domain"));
+                fileSystemPort.createDirectory(projectPath.resolve("application"));
+                fileSystemPort.createDirectory(projectPath.resolve("infrastructure/entry-points"));
+                fileSystemPort.createDirectory(projectPath.resolve("infrastructure/driven-adapters"));
+
+                // Generate domain modules
+                files.addAll(generateGranularDomainModelModule(projectPath, config, context, architecturePath));
+                files.addAll(generateGranularDomainPortsModule(projectPath, config, context, architecturePath));
+                files.addAll(generateGranularDomainUseCaseModule(projectPath, config, context, architecturePath));
+
+                // Generate application module
+                files.addAll(generateGranularAppServiceModule(projectPath, config, context, architecturePath));
+
+                return files;
+        }
+
+        private List<GeneratedFile> generateGranularDomainModelModule(
+                        Path projectPath,
+                        ProjectConfig config,
+                        Map<String, Object> context,
+                        String architecturePath) {
+
+                List<GeneratedFile> files = new ArrayList<>();
+                Path modulePath = projectPath.resolve("domain/model");
+
+                // Generate build.gradle.kts
+                String buildGradleContent = templateRepository.processTemplate(
+                                architecturePath + "/modules/domain-model/build.gradle.kts.ftl",
+                                context);
+                files.add(GeneratedFile.create(
+                                modulePath.resolve("build.gradle.kts"),
+                                buildGradleContent));
+
+                // Create package structure
+                Path srcPath = modulePath
+                                .resolve("src/main/java")
+                                .resolve(config.basePackage().replace('.', '/'))
+                                .resolve("domain/model");
+
+                fileSystemPort.createDirectory(srcPath);
+                files.add(GeneratedFile.create(srcPath.resolve(".gitkeep"), ""));
+
+                return files;
+        }
+
+        private List<GeneratedFile> generateGranularDomainPortsModule(
+                        Path projectPath,
+                        ProjectConfig config,
+                        Map<String, Object> context,
+                        String architecturePath) {
+
+                List<GeneratedFile> files = new ArrayList<>();
+                Path modulePath = projectPath.resolve("domain/ports");
+
+                // Generate build.gradle.kts
+                String buildGradleContent = templateRepository.processTemplate(
+                                architecturePath + "/modules/domain-ports/build.gradle.kts.ftl",
+                                context);
+                files.add(GeneratedFile.create(
+                                modulePath.resolve("build.gradle.kts"),
+                                buildGradleContent));
+
+                // Create package structure
+                Path srcPath = modulePath
+                                .resolve("src/main/java")
+                                .resolve(config.basePackage().replace('.', '/'))
+                                .resolve("domain/port");
+
+                fileSystemPort.createDirectory(srcPath.resolve("in"));
+                fileSystemPort.createDirectory(srcPath.resolve("out"));
+                files.add(GeneratedFile.create(srcPath.resolve("in/.gitkeep"), ""));
+                files.add(GeneratedFile.create(srcPath.resolve("out/.gitkeep"), ""));
+
+                return files;
+        }
+
+        private List<GeneratedFile> generateGranularDomainUseCaseModule(
+                        Path projectPath,
+                        ProjectConfig config,
+                        Map<String, Object> context,
+                        String architecturePath) {
+
+                List<GeneratedFile> files = new ArrayList<>();
+                Path modulePath = projectPath.resolve("domain/usecase");
+
+                // Generate build.gradle.kts
+                String buildGradleContent = templateRepository.processTemplate(
+                                architecturePath + "/modules/domain-usecase/build.gradle.kts.ftl",
+                                context);
+                files.add(GeneratedFile.create(
+                                modulePath.resolve("build.gradle.kts"),
+                                buildGradleContent));
+
+                // Create package structure
+                Path srcPath = modulePath
+                                .resolve("src/main/java")
+                                .resolve(config.basePackage().replace('.', '/'))
+                                .resolve("domain/usecase");
+
+                fileSystemPort.createDirectory(srcPath);
+                files.add(GeneratedFile.create(srcPath.resolve(".gitkeep"), ""));
+
+                return files;
+        }
+
+        private List<GeneratedFile> generateGranularAppServiceModule(
+                        Path projectPath,
+                        ProjectConfig config,
+                        Map<String, Object> context,
+                        String architecturePath) {
+
+                List<GeneratedFile> files = new ArrayList<>();
+                Path modulePath = projectPath.resolve("application/app-service");
+
+                // Generate build.gradle.kts
+                String buildGradleContent = templateRepository.processTemplate(
+                                architecturePath + "/modules/app-service/build.gradle.kts.ftl",
+                                context);
+                files.add(GeneratedFile.create(
+                                modulePath.resolve("build.gradle.kts"),
+                                buildGradleContent));
+
+                // Create package structure
+                Path srcPath = modulePath
+                                .resolve("src/main/java")
+                                .resolve(config.basePackage().replace('.', '/'))
+                                .resolve("config");
+
+                fileSystemPort.createDirectory(srcPath);
+
+                // Generate application.yml
+                String frameworkPath = "frameworks/" + config.framework().name().toLowerCase() + "/"
+                                + config.paradigm().name().toLowerCase() + "/project";
+
+                String applicationYmlContent = templateRepository.processTemplate(
+                                frameworkPath + "/application.yml.ftl",
+                                context);
+
+                Path resourcesPath = modulePath.resolve("src/main/resources");
+                fileSystemPort.createDirectory(resourcesPath);
+
+                files.add(GeneratedFile.create(
+                                resourcesPath.resolve("application.yml"),
+                                applicationYmlContent));
+
+                // Generate main Application class
+                String applicationClassContent = templateRepository.processTemplate(
+                                frameworkPath + "/Application.java.ftl",
+                                context);
+
+                String applicationClassName = toPascalCase(config.name()) + "Application.java";
+                Path mainClassPath = srcPath.resolve(applicationClassName);
+
+                files.add(GeneratedFile.create(
+                                mainClassPath,
+                                applicationClassContent));
+
+                // Generate BeanConfiguration class
+                String beanConfigContent = templateRepository.processTemplate(
+                                architecturePath + "/project/BeanConfiguration.java.ftl",
+                                context);
+
+                Path configPath = srcPath.resolve("BeanConfiguration.java");
+
+                files.add(GeneratedFile.create(
+                                configPath,
+                                beanConfigContent));
+
+                return files;
+        }
+
 }

@@ -79,4 +79,22 @@ public interface FileSystemPort {
    * @return list of file paths
    */
   List<Path> listFiles(Path path);
+
+  /**
+   * Reads the content of a file.
+   *
+   * @param path the file path
+   * @return the file content as string
+   * @throws FileWriteException if reading fails
+   */
+  String readFile(Path path);
+
+  /**
+   * Appends content to an existing file.
+   *
+   * @param path    the file path
+   * @param content the content to append
+   * @throws FileWriteException if appending fails
+   */
+  void appendToFile(Path path, String content);
 }

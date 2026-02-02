@@ -1,0 +1,4 @@
+project: {name: test-hexagonal-granular, basePackage: com.pragma.test, pluginVersion: 0.1.15-SNAPSHOT,
+  createdAt: '2026-02-01T22:34:14.113016'}
+architecture: {type: hexagonal-multi-granular, paradigm: reactive, framework: spring,
+  adaptersAsModules: true}

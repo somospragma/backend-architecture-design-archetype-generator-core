@@ -8,6 +8,7 @@ import java.util.Map;
 
 import com.pragma.archetype.domain.model.AdapterConfig;
 import com.pragma.archetype.domain.model.GeneratedFile;
+import com.pragma.archetype.domain.model.ProjectConfig;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 
@@ -19,16 +20,76 @@ public class AdapterGenerator {
 
   private final TemplateRepository templateRepository;
   private final FileSystemPort fileSystemPort;
+  private final ProjectGenerator projectGenerator;
 
   public AdapterGenerator(TemplateRepository templateRepository, FileSystemPort fileSystemPort) {
     this.templateRepository = templateRepository;
     this.fileSystemPort = fileSystemPort;
+    this.projectGenerator = new ProjectGenerator(templateRepository, fileSystemPort);
   }
 
   /**
    * Generates adapter files based on configuration.
+   * If ProjectConfig has adaptersAsModules=true, creates a new Gradle module.
    */
-  public List<GeneratedFile> generate(Path projectPath, AdapterConfig config) {
+  public List<GeneratedFile> generate(Path projectPath, AdapterConfig config, ProjectConfig projectConfig) {
+    List<GeneratedFile> generatedFiles = new ArrayList<>();
+
+    // Check if we should create adapter as a module
+    if (projectConfig != null && projectConfig.adaptersAsModules()) {
+      generatedFiles.addAll(generateAdapterAsModule(projectPath, config, projectConfig));
+    } else {
+      // Traditional approach: generate files in existing structure
+      generatedFiles.addAll(generateAdapterInPlace(projectPath, config));
+    }
+
+    return generatedFiles;
+  }
+
+  /**
+   * Generates adapter as a new Gradle module (for granular architectures).
+   */
+  private List<GeneratedFile> generateAdapterAsModule(Path projectPath, AdapterConfig config,
+      ProjectConfig projectConfig) {
+    List<GeneratedFile> generatedFiles = new ArrayList<>();
+
+    // Determine module path based on adapter type
+    // driven-adapters go in: infrastructure/driven-adapters/{adapter-name}
+    String moduleName = config.name().toLowerCase().replaceAll("([a-z])([A-Z])", "$1-$2").toLowerCase();
+    String modulePath = "infrastructure/driven-adapters/" + moduleName;
+
+    // 1. Create module build.gradle.kts
+    GeneratedFile buildFile = generateModuleBuildFile(projectPath, config, projectConfig, modulePath);
+    generatedFiles.add(buildFile);
+
+    // 2. Generate adapter implementation in the module
+    GeneratedFile adapterFile = generateAdapterInModule(projectPath, config, modulePath);
+    generatedFiles.add(adapterFile);
+
+    // 3. Generate entity mapper if needed
+    if (config.type() == AdapterConfig.AdapterType.REDIS ||
+        config.type() == AdapterConfig.AdapterType.MONGODB) {
+      GeneratedFile mapperFile = generateMapperInModule(projectPath, config, modulePath);
+      generatedFiles.add(mapperFile);
+
+      GeneratedFile entityFile = generateDataEntityInModule(projectPath, config, modulePath);
+      generatedFiles.add(entityFile);
+    }
+
+    // 4. Update settings.gradle.kts to include the new module
+    String modulePathForSettings = modulePath.replace('/', ':');
+    projectGenerator.addModuleToSettings(projectPath, modulePathForSettings);
+
+    // 5. Add dependency from app-service to this adapter module
+    projectGenerator.addDependencyToModule(projectPath, "application/app-service", ":" + modulePathForSettings);
+
+    return generatedFiles;
+  }
+
+  /**
+   * Generates adapter files in existing structure (traditional approach).
+   */
+  private List<GeneratedFile> generateAdapterInPlace(Path projectPath, AdapterConfig config) {
     List<GeneratedFile> generatedFiles = new ArrayList<>();
 
     // Prepare template data
@@ -49,6 +110,78 @@ public class AdapterGenerator {
     }
 
     return generatedFiles;
+  }
+
+  /**
+   * Generates build.gradle.kts for the adapter module.
+   */
+  private GeneratedFile generateModuleBuildFile(Path projectPath, AdapterConfig config,
+      ProjectConfig projectConfig, String modulePath) {
+    Map<String, Object> data = new HashMap<>();
+    data.put("adapterType", config.type().name().toLowerCase());
+    data.put("basePackage", projectConfig.basePackage());
+
+    // Select template based on adapter type
+    String templatePath = "architectures/hexagonal-multi-granular/modules/driven-adapter-build.gradle.kts.ftl";
+    String content = templateRepository.processTemplate(templatePath, data);
+
+    Path filePath = projectPath.resolve(modulePath).resolve("build.gradle.kts");
+    return new GeneratedFile(filePath, content, GeneratedFile.FileType.GRADLE_BUILD);
+  }
+
+  /**
+   * Generates adapter implementation in module.
+   */
+  private GeneratedFile generateAdapterInModule(Path projectPath, AdapterConfig config, String modulePath) {
+    Map<String, Object> data = prepareTemplateData(config);
+    String templatePath = getAdapterTemplate(config.type());
+    String content = templateRepository.processTemplate(templatePath, data);
+
+    String packagePath = config.packageName().replace('.', '/');
+    Path filePath = projectPath
+        .resolve(modulePath)
+        .resolve("src/main/java")
+        .resolve(packagePath)
+        .resolve(config.name() + "Adapter.java");
+
+    return GeneratedFile.javaSource(filePath, content);
+  }
+
+  /**
+   * Generates mapper in module.
+   */
+  private GeneratedFile generateMapperInModule(Path projectPath, AdapterConfig config, String modulePath) {
+    Map<String, Object> data = prepareTemplateData(config);
+    String content = templateRepository.processTemplate(getMapperTemplate(), data);
+
+    String mapperPackage = config.packageName() + ".mapper";
+    String packagePath = mapperPackage.replace('.', '/');
+    Path filePath = projectPath
+        .resolve(modulePath)
+        .resolve("src/main/java")
+        .resolve(packagePath)
+        .resolve(config.entityName() + "Mapper.java");
+
+    return GeneratedFile.javaSource(filePath, content);
+  }
+
+  /**
+   * Generates data entity in module.
+   */
+  private GeneratedFile generateDataEntityInModule(Path projectPath, AdapterConfig config, String modulePath) {
+    Map<String, Object> data = prepareTemplateData(config);
+    String templatePath = getDataEntityTemplate(config.type());
+    String content = templateRepository.processTemplate(templatePath, data);
+
+    String entityPackage = config.packageName() + ".entity";
+    String packagePath = entityPackage.replace('.', '/');
+    Path filePath = projectPath
+        .resolve(modulePath)
+        .resolve("src/main/java")
+        .resolve(packagePath)
+        .resolve(config.entityName() + "Data.java");
+
+    return GeneratedFile.javaSource(filePath, content);
   }
 
   private GeneratedFile generateAdapter(Path projectPath, AdapterConfig config, Map<String, Object> data) {

@@ -167,14 +167,19 @@ public class InitCleanArchTask extends DefaultTask {
    */
   private ProjectConfig createProjectConfig() {
     String projectName = getProject().getName();
+    ArchitectureType archType = ArchitectureType.valueOf(architecture.toUpperCase().replace('-', '_'));
+
+    // Automatically enable adaptersAsModules for hexagonal-multi-granular
+    boolean adaptersAsModules = (archType == ArchitectureType.HEXAGONAL_MULTI_GRANULAR);
 
     return ProjectConfig.builder()
         .name(projectName)
         .basePackage(packageName)
-        .architecture(ArchitectureType.valueOf(architecture.toUpperCase().replace('-', '_')))
+        .architecture(archType)
         .paradigm(Paradigm.valueOf(paradigm.toUpperCase()))
         .framework(Framework.valueOf(framework.toUpperCase()))
         .pluginVersion("0.1.15-SNAPSHOT")
+        .adaptersAsModules(adaptersAsModules)
         .build();
   }
 

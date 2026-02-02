@@ -14,7 +14,8 @@ public record ProjectConfig(
     Paradigm paradigm,
     Framework framework,
     String pluginVersion,
-    LocalDateTime createdAt) {
+    LocalDateTime createdAt,
+    boolean adaptersAsModules) {
 
   /**
    * Compact constructor with validation.
@@ -73,6 +74,7 @@ public record ProjectConfig(
     private Framework framework;
     private String pluginVersion = "0.1.0-SNAPSHOT";
     private LocalDateTime createdAt = LocalDateTime.now();
+    private boolean adaptersAsModules = false;
 
     public Builder name(String name) {
       this.name = name;
@@ -109,6 +111,11 @@ public record ProjectConfig(
       return this;
     }
 
+    public Builder adaptersAsModules(boolean adaptersAsModules) {
+      this.adaptersAsModules = adaptersAsModules;
+      return this;
+    }
+
     public ProjectConfig build() {
       return new ProjectConfig(
           name,
@@ -117,7 +124,8 @@ public record ProjectConfig(
           paradigm,
           framework,
           pluginVersion,
-          createdAt);
+          createdAt,
+          adaptersAsModules);
     }
   }
 }

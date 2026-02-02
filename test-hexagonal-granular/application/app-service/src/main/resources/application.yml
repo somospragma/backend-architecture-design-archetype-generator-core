@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: test-hexagonal-granular
+  
+  # WebFlux Configuration
+  webflux:
+    base-path: /api
+
+server:
+  port: 8080
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.pragma.test: DEBUG
+    org.springframework.web: DEBUG
+    reactor.netty: INFO
+
+# Actuator (optional)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized

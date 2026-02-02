@@ -43,10 +43,13 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
     }
 
     try {
-      // 2. Generate adapter files
-      List<GeneratedFile> generatedFiles = generator.generate(projectPath, config);
+      // 2. Read project configuration to check adaptersAsModules flag
+      var projectConfig = configurationPort.readConfiguration(projectPath).orElse(null);
 
-      // 3. Write files to disk
+      // 3. Generate adapter files
+      List<GeneratedFile> generatedFiles = generator.generate(projectPath, config, projectConfig);
+
+      // 4. Write files to disk
       for (GeneratedFile file : generatedFiles) {
         fileSystemPort.writeFile(file);
       }
