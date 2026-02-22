@@ -42,6 +42,9 @@ dependencies {
     testImplementation("org.mockito:mockito-junit-jupiter:5.8.0")
     testImplementation("org.assertj:assertj-core:3.24.2")
     
+    // Testing - MockWebServer for HTTP tests
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    
     // Testing - Kotest for property-based testing
     testImplementation("io.kotest:kotest-runner-junit5:5.8.0")
     testImplementation("io.kotest:kotest-assertions-core:5.8.0")
