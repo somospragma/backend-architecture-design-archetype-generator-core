@@ -8,8 +8,6 @@ import org.yaml.snakeyaml.Yaml;
 
 import com.pragma.archetype.domain.model.AdapterMetadata;
 import com.pragma.archetype.domain.model.AdapterMetadata.ConfigurationClass;
-import com.pragma.archetype.domain.model.AdapterMetadata.Dependency;
-import com.pragma.archetype.domain.model.ValidationResult;
 import com.pragma.archetype.domain.port.out.TemplateRepository.TemplateNotFoundException;
 
 /**
@@ -207,6 +205,7 @@ public class AdapterMetadataLoader {
 
   /**
    * Extracts dependencies from the YAML data.
+   * Supports both flat format and nested format (dependencies.gradle).
    */
   @SuppressWarnings("unchecked")
   private List<Dependency> extractDependencies(Map<String, Object> data) {
@@ -215,22 +214,28 @@ public class AdapterMetadataLoader {
       return List.of();
     }
 
+    // Check if it's nested format (dependencies.gradle)
+    if (depsObj instanceof Map) {
+      Map<String, Object> depsMap = (Map<String, Object>) depsObj;
+      Object gradleDeps = depsMap.get("gradle");
+      if (gradleDeps != null && gradleDeps instanceof List) {
+        // Nested format: dependencies.gradle
+        return parseDependencyList((List<Map<String, Object>>) gradleDeps, "compile", true);
+      }
+    }
+
+    // Flat format: dependencies as list
     if (!(depsObj instanceof List)) {
-      throw new IllegalArgumentException("Field 'dependencies' must be a list");
+      throw new IllegalArgumentException("Field 'dependencies' must be a list or map with 'gradle' key");
     }
 
     List<Map<String, Object>> depsList = (List<Map<String, Object>>) depsObj;
-    List<Dependency> dependencies = new ArrayList<>();
-
-    for (Map<String, Object> depData : depsList) {
-      dependencies.add(parseDependency(depData, "compile"));
-    }
-
-    return dependencies;
+    return parseDependencyList(depsList, "compile", false);
   }
 
   /**
    * Extracts test dependencies from the YAML data (NEW).
+   * Supports both flat format and nested format (testDependencies.gradle).
    */
   @SuppressWarnings("unchecked")
   private List<Dependency> extractTestDependencies(Map<String, Object> data) {
@@ -239,30 +244,106 @@ public class AdapterMetadataLoader {
       return List.of();
     }
 
+    // Check if it's nested format (testDependencies.gradle)
+    if (testDepsObj instanceof Map) {
+      Map<String, Object> testDepsMap = (Map<String, Object>) testDepsObj;
+      Object gradleDeps = testDepsMap.get("gradle");
+      if (gradleDeps != null && gradleDeps instanceof List) {
+        // Nested format: testDependencies.gradle
+        return parseDependencyList((List<Map<String, Object>>) gradleDeps, "test", true);
+      }
+    }
+
+    // Flat format: testDependencies as list
     if (!(testDepsObj instanceof List)) {
-      throw new IllegalArgumentException("Field 'testDependencies' must be a list");
+      throw new IllegalArgumentException("Field 'testDependencies' must be a list or map with 'gradle' key");
     }
 
     List<Map<String, Object>> testDepsList = (List<Map<String, Object>>) testDepsObj;
-    List<Dependency> testDependencies = new ArrayList<>();
+    return parseDependencyList(testDepsList, "test", false);
+  }
 
-    for (Map<String, Object> depData : testDepsList) {
-      testDependencies.add(parseDependency(depData, "test"));
+  /**
+   * Parses a list of dependencies.
+   * 
+   * @param depsList list of dependency maps
+   * @param defaultScope default scope if not specified
+   * @param isNestedFormat true if using nested format (groupId/artifactId), false for flat format (group/artifact)
+   * @return list of parsed dependencies
+   */
+  private List<Dependency> parseDependencyList(
+      List<Map<String, Object>> depsList,
+      String defaultScope,
+      boolean isNestedFormat) {
+    List<Dependency> dependencies = new ArrayList<>();
+
+    for (Map<String, Object> depData : depsList) {
+      dependencies.add(parseDependency(depData, defaultScope, isNestedFormat));
     }
 
-    return testDependencies;
+    return dependencies;
   }
 
   /**
    * Parses a single dependency from YAML data.
+   * Supports both flat format (group/artifact) and nested format (groupId/artifactId).
+   * 
+   * @param depData dependency data map
+   * @param defaultScope default scope if not specified
+   * @param isNestedFormat true if using nested format (groupId/artifactId)
+   * @return parsed Dependency
    */
-  private Dependency parseDependency(Map<String, Object> depData, String defaultScope) {
-    String group = extractRequiredString(depData, "group");
-    String artifact = extractRequiredString(depData, "artifact");
+  private Dependency parseDependency(Map<String, Object> depData, String defaultScope, boolean isNestedFormat) {
+    // Extract group/groupId
+    String group = isNestedFormat 
+        ? extractOptionalString(depData, "groupId")
+        : extractOptionalString(depData, "group");
+    
+    // Fallback: try the other format if not found
+    if (group == null) {
+      group = isNestedFormat 
+          ? extractOptionalString(depData, "group")
+          : extractOptionalString(depData, "groupId");
+    }
+    
+    if (group == null) {
+      throw new IllegalArgumentException("Required field 'group' or 'groupId' is missing");
+    }
+
+    // Extract artifact/artifactId
+    String artifact = isNestedFormat
+        ? extractOptionalString(depData, "artifactId")
+        : extractOptionalString(depData, "artifact");
+    
+    // Fallback: try the other format if not found
+    if (artifact == null) {
+      artifact = isNestedFormat
+          ? extractOptionalString(depData, "artifact")
+          : extractOptionalString(depData, "artifactId");
+    }
+    
+    if (artifact == null) {
+      throw new IllegalArgumentException("Required field 'artifact' or 'artifactId' is missing");
+    }
+
     String version = extractOptionalString(depData, "version");
     String scope = extractOptionalString(depData, "scope");
 
     // Use provided scope or default scope
+    if (scope == null || scope.isBlank()) {
+      scope = defaultScope;
+    }
+
+    return new Dependency(group, artifact, version, scope);
+  }
+
+  /**
+   * @deprecated Use {@link #parseDependency(Map, String, boolean)} instead
+   */
+  @Deprecated
+  private Dependency parseDependency(Map<String, Object> depData, String defaultScope) {
+    return parseDependency(depData, defaultScope, false);
+  }    // Use provided scope or default scope
     if (scope == null || scope.isBlank()) {
       scope = defaultScope;
     }

@@ -345,7 +345,10 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
 
     try {
       // 1. Application.yml will be modified if adapter has application properties
-      AdapterMetadata metadata = templateRepository.loadAdapterMetadata(config.type().name().toLowerCase());
+      AdapterMetadata metadata = loadAdapterMetadataWithFallback(
+          config.type().name().toLowerCase(),
+          projectPath,
+          config);
       if (metadata.hasApplicationProperties()) {
         Path applicationYml = Path.of("src/main/resources/application.yml");
         if (fileSystemPort.exists(projectPath.resolve(applicationYml))) {
@@ -382,7 +385,10 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
   private void mergeApplicationPropertiesIfNeeded(Path projectPath, AdapterConfig config) {
     try {
       // 1. Load adapter metadata to check if it has applicationPropertiesTemplate
-      AdapterMetadata metadata = templateRepository.loadAdapterMetadata(config.type().name().toLowerCase());
+      AdapterMetadata metadata = loadAdapterMetadataWithFallback(
+          config.type().name().toLowerCase(),
+          projectPath,
+          config);
 
       if (!metadata.hasApplicationProperties()) {
         logger.debug("Adapter {} does not have application properties template, skipping merge",
@@ -475,7 +481,10 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
 
     try {
       // 1. Load adapter metadata to check if it has configuration classes
-      AdapterMetadata metadata = templateRepository.loadAdapterMetadata(config.type().name().toLowerCase());
+      AdapterMetadata metadata = loadAdapterMetadataWithFallback(
+          config.type().name().toLowerCase(),
+          projectPath,
+          config);
 
       if (!metadata.hasConfigurationClasses()) {
         logger.debug("Adapter {} does not have configuration classes, skipping generation",
@@ -578,7 +587,10 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
   private void addTestDependenciesIfNeeded(Path projectPath, AdapterConfig config) {
     try {
       // 1. Load adapter metadata to check if it has test dependencies
-      AdapterMetadata metadata = templateRepository.loadAdapterMetadata(config.type().name().toLowerCase());
+      AdapterMetadata metadata = loadAdapterMetadataWithFallback(
+          config.type().name().toLowerCase(),
+          projectPath,
+          config);
 
       if (!metadata.hasTestDependencies()) {
         logger.debug("Adapter {} does not have test dependencies, skipping", config.name());
@@ -721,7 +733,10 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
     try {
       // Load adapter metadata
       String adapterTypeLower = config.type().name().toLowerCase();
-      AdapterMetadata metadata = templateRepository.loadAdapterMetadata(adapterTypeLower);
+      AdapterMetadata metadata = loadAdapterMetadataWithFallback(
+          adapterTypeLower,
+          projectPath,
+          config);
 
       // Get all dependencies (regular + test)
       List<AdapterMetadata.Dependency> allNewDependencies = new ArrayList<>();
@@ -822,4 +837,42 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
       default -> "driven-adapters"; // Default to driven-adapters for unknown types
     };
   }
+
 }
+
+  /**
+   * Loads adapter metadata using framework-aware path if projectConfig is available,
+   * otherwise falls back to legacy loading.
+   * 
+   * @param adapterTypeLower adapter type in lowercase
+   * @param projectPath path to project (to read config if needed)
+   * @param config adapter configuration
+   * @return AdapterMetadata
+   */
+  private AdapterMetadata loadAdapterMetadataWithFallback(
+      String adapterTypeLower,
+      Path projectPath,
+      AdapterConfig config) {
+    try {
+      // Try to read project config
+      var projectConfig = configurationPort.readConfiguration(projectPath).orElse(null);
+      
+      if (projectConfig != null) {
+        // Use framework-aware loading
+        String framework = projectConfig.framework().name().toLowerCase();
+        String paradigm = projectConfig.paradigm().name().toLowerCase();
+        String adapterTypeCategory = determineAdapterTypeCategory(config);
+        
+        return templateRepository.loadAdapterMetadata(
+            adapterTypeLower,
+            framework,
+            paradigm,
+            adapterTypeCategory);
+      }
+    } catch (Exception e) {
+      logger.debug("Could not load with framework-aware path, falling back to legacy: {}", e.getMessage());
+    }
+    
+    // Fallback to legacy loading
+    return templateRepository.loadAdapterMetadata(adapterTypeLower);
+  }
