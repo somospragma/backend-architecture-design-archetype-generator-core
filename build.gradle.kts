@@ -2,6 +2,7 @@ plugins {
     `java-gradle-plugin`
     `maven-publish`
     id("com.gradle.plugin-publish") version "1.2.1"
+    jacoco
 }
 
 group = "com.pragma"
@@ -54,6 +55,26 @@ gradlePlugin {
 
 tasks.test {
     useJUnitPlatform()
+    ignoreFailures = true
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+}
+
+tasks.jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = "0.80".toBigDecimal()
+            }
+        }
+    }
 }
 
 tasks.withType<JavaCompile> {

@@ -17,10 +17,13 @@ public class UseCaseValidator {
 
   private final FileSystemPort fileSystemPort;
   private final ConfigurationPort configurationPort;
+  private final PackageValidator packageValidator;
 
-  public UseCaseValidator(FileSystemPort fileSystemPort, ConfigurationPort configurationPort) {
+  public UseCaseValidator(FileSystemPort fileSystemPort, ConfigurationPort configurationPort,
+      PackageValidator packageValidator) {
     this.fileSystemPort = fileSystemPort;
     this.configurationPort = configurationPort;
+    this.packageValidator = packageValidator;
   }
 
   /**
@@ -45,8 +48,25 @@ public class UseCaseValidator {
     // Validate package name
     if (config.packageName() == null || config.packageName().isBlank()) {
       errors.add("Package name is required");
-    } else if (!isValidPackageName(config.packageName())) {
-      errors.add("Invalid package name: " + config.packageName());
+    } else {
+      // Use PackageValidator for comprehensive package validation
+      ValidationResult packageValidation = packageValidator.validatePackageName(config.packageName());
+      if (!packageValidation.valid()) {
+        errors.addAll(packageValidation.errors());
+      }
+
+      // Validate base package consistency if project config is available
+      var projectConfigOpt = configurationPort.readConfiguration(projectPath);
+      if (projectConfigOpt.isPresent()) {
+        String basePackage = projectConfigOpt.get().basePackage();
+        if (basePackage != null && !basePackage.isBlank()) {
+          ValidationResult basePackageValidation = packageValidator.validateBasePackageConsistency(config.packageName(),
+              basePackage);
+          if (!basePackageValidation.valid()) {
+            errors.addAll(basePackageValidation.errors());
+          }
+        }
+      }
     }
 
     // Validate methods

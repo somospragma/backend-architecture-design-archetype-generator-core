@@ -9,6 +9,7 @@ import java.util.Map;
 import com.pragma.archetype.domain.model.ArchitectureType;
 import com.pragma.archetype.domain.model.GeneratedFile;
 import com.pragma.archetype.domain.model.ProjectConfig;
+import com.pragma.archetype.domain.model.StructureMetadata;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 
@@ -303,6 +304,7 @@ public class ProjectGenerator {
 
         /**
          * Generates architecture-specific folder structure.
+         * Loads structure metadata from structure.yml and creates packages dynamically.
          *
          * @param projectPath the project root path
          * @param config      the project configuration
@@ -316,12 +318,50 @@ public class ProjectGenerator {
 
                 List<GeneratedFile> files = new ArrayList<>();
 
-                Path basePath = projectPath
-                                .resolve("src/main/java")
-                                .resolve(config.basePackage().replace('.', '/'));
+                try {
+                        // Load structure metadata for the architecture
+                        StructureMetadata structureMetadata = templateRepository
+                                        .loadStructureMetadata(config.architecture());
 
-                // Create architecture-specific folders based on type
-                switch (config.architecture()) {
+                        Path basePath = projectPath
+                                        .resolve("src/main/java")
+                                        .resolve(config.basePackage().replace('.', '/'));
+
+                        // Create directories from structure metadata packages
+                        if (structureMetadata.packages() != null && !structureMetadata.packages().isEmpty()) {
+                                for (String packagePath : structureMetadata.packages()) {
+                                        Path fullPath = basePath.resolve(packagePath);
+                                        fileSystemPort.createDirectory(fullPath);
+
+                                        // Add .gitkeep file to preserve empty directories
+                                        files.add(GeneratedFile.create(
+                                                        fullPath.resolve(".gitkeep"),
+                                                        ""));
+                                }
+                        } else {
+                                // Fallback to hardcoded structure if packages not defined in metadata
+                                createFallbackStructure(basePath, config.architecture(), files);
+                        }
+
+                } catch (Exception e) {
+                        // If structure metadata loading fails, fall back to hardcoded structure
+                        System.err.println("Failed to load structure metadata, using fallback structure: "
+                                        + e.getMessage());
+                        Path basePath = projectPath
+                                        .resolve("src/main/java")
+                                        .resolve(config.basePackage().replace('.', '/'));
+                        createFallbackStructure(basePath, config.architecture(), files);
+                }
+
+                return files;
+        }
+
+        /**
+         * Creates fallback folder structure when structure metadata is not available.
+         * This maintains backward compatibility with existing behavior.
+         */
+        private void createFallbackStructure(Path basePath, ArchitectureType architecture, List<GeneratedFile> files) {
+                switch (architecture) {
                         case HEXAGONAL_SINGLE, HEXAGONAL_MULTI, HEXAGONAL_MULTI_GRANULAR -> {
                                 // Domain layer
                                 fileSystemPort.createDirectory(basePath.resolve("domain/model"));
@@ -337,27 +377,15 @@ public class ProjectGenerator {
                                 fileSystemPort.createDirectory(basePath.resolve("infrastructure/config"));
 
                                 // Add .gitkeep files to preserve empty directories
+                                files.add(GeneratedFile.create(basePath.resolve("domain/model/.gitkeep"), ""));
+                                files.add(GeneratedFile.create(basePath.resolve("domain/port/in/.gitkeep"), ""));
+                                files.add(GeneratedFile.create(basePath.resolve("domain/port/out/.gitkeep"), ""));
+                                files.add(GeneratedFile.create(basePath.resolve("application/usecase/.gitkeep"), ""));
                                 files.add(GeneratedFile.create(
-                                                basePath.resolve("domain/model/.gitkeep"),
-                                                ""));
+                                                basePath.resolve("infrastructure/entry-points/rest/.gitkeep"), ""));
                                 files.add(GeneratedFile.create(
-                                                basePath.resolve("domain/port/in/.gitkeep"),
-                                                ""));
-                                files.add(GeneratedFile.create(
-                                                basePath.resolve("domain/port/out/.gitkeep"),
-                                                ""));
-                                files.add(GeneratedFile.create(
-                                                basePath.resolve("application/usecase/.gitkeep"),
-                                                ""));
-                                files.add(GeneratedFile.create(
-                                                basePath.resolve("infrastructure/entry-points/rest/.gitkeep"),
-                                                ""));
-                                files.add(GeneratedFile.create(
-                                                basePath.resolve("infrastructure/driven-adapters/.gitkeep"),
-                                                ""));
-                                files.add(GeneratedFile.create(
-                                                basePath.resolve("infrastructure/config/.gitkeep"),
-                                                ""));
+                                                basePath.resolve("infrastructure/driven-adapters/.gitkeep"), ""));
+                                files.add(GeneratedFile.create(basePath.resolve("infrastructure/config/.gitkeep"), ""));
                         }
                         case ONION_SINGLE, ONION_MULTI -> {
                                 // Core layer
@@ -366,30 +394,22 @@ public class ProjectGenerator {
                                 fileSystemPort.createDirectory(basePath.resolve("core/application/port"));
 
                                 // Infrastructure layer
-                                fileSystemPort.createDirectory(basePath.resolve("infrastructure/entry-points"));
-                                fileSystemPort.createDirectory(basePath.resolve("infrastructure/driven-adapters"));
+                                fileSystemPort.createDirectory(basePath.resolve("infrastructure/adapter/in"));
+                                fileSystemPort.createDirectory(basePath.resolve("infrastructure/adapter/out"));
                                 fileSystemPort.createDirectory(basePath.resolve("infrastructure/config"));
 
                                 // Add .gitkeep files
-                                files.add(GeneratedFile.create(
-                                                basePath.resolve("core/domain/.gitkeep"),
+                                files.add(GeneratedFile.create(basePath.resolve("core/domain/.gitkeep"), ""));
+                                files.add(GeneratedFile.create(basePath.resolve("core/application/service/.gitkeep"),
                                                 ""));
-                                files.add(GeneratedFile.create(
-                                                basePath.resolve("core/application/service/.gitkeep"),
+                                files.add(GeneratedFile.create(basePath.resolve("core/application/port/.gitkeep"), ""));
+                                files.add(GeneratedFile.create(basePath.resolve("infrastructure/adapter/in/.gitkeep"),
                                                 ""));
-                                files.add(GeneratedFile.create(
-                                                basePath.resolve("core/application/port/.gitkeep"),
+                                files.add(GeneratedFile.create(basePath.resolve("infrastructure/adapter/out/.gitkeep"),
                                                 ""));
-                                files.add(GeneratedFile.create(
-                                                basePath.resolve("infrastructure/adapter/.gitkeep"),
-                                                ""));
-                                files.add(GeneratedFile.create(
-                                                basePath.resolve("infrastructure/config/.gitkeep"),
-                                                ""));
+                                files.add(GeneratedFile.create(basePath.resolve("infrastructure/config/.gitkeep"), ""));
                         }
                 }
-
-                return files;
         }
 
         /**

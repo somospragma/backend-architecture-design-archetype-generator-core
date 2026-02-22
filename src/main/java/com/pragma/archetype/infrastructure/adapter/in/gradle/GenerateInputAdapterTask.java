@@ -17,11 +17,13 @@ import com.pragma.archetype.domain.model.InputAdapterConfig.EndpointParameter;
 import com.pragma.archetype.domain.model.InputAdapterConfig.HttpMethod;
 import com.pragma.archetype.domain.model.InputAdapterConfig.InputAdapterType;
 import com.pragma.archetype.domain.model.InputAdapterConfig.ParameterType;
+import com.pragma.archetype.domain.model.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateInputAdapterUseCase;
 import com.pragma.archetype.domain.port.in.GenerateInputAdapterUseCase.GenerationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
+import com.pragma.archetype.domain.service.ConfigurationValidator;
 import com.pragma.archetype.domain.service.InputAdapterValidator;
 import com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter;
 import com.pragma.archetype.infrastructure.adapter.out.filesystem.LocalFileSystemAdapter;
@@ -101,16 +103,30 @@ public class GenerateInputAdapterTask extends DefaultTask {
     getLogger().lifecycle("Generating input adapter: {}", adapterName);
 
     try {
-      // 1. Validate inputs
+      // 1. Validate project configuration exists
+      Path projectPath = getProject().getProjectDir().toPath();
+      FileSystemPort fileSystemPort = new LocalFileSystemAdapter();
+      ConfigurationPort configurationPort = new YamlConfigurationAdapter();
+
+      ConfigurationValidator configValidator = new ConfigurationValidator(fileSystemPort, configurationPort);
+      ValidationResult configValidation = configValidator.validateProjectConfig(projectPath);
+
+      if (configValidation.isInvalid()) {
+        getLogger().error("✗ Configuration validation failed:");
+        configValidation.errors().forEach(error -> getLogger().error("  {}", error));
+        throw new RuntimeException("Configuration validation failed. Please fix the errors above.");
+      }
+
+      // 2. Validate inputs
       validateInputs();
 
-      // 2. Parse adapter type
+      // 3. Parse adapter type
       InputAdapterType adapterType = parseAdapterType(type);
 
-      // 3. Parse endpoints
+      // 4. Parse endpoints
       List<Endpoint> endpointList = parseEndpoints(endpoints);
 
-      // 4. Create configuration
+      // 5. Create configuration
       InputAdapterConfig config = InputAdapterConfig.builder()
           .name(adapterName)
           .useCaseName(useCaseName)
@@ -119,13 +135,12 @@ public class GenerateInputAdapterTask extends DefaultTask {
           .endpoints(endpointList)
           .build();
 
-      // 5. Setup dependencies
-      FileSystemPort fileSystemPort = new LocalFileSystemAdapter();
-      ConfigurationPort configurationPort = new YamlConfigurationAdapter();
+      // 6. Setup dependencies (reuse instances from validation)
       TemplateRepository templateRepository = createTemplateRepository();
 
-      // 6. Setup use case
-      InputAdapterValidator validator = new InputAdapterValidator(fileSystemPort, configurationPort);
+      // 7. Setup use case
+      com.pragma.archetype.domain.service.PackageValidator packageValidator = new com.pragma.archetype.domain.service.PackageValidator();
+      InputAdapterValidator validator = new InputAdapterValidator(fileSystemPort, configurationPort, packageValidator);
       InputAdapterGenerator generator = new InputAdapterGenerator(templateRepository, fileSystemPort);
       GenerateInputAdapterUseCase useCase = new GenerateInputAdapterUseCaseImpl(
           validator,
@@ -133,11 +148,10 @@ public class GenerateInputAdapterTask extends DefaultTask {
           configurationPort,
           fileSystemPort);
 
-      // 7. Execute use case
-      Path projectPath = getProject().getProjectDir().toPath();
+      // 8. Execute use case
       GenerationResult result = useCase.execute(projectPath, config);
 
-      // 8. Handle result
+      // 9. Handle result
       if (result.success()) {
         getLogger().lifecycle("✓ Input adapter generated successfully!");
         getLogger().lifecycle("  Generated {} file(s)", result.generatedFiles().size());

@@ -11,32 +11,41 @@ import java.util.Objects;
  */
 public record ValidationResult(
     boolean valid,
-    List<String> errors) {
+    List<String> errors,
+    List<String> warnings) {
 
   public ValidationResult {
     Objects.requireNonNull(errors, "Errors list cannot be null");
     errors = Collections.unmodifiableList(new ArrayList<>(errors));
+    warnings = warnings != null ? Collections.unmodifiableList(new ArrayList<>(warnings)) : List.of();
   }
 
   /**
    * Creates a successful validation result.
    */
   public static ValidationResult success() {
-    return new ValidationResult(true, List.of());
+    return new ValidationResult(true, List.of(), List.of());
+  }
+
+  /**
+   * Creates a successful validation result with warnings.
+   */
+  public static ValidationResult successWithWarnings(List<String> warnings) {
+    return new ValidationResult(true, List.of(), warnings);
   }
 
   /**
    * Creates a failed validation result with a single error.
    */
   public static ValidationResult failure(String error) {
-    return new ValidationResult(false, List.of(error));
+    return new ValidationResult(false, List.of(error), List.of());
   }
 
   /**
    * Creates a failed validation result with multiple errors.
    */
   public static ValidationResult failure(List<String> errors) {
-    return new ValidationResult(false, errors);
+    return new ValidationResult(false, errors, List.of());
   }
 
   /**
@@ -44,6 +53,13 @@ public record ValidationResult(
    */
   public boolean isInvalid() {
     return !valid;
+  }
+
+  /**
+   * Checks if there are warnings.
+   */
+  public boolean hasWarnings() {
+    return !warnings.isEmpty();
   }
 
   /**
@@ -58,5 +74,12 @@ public record ValidationResult(
    */
   public String getAllErrors() {
     return String.join("\n", errors);
+  }
+
+  /**
+   * Gets all warning messages as a single string.
+   */
+  public String getAllWarnings() {
+    return String.join("\n", warnings);
   }
 }

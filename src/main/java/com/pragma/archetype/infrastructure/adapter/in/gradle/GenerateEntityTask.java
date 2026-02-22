@@ -14,11 +14,13 @@ import com.pragma.archetype.application.generator.EntityGenerator;
 import com.pragma.archetype.application.usecase.GenerateEntityUseCaseImpl;
 import com.pragma.archetype.domain.model.EntityConfig;
 import com.pragma.archetype.domain.model.ProjectConfig;
+import com.pragma.archetype.domain.model.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateEntityUseCase;
 import com.pragma.archetype.domain.port.in.GenerateEntityUseCase.GenerationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
+import com.pragma.archetype.domain.service.ConfigurationValidator;
 import com.pragma.archetype.domain.service.EntityValidator;
 import com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter;
 import com.pragma.archetype.infrastructure.adapter.out.filesystem.LocalFileSystemAdapter;
@@ -95,23 +97,37 @@ public class GenerateEntityTask extends DefaultTask {
     getLogger().lifecycle("Generating entity: {}", entityName);
 
     try {
-      // 1. Validate inputs
+      // 1. Validate project configuration exists
+      Path projectPath = getProject().getProjectDir().toPath();
+      FileSystemPort fileSystemPort = new LocalFileSystemAdapter();
+      ConfigurationPort configurationPort = new YamlConfigurationAdapter();
+
+      ConfigurationValidator configValidator = new ConfigurationValidator(fileSystemPort, configurationPort);
+      ValidationResult configValidation = configValidator.validateProjectConfig(projectPath);
+
+      if (configValidation.isInvalid()) {
+        getLogger().error("✗ Configuration validation failed:");
+        configValidation.errors().forEach(error -> getLogger().error("  {}", error));
+        throw new RuntimeException("Configuration validation failed. Please fix the errors above.");
+      }
+
+      // 2. Validate inputs
       validateInputs();
 
-      // 2. Resolve package name (auto-detect if not provided)
+      // 3. Resolve package name (auto-detect if not provided)
       String resolvedPackageName = resolvePackageName();
 
-      // 3. Parse fields
+      // 4. Parse fields
       List<EntityConfig.EntityField> entityFields = parseFields(fields);
 
-      // 4. Filter out 'id' field if hasId is true (to avoid duplication)
+      // 5. Filter out 'id' field if hasId is true (to avoid duplication)
       if (hasId) {
         entityFields = entityFields.stream()
             .filter(field -> !field.name().equalsIgnoreCase("id"))
             .toList();
       }
 
-      // 5. Create configuration
+      // 6. Create configuration
       EntityConfig config = EntityConfig.builder()
           .name(entityName)
           .fields(entityFields)
@@ -120,12 +136,10 @@ public class GenerateEntityTask extends DefaultTask {
           .packageName(resolvedPackageName)
           .build();
 
-      // 5. Setup dependencies
-      FileSystemPort fileSystemPort = new LocalFileSystemAdapter();
-      ConfigurationPort configurationPort = new YamlConfigurationAdapter();
+      // 7. Setup dependencies (reuse instances from validation)
       TemplateRepository templateRepository = createTemplateRepository();
 
-      // 6. Setup use case
+      // 8. Setup use case
       EntityValidator validator = new EntityValidator(fileSystemPort, configurationPort);
       EntityGenerator generator = new EntityGenerator(templateRepository, fileSystemPort);
       GenerateEntityUseCase useCase = new GenerateEntityUseCaseImpl(
@@ -134,11 +148,10 @@ public class GenerateEntityTask extends DefaultTask {
           configurationPort,
           fileSystemPort);
 
-      // 6. Execute use case
-      Path projectPath = getProject().getProjectDir().toPath();
+      // 9. Execute use case
       GenerationResult result = useCase.execute(projectPath, config);
 
-      // 7. Handle result
+      // 10. Handle result
       if (result.success()) {
         getLogger().lifecycle("✓ Entity generated successfully!");
         getLogger().lifecycle("  Generated {} file(s)", result.generatedFiles().size());

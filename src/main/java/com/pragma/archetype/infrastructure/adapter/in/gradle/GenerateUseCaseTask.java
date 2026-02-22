@@ -14,11 +14,13 @@ import com.pragma.archetype.application.generator.UseCaseGenerator;
 import com.pragma.archetype.application.usecase.GenerateUseCaseUseCaseImpl;
 import com.pragma.archetype.domain.model.ProjectConfig;
 import com.pragma.archetype.domain.model.UseCaseConfig;
+import com.pragma.archetype.domain.model.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateUseCaseUseCase;
 import com.pragma.archetype.domain.port.in.GenerateUseCaseUseCase.GenerationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
+import com.pragma.archetype.domain.service.ConfigurationValidator;
 import com.pragma.archetype.domain.service.UseCaseValidator;
 import com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter;
 import com.pragma.archetype.infrastructure.adapter.out.filesystem.LocalFileSystemAdapter;
@@ -96,16 +98,30 @@ public class GenerateUseCaseTask extends DefaultTask {
     getLogger().lifecycle("Generating use case: {}", useCaseName);
 
     try {
-      // 1. Validate inputs
+      // 1. Validate project configuration exists
+      Path projectPath = getProject().getProjectDir().toPath();
+      FileSystemPort fileSystemPort = new LocalFileSystemAdapter();
+      ConfigurationPort configurationPort = new YamlConfigurationAdapter();
+
+      ConfigurationValidator configValidator = new ConfigurationValidator(fileSystemPort, configurationPort);
+      ValidationResult configValidation = configValidator.validateProjectConfig(projectPath);
+
+      if (configValidation.isInvalid()) {
+        getLogger().error("✗ Configuration validation failed:");
+        configValidation.errors().forEach(error -> getLogger().error("  {}", error));
+        throw new RuntimeException("Configuration validation failed. Please fix the errors above.");
+      }
+
+      // 2. Validate inputs
       validateInputs();
 
-      // 2. Resolve package name (auto-detect if not provided)
+      // 3. Resolve package name (auto-detect if not provided)
       String resolvedPackageName = resolvePackageName();
 
-      // 3. Parse methods
+      // 4. Parse methods
       List<UseCaseConfig.UseCaseMethod> useCaseMethods = parseMethods(methods);
 
-      // 4. Create configuration
+      // 5. Create configuration
       UseCaseConfig config = UseCaseConfig.builder()
           .name(useCaseName)
           .packageName(resolvedPackageName)
@@ -114,13 +130,12 @@ public class GenerateUseCaseTask extends DefaultTask {
           .generateImpl(generateImpl)
           .build();
 
-      // 4. Setup dependencies
-      FileSystemPort fileSystemPort = new LocalFileSystemAdapter();
-      ConfigurationPort configurationPort = new YamlConfigurationAdapter();
+      // 6. Setup dependencies (reuse instances from validation)
       TemplateRepository templateRepository = createTemplateRepository();
 
-      // 5. Setup use case
-      UseCaseValidator validator = new UseCaseValidator(fileSystemPort, configurationPort);
+      // 7. Setup use case
+      com.pragma.archetype.domain.service.PackageValidator packageValidator = new com.pragma.archetype.domain.service.PackageValidator();
+      UseCaseValidator validator = new UseCaseValidator(fileSystemPort, configurationPort, packageValidator);
       UseCaseGenerator generator = new UseCaseGenerator(templateRepository, fileSystemPort);
       GenerateUseCaseUseCase useCase = new GenerateUseCaseUseCaseImpl(
           validator,
@@ -128,11 +143,10 @@ public class GenerateUseCaseTask extends DefaultTask {
           configurationPort,
           fileSystemPort);
 
-      // 6. Execute use case
-      Path projectPath = getProject().getProjectDir().toPath();
+      // 8. Execute use case
       GenerationResult result = useCase.execute(projectPath, config);
 
-      // 7. Handle result
+      // 9. Handle result
       if (result.success()) {
         getLogger().lifecycle("✓ Use case generated successfully!");
         getLogger().lifecycle("  Generated {} file(s)", result.generatedFiles().size());

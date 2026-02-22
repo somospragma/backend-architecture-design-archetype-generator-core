@@ -24,8 +24,11 @@ public class LocalFileSystemAdapter implements FileSystemPort {
         Files.createDirectories(parent);
       }
 
-      // Write file content
-      Files.writeString(file.path(), file.content());
+      // Atomic write: write to temporary file first, then rename
+      Path tempFile = file.path().resolveSibling(file.path().getFileName() + ".tmp");
+      Files.writeString(tempFile, file.content());
+      Files.move(tempFile, file.path(), java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+          java.nio.file.StandardCopyOption.ATOMIC_MOVE);
 
     } catch (IOException e) {
       throw new FileWriteException(
@@ -124,7 +127,13 @@ public class LocalFileSystemAdapter implements FileSystemPort {
     try {
       String existingContent = readFile(path);
       String newContent = existingContent + content;
-      Files.writeString(path, newContent);
+
+      // Atomic write: write to temporary file first, then rename
+      Path tempFile = path.resolveSibling(path.getFileName() + ".tmp");
+      Files.writeString(tempFile, newContent);
+      Files.move(tempFile, path, java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+          java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+
     } catch (IOException e) {
       throw new FileWriteException(
           "Failed to append to file: " + path,

@@ -14,12 +14,15 @@ import com.pragma.archetype.application.generator.AdapterGenerator;
 import com.pragma.archetype.application.usecase.GenerateAdapterUseCaseImpl;
 import com.pragma.archetype.domain.model.AdapterConfig;
 import com.pragma.archetype.domain.model.ProjectConfig;
+import com.pragma.archetype.domain.model.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateAdapterUseCase;
 import com.pragma.archetype.domain.port.in.GenerateAdapterUseCase.GenerationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
+import com.pragma.archetype.domain.port.out.PathResolver;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 import com.pragma.archetype.domain.service.AdapterValidator;
+import com.pragma.archetype.domain.service.ConfigurationValidator;
 import com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter;
 import com.pragma.archetype.infrastructure.adapter.out.filesystem.LocalFileSystemAdapter;
 import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTemplateRepository;
@@ -97,22 +100,36 @@ public class GenerateOutputAdapterTask extends DefaultTask {
     getLogger().lifecycle("Generating {} adapter: {}", type, adapterName);
 
     try {
-      // 1. Validate inputs
+      // 1. Validate project configuration exists
+      Path projectPath = getProject().getProjectDir().toPath();
+      FileSystemPort fileSystemPort = new LocalFileSystemAdapter();
+      ConfigurationPort configurationPort = new YamlConfigurationAdapter();
+
+      ConfigurationValidator configValidator = new ConfigurationValidator(fileSystemPort, configurationPort);
+      ValidationResult configValidation = configValidator.validateProjectConfig(projectPath);
+
+      if (configValidation.isInvalid()) {
+        getLogger().error("✗ Configuration validation failed:");
+        configValidation.errors().forEach(error -> getLogger().error("  {}", error));
+        throw new RuntimeException("Configuration validation failed. Please fix the errors above.");
+      }
+
+      // 2. Validate inputs
       validateInputs();
 
-      // 2. Resolve package name (auto-detect if not provided)
+      // 3. Resolve package name (auto-detect if not provided)
       String resolvedPackageName = resolvePackageName(type);
 
-      // 3. Parse adapter type
+      // 4. Parse adapter type
       AdapterConfig.AdapterType adapterType = parseAdapterType(type);
 
-      // 4. Parse methods (if provided)
+      // 5. Parse methods (if provided)
       List<AdapterConfig.AdapterMethod> adapterMethods = new ArrayList<>();
       if (!methods.isBlank()) {
         adapterMethods = parseMethods(methods);
       }
 
-      // 5. Create configuration
+      // 6. Create configuration
       AdapterConfig config = AdapterConfig.builder()
           .name(adapterName)
           .entityName(entityName)
@@ -121,25 +138,30 @@ public class GenerateOutputAdapterTask extends DefaultTask {
           .methods(adapterMethods)
           .build();
 
-      // 5. Setup dependencies
-      FileSystemPort fileSystemPort = new LocalFileSystemAdapter();
-      ConfigurationPort configurationPort = new YamlConfigurationAdapter();
+      // 7. Setup dependencies (reuse instances from validation)
+      YamlConfigurationAdapter yamlConfigurationAdapter = (YamlConfigurationAdapter) configurationPort;
       TemplateRepository templateRepository = createTemplateRepository();
+      PathResolver pathResolver = new com.pragma.archetype.domain.service.PathResolverImpl(templateRepository);
 
-      // 6. Setup use case
-      AdapterValidator validator = new AdapterValidator(fileSystemPort, configurationPort);
-      AdapterGenerator generator = new AdapterGenerator(templateRepository, fileSystemPort);
+      // 8. Setup use case
+      com.pragma.archetype.domain.service.PackageValidator packageValidator = new com.pragma.archetype.domain.service.PackageValidator();
+      AdapterValidator validator = new AdapterValidator(fileSystemPort, configurationPort, packageValidator);
+      AdapterGenerator generator = new AdapterGenerator(templateRepository, fileSystemPort, pathResolver);
+      com.pragma.archetype.domain.service.BackupService backupService = new com.pragma.archetype.domain.service.BackupService(
+          fileSystemPort);
       GenerateAdapterUseCase useCase = new GenerateAdapterUseCaseImpl(
           validator,
           generator,
           configurationPort,
-          fileSystemPort);
+          fileSystemPort,
+          templateRepository,
+          yamlConfigurationAdapter,
+          backupService);
 
-      // 7. Execute use case
-      Path projectPath = getProject().getProjectDir().toPath();
+      // 9. Execute use case
       GenerationResult result = useCase.execute(projectPath, config);
 
-      // 8. Handle result
+      // 10. Handle result
       if (result.success()) {
         getLogger().lifecycle("✓ Adapter generated successfully!");
         getLogger().lifecycle("  Generated {} file(s)", result.generatedFiles().size());

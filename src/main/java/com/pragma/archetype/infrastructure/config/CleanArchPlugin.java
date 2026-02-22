@@ -10,6 +10,7 @@ import com.pragma.archetype.infrastructure.adapter.in.gradle.GenerateOutputAdapt
 import com.pragma.archetype.infrastructure.adapter.in.gradle.GenerateUseCaseTask;
 import com.pragma.archetype.infrastructure.adapter.in.gradle.InitCleanArchTask;
 import com.pragma.archetype.infrastructure.adapter.in.gradle.UpdateTemplatesTask;
+import com.pragma.archetype.infrastructure.adapter.in.gradle.ValidateTemplatesTask;
 
 /**
  * Gradle plugin for Clean Architecture Generator.
@@ -59,6 +60,12 @@ public class CleanArchPlugin implements Plugin<Project> {
     project.getTasks().register("clearTemplateCache", ClearTemplateCacheTask.class, task -> {
       task.setGroup("clean architecture");
       task.setDescription("Clear the local template cache");
+    });
+
+    // Register validateTemplates task
+    project.getTasks().register("validateTemplates", ValidateTemplatesTask.class, task -> {
+      task.setGroup("clean architecture");
+      task.setDescription("Validate architecture and adapter templates");
     });
 
     // Future tasks will be registered here:

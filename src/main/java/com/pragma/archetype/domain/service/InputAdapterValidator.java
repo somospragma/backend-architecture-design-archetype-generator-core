@@ -17,10 +17,13 @@ public class InputAdapterValidator {
 
   private final FileSystemPort fileSystemPort;
   private final ConfigurationPort configurationPort;
+  private final PackageValidator packageValidator;
 
-  public InputAdapterValidator(FileSystemPort fileSystemPort, ConfigurationPort configurationPort) {
+  public InputAdapterValidator(FileSystemPort fileSystemPort, ConfigurationPort configurationPort,
+      PackageValidator packageValidator) {
     this.fileSystemPort = fileSystemPort;
     this.configurationPort = configurationPort;
+    this.packageValidator = packageValidator;
   }
 
   /**
@@ -45,14 +48,34 @@ public class InputAdapterValidator {
     // Validate package name
     if (config.packageName() == null || config.packageName().isBlank()) {
       errors.add("Package name is required");
-    } else if (!isValidPackageName(config.packageName())) {
-      errors.add("Invalid package name: " + config.packageName());
-    } else if (config.packageName().contains(".adapter.out.")) {
-      errors.add(
-          "Invalid package structure: use 'driven-adapters' instead of 'adapter.out'. Example: com.company.infrastructure.driven-adapters.redis");
-    } else if (config.packageName().contains(".adapter.in.")) {
-      errors.add(
-          "Invalid package structure: use 'entry-points' instead of 'adapter.in'. Example: com.company.infrastructure.entry-points.rest");
+    } else {
+      // Use PackageValidator for comprehensive package validation
+      ValidationResult packageValidation = packageValidator.validatePackageName(config.packageName());
+      if (!packageValidation.valid()) {
+        errors.addAll(packageValidation.errors());
+      }
+
+      // Additional adapter-specific package validation
+      if (config.packageName().contains(".adapter.out.")) {
+        errors.add(
+            "Invalid package structure: use 'driven-adapters' instead of 'adapter.out'. Example: com.company.infrastructure.driven-adapters.redis");
+      } else if (config.packageName().contains(".adapter.in.")) {
+        errors.add(
+            "Invalid package structure: use 'entry-points' instead of 'adapter.in'. Example: com.company.infrastructure.entry-points.rest");
+      }
+
+      // Validate base package consistency if project config is available
+      var projectConfigOpt = configurationPort.readConfiguration(projectPath);
+      if (projectConfigOpt.isPresent()) {
+        String basePackage = projectConfigOpt.get().basePackage();
+        if (basePackage != null && !basePackage.isBlank()) {
+          ValidationResult basePackageValidation = packageValidator.validateBasePackageConsistency(config.packageName(),
+              basePackage);
+          if (!basePackageValidation.valid()) {
+            errors.addAll(basePackageValidation.errors());
+          }
+        }
+      }
     }
 
     // Validate adapter type

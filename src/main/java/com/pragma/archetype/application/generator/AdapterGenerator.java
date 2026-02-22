@@ -10,6 +10,7 @@ import com.pragma.archetype.domain.model.AdapterConfig;
 import com.pragma.archetype.domain.model.GeneratedFile;
 import com.pragma.archetype.domain.model.ProjectConfig;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
+import com.pragma.archetype.domain.port.out.PathResolver;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 
 /**
@@ -20,11 +21,14 @@ public class AdapterGenerator {
 
   private final TemplateRepository templateRepository;
   private final FileSystemPort fileSystemPort;
+  private final PathResolver pathResolver;
   private final ProjectGenerator projectGenerator;
 
-  public AdapterGenerator(TemplateRepository templateRepository, FileSystemPort fileSystemPort) {
+  public AdapterGenerator(TemplateRepository templateRepository, FileSystemPort fileSystemPort,
+      PathResolver pathResolver) {
     this.templateRepository = templateRepository;
     this.fileSystemPort = fileSystemPort;
+    this.pathResolver = pathResolver;
     this.projectGenerator = new ProjectGenerator(templateRepository, fileSystemPort);
   }
 
@@ -40,7 +44,7 @@ public class AdapterGenerator {
       generatedFiles.addAll(generateAdapterAsModule(projectPath, config, projectConfig));
     } else {
       // Traditional approach: generate files in existing structure
-      generatedFiles.addAll(generateAdapterInPlace(projectPath, config));
+      generatedFiles.addAll(generateAdapterInPlace(projectPath, config, projectConfig));
     }
 
     return generatedFiles;
@@ -89,23 +93,24 @@ public class AdapterGenerator {
   /**
    * Generates adapter files in existing structure (traditional approach).
    */
-  private List<GeneratedFile> generateAdapterInPlace(Path projectPath, AdapterConfig config) {
+  private List<GeneratedFile> generateAdapterInPlace(Path projectPath, AdapterConfig config,
+      ProjectConfig projectConfig) {
     List<GeneratedFile> generatedFiles = new ArrayList<>();
 
     // Prepare template data
     Map<String, Object> data = prepareTemplateData(config);
 
     // Generate adapter implementation
-    GeneratedFile adapterFile = generateAdapter(projectPath, config, data);
+    GeneratedFile adapterFile = generateAdapter(projectPath, config, data, projectConfig);
     generatedFiles.add(adapterFile);
 
     // Generate entity mapper if needed
     if (config.type() == AdapterConfig.AdapterType.REDIS ||
         config.type() == AdapterConfig.AdapterType.MONGODB) {
-      GeneratedFile mapperFile = generateMapper(projectPath, config, data);
+      GeneratedFile mapperFile = generateMapper(projectPath, config, data, projectConfig);
       generatedFiles.add(mapperFile);
 
-      GeneratedFile entityFile = generateDataEntity(projectPath, config, data);
+      GeneratedFile entityFile = generateDataEntity(projectPath, config, data, projectConfig);
       generatedFiles.add(entityFile);
     }
 
@@ -184,53 +189,142 @@ public class AdapterGenerator {
     return GeneratedFile.javaSource(filePath, content);
   }
 
-  private GeneratedFile generateAdapter(Path projectPath, AdapterConfig config, Map<String, Object> data) {
+  private GeneratedFile generateAdapter(Path projectPath, AdapterConfig config, Map<String, Object> data,
+      ProjectConfig projectConfig) {
     // Select template based on adapter type
     String templatePath = getAdapterTemplate(config.type());
 
     // Process template
     String content = templateRepository.processTemplate(templatePath, data);
 
-    // Calculate file path:
-    // infrastructure/adapter/out/{type}/{AdapterName}Adapter.java
-    String packagePath = config.packageName().replace('.', '/');
-    Path filePath = projectPath
-        .resolve("src/main/java")
-        .resolve(packagePath)
-        .resolve(config.name() + "Adapter.java");
+    // Resolve adapter path using PathResolver if project config is available
+    Path filePath;
+    if (projectConfig != null) {
+      // Prepare context for path resolution
+      Map<String, String> context = new HashMap<>();
+      context.put("basePackage", projectConfig.basePackage());
+
+      // Determine adapter type string (driven or driving)
+      String adapterType = "driven"; // Default for output adapters
+
+      // Resolve the adapter base path (relative to basePackage)
+      Path adapterBasePath = pathResolver.resolveAdapterPath(
+          projectConfig.architecture(),
+          adapterType,
+          config.name().toLowerCase(),
+          context);
+
+      // Convert base package to path
+      String basePackagePath = projectConfig.basePackage().replace('.', '/');
+
+      // Build full file path:
+      // src/main/java/{basePackage}/{resolvedPath}/{AdapterName}Adapter.java
+      filePath = projectPath
+          .resolve("src/main/java")
+          .resolve(basePackagePath)
+          .resolve(adapterBasePath)
+          .resolve(config.name() + "Adapter.java");
+    } else {
+      // Fallback to hardcoded path if project config not available
+      String packagePath = config.packageName().replace('.', '/');
+      filePath = projectPath
+          .resolve("src/main/java")
+          .resolve(packagePath)
+          .resolve(config.name() + "Adapter.java");
+    }
 
     return GeneratedFile.javaSource(filePath, content);
   }
 
-  private GeneratedFile generateMapper(Path projectPath, AdapterConfig config, Map<String, Object> data) {
+  private GeneratedFile generateMapper(Path projectPath, AdapterConfig config, Map<String, Object> data,
+      ProjectConfig projectConfig) {
     // Process mapper template with new structure
     String content = templateRepository.processTemplate(getMapperTemplate(), data);
 
-    // Calculate file path:
-    // infrastructure/adapter/out/{type}/mapper/{Entity}Mapper.java
-    String mapperPackage = config.packageName() + ".mapper";
-    String packagePath = mapperPackage.replace('.', '/');
-    Path filePath = projectPath
-        .resolve("src/main/java")
-        .resolve(packagePath)
-        .resolve(config.entityName() + "Mapper.java");
+    // Resolve mapper path using PathResolver if project config is available
+    Path filePath;
+    if (projectConfig != null) {
+      // Prepare context for path resolution
+      Map<String, String> context = new HashMap<>();
+      context.put("basePackage", projectConfig.basePackage());
+
+      // Determine adapter type string (driven or driving)
+      String adapterType = "driven"; // Default for output adapters
+
+      // Resolve the adapter base path (relative to basePackage)
+      Path adapterBasePath = pathResolver.resolveAdapterPath(
+          projectConfig.architecture(),
+          adapterType,
+          config.name().toLowerCase(),
+          context);
+
+      // Convert base package to path
+      String basePackagePath = projectConfig.basePackage().replace('.', '/');
+
+      // Build full file path:
+      // src/main/java/{basePackage}/{resolvedPath}/mapper/{Entity}Mapper.java
+      filePath = projectPath
+          .resolve("src/main/java")
+          .resolve(basePackagePath)
+          .resolve(adapterBasePath)
+          .resolve("mapper")
+          .resolve(config.entityName() + "Mapper.java");
+    } else {
+      // Fallback to hardcoded path if project config not available
+      String mapperPackage = config.packageName() + ".mapper";
+      String packagePath = mapperPackage.replace('.', '/');
+      filePath = projectPath
+          .resolve("src/main/java")
+          .resolve(packagePath)
+          .resolve(config.entityName() + "Mapper.java");
+    }
 
     return GeneratedFile.javaSource(filePath, content);
   }
 
-  private GeneratedFile generateDataEntity(Path projectPath, AdapterConfig config, Map<String, Object> data) {
+  private GeneratedFile generateDataEntity(Path projectPath, AdapterConfig config, Map<String, Object> data,
+      ProjectConfig projectConfig) {
     // Process data entity template
     String templatePath = getDataEntityTemplate(config.type());
     String content = templateRepository.processTemplate(templatePath, data);
 
-    // Calculate file path:
-    // infrastructure/adapter/out/{type}/entity/{Entity}Data.java
-    String entityPackage = config.packageName() + ".entity";
-    String packagePath = entityPackage.replace('.', '/');
-    Path filePath = projectPath
-        .resolve("src/main/java")
-        .resolve(packagePath)
-        .resolve(config.entityName() + "Data.java");
+    // Resolve entity path using PathResolver if project config is available
+    Path filePath;
+    if (projectConfig != null) {
+      // Prepare context for path resolution
+      Map<String, String> context = new HashMap<>();
+      context.put("basePackage", projectConfig.basePackage());
+
+      // Determine adapter type string (driven or driving)
+      String adapterType = "driven"; // Default for output adapters
+
+      // Resolve the adapter base path (relative to basePackage)
+      Path adapterBasePath = pathResolver.resolveAdapterPath(
+          projectConfig.architecture(),
+          adapterType,
+          config.name().toLowerCase(),
+          context);
+
+      // Convert base package to path
+      String basePackagePath = projectConfig.basePackage().replace('.', '/');
+
+      // Build full file path:
+      // src/main/java/{basePackage}/{resolvedPath}/entity/{Entity}Data.java
+      filePath = projectPath
+          .resolve("src/main/java")
+          .resolve(basePackagePath)
+          .resolve(adapterBasePath)
+          .resolve("entity")
+          .resolve(config.entityName() + "Data.java");
+    } else {
+      // Fallback to hardcoded path if project config not available
+      String entityPackage = config.packageName() + ".entity";
+      String packagePath = entityPackage.replace('.', '/');
+      filePath = projectPath
+          .resolve("src/main/java")
+          .resolve(packagePath)
+          .resolve(config.entityName() + "Data.java");
+    }
 
     return GeneratedFile.javaSource(filePath, content);
   }

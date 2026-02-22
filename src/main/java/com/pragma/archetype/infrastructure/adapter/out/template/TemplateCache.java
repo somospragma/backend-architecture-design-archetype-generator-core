@@ -53,8 +53,11 @@ public class TemplateCache {
       // Create parent directories if they don't exist
       Files.createDirectories(cachedFile.getParent());
 
-      // Write content to cache
-      Files.writeString(cachedFile, content);
+      // Atomic write: write to temporary file first, then rename
+      Path tempFile = cachedFile.resolveSibling(cachedFile.getFileName() + ".tmp");
+      Files.writeString(tempFile, content);
+      Files.move(tempFile, cachedFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+          java.nio.file.StandardCopyOption.ATOMIC_MOVE);
 
     } catch (IOException e) {
       // If we can't write to cache, just log and continue

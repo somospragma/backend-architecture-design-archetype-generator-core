@@ -24,6 +24,8 @@ public class GitHubTemplateDownloader {
    * @param templatePath relative path to template (e.g.,
    *                     "templates/frameworks/spring/...")
    * @return template content
+   * @throws HttpClientPort.HttpDownloadException if download fails or branch
+   *                                              doesn't exist
    */
   public String downloadTemplate(TemplateConfig config, String templatePath) {
     // Build cache key
@@ -39,14 +41,24 @@ public class GitHubTemplateDownloader {
 
     // Download from remote
     String url = buildRawUrl(config.repository(), config.getEffectiveBranch(), templatePath);
-    String content = httpClient.downloadContent(url);
+    try {
+      String content = httpClient.downloadContent(url);
 
-    // Cache if enabled
-    if (config.cache()) {
-      cache.put(cacheKey, content);
+      // Cache if enabled
+      if (config.cache()) {
+        cache.put(cacheKey, content);
+      }
+
+      return content;
+    } catch (HttpClientPort.HttpDownloadException e) {
+      // Enhance error message with branch information
+      String branch = config.getEffectiveBranch();
+      String enhancedMessage = String.format(
+          "Failed to download template '%s' from branch '%s' in repository '%s'. " +
+              "Please verify that the branch exists and the template path is correct. Error: %s",
+          templatePath, branch, config.repository(), e.getMessage());
+      throw new HttpClientPort.HttpDownloadException(enhancedMessage, e);
     }
-
-    return content;
   }
 
   /**
@@ -68,6 +80,24 @@ public class GitHubTemplateDownloader {
     // Check remote
     String url = buildRawUrl(config.repository(), config.getEffectiveBranch(), templatePath);
     return httpClient.isAccessible(url);
+  }
+
+  /**
+   * Validates that the remote repository and branch are accessible.
+   *
+   * @param config template configuration
+   * @return true if repository and branch are accessible, false otherwise
+   */
+  public boolean validateRemoteRepository(TemplateConfig config) {
+    if (config.isLocalMode()) {
+      return true; // Local mode doesn't need remote validation
+    }
+
+    // Try to access a common file that should exist in any branch (README.md or
+    // similar)
+    // If we can't access the repository at all, this will fail
+    String testUrl = buildRawUrl(config.repository(), config.getEffectiveBranch(), "README.md");
+    return httpClient.isAccessible(testUrl);
   }
 
   /**

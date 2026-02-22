@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 import com.pragma.archetype.domain.model.ProjectConfig;
+import com.pragma.archetype.domain.model.TemplateConfig;
 
 /**
  * Output port for reading and writing project configuration.
@@ -42,4 +43,14 @@ public interface ConfigurationPort {
    * @param projectPath the root directory of the project
    */
   void deleteConfiguration(Path projectPath);
+
+  /**
+   * Reads template configuration from .cleanarch.yml.
+   * Parses the templates section including localPath, branch, mode, and cache
+   * properties.
+   * 
+   * @param projectPath the root directory of the project
+   * @return template configuration or default if not specified
+   */
+  TemplateConfig readTemplateConfiguration(Path projectPath);
 }

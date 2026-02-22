@@ -1,6 +1,7 @@
 package com.pragma.archetype.domain.model;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -15,7 +16,8 @@ public record ProjectConfig(
     Framework framework,
     String pluginVersion,
     LocalDateTime createdAt,
-    boolean adaptersAsModules) {
+    boolean adaptersAsModules,
+    Map<String, String> dependencyOverrides) {
 
   /**
    * Compact constructor with validation.
@@ -75,6 +77,7 @@ public record ProjectConfig(
     private String pluginVersion = "0.1.0-SNAPSHOT";
     private LocalDateTime createdAt = LocalDateTime.now();
     private boolean adaptersAsModules = false;
+    private Map<String, String> dependencyOverrides = Map.of();
 
     public Builder name(String name) {
       this.name = name;
@@ -116,6 +119,11 @@ public record ProjectConfig(
       return this;
     }
 
+    public Builder dependencyOverrides(Map<String, String> dependencyOverrides) {
+      this.dependencyOverrides = dependencyOverrides != null ? dependencyOverrides : Map.of();
+      return this;
+    }
+
     public ProjectConfig build() {
       return new ProjectConfig(
           name,
@@ -125,7 +133,8 @@ public record ProjectConfig(
           framework,
           pluginVersion,
           createdAt,
-          adaptersAsModules);
+          adaptersAsModules,
+          dependencyOverrides);
     }
   }
 }
