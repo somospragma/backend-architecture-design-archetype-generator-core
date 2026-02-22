@@ -3,6 +3,7 @@ plugins {
     `maven-publish`
     id("com.gradle.plugin-publish") version "1.2.1"
     jacoco
+    kotlin("jvm") version "1.9.21"
 }
 
 group = "com.pragma"
@@ -35,11 +36,17 @@ dependencies {
     implementation("org.slf4j:slf4j-api:2.0.9")
     implementation("ch.qos.logback:logback-classic:1.4.14")
     
-    // Testing
+    // Testing - JUnit
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
     testImplementation("org.mockito:mockito-core:5.8.0")
     testImplementation("org.mockito:mockito-junit-jupiter:5.8.0")
     testImplementation("org.assertj:assertj-core:3.24.2")
+    
+    // Testing - Kotest for property-based testing
+    testImplementation("io.kotest:kotest-runner-junit5:5.8.0")
+    testImplementation("io.kotest:kotest-assertions-core:5.8.0")
+    testImplementation("io.kotest:kotest-property:5.8.0")
+    testImplementation("io.kotest:kotest-framework-datatest:5.8.0")
 }
 
 gradlePlugin {
