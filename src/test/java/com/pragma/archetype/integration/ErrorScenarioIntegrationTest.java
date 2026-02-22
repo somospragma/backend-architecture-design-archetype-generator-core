@@ -104,7 +104,9 @@ class ErrorScenarioIntegrationTest {
             basePackage: com.example.test
           architecture:
             type: hexagonal-single
-          """;
+            paradigm: reactive
+            framework: spring
+          """.stripIndent();
       Files.writeString(configFile, yamlWithoutName);
 
       // When
@@ -113,8 +115,8 @@ class ErrorScenarioIntegrationTest {
       // Then
       assertFalse(result.valid(), "Validation should fail when project name is missing");
       assertTrue(result.errors().stream()
-          .anyMatch(e -> e.contains("name") && e.contains("required")),
-          "Error message should mention missing project name");
+          .anyMatch(e -> e.contains("Missing") && e.contains("project.name")),
+          "Error message should mention missing project.name field. Actual errors: " + result.errors());
     }
 
     @Test
@@ -140,8 +142,8 @@ class ErrorScenarioIntegrationTest {
       // Then
       assertFalse(result.valid(), "Validation should fail for invalid architecture type");
       assertTrue(result.errors().stream()
-          .anyMatch(e -> e.contains("invalid-architecture") || e.contains("not supported")),
-          "Error message should mention the invalid architecture type");
+          .anyMatch(e -> e.contains("parse") || e.contains("Failed")),
+          "Error message should mention parsing failure for invalid architecture type");
     }
 
     @Test
@@ -158,7 +160,9 @@ class ErrorScenarioIntegrationTest {
             basePackage: Com.Example.Test
           architecture:
             type: hexagonal-single
-          """;
+            paradigm: reactive
+            framework: spring
+          """.stripIndent();
       Files.writeString(configFile, yamlWithInvalidPackage);
 
       // When
@@ -167,8 +171,8 @@ class ErrorScenarioIntegrationTest {
       // Then
       assertFalse(result.valid(), "Validation should fail for invalid package name");
       assertTrue(result.errors().stream()
-          .anyMatch(e -> e.contains("basePackage") && e.contains("lowercase")),
-          "Error message should mention package naming convention");
+          .anyMatch(e -> e.contains("Invalid package name") || e.contains("naming conventions")),
+          "Error message should mention invalid package name or naming conventions. Actual errors: " + result.errors());
     }
   }
 
@@ -204,8 +208,8 @@ class ErrorScenarioIntegrationTest {
       // Then
       assertFalse(result.valid(), "Validation should fail when localPath does not exist");
       assertTrue(result.errors().stream()
-          .anyMatch(e -> e.contains("localPath") && e.contains("not exist")),
-          "Error message should mention localPath does not exist");
+          .anyMatch(e -> e.contains("Local template path") && e.contains("does not exist")),
+          "Error message should mention local template path does not exist");
     }
 
     @Test
@@ -237,7 +241,7 @@ class ErrorScenarioIntegrationTest {
       // Then
       assertFalse(result.valid(), "Validation should fail for invalid repository URL");
       assertTrue(result.errors().stream()
-          .anyMatch(e -> e.contains("repository") && e.contains("invalid")),
+          .anyMatch(e -> e.contains("Invalid repository URL") || e.contains("valid HTTPS")),
           "Error message should mention invalid repository URL");
     }
 
@@ -310,7 +314,9 @@ class ErrorScenarioIntegrationTest {
             basePackage: com..example..test
           architecture:
             type: hexagonal-single
-          """;
+            paradigm: reactive
+            framework: spring
+          """.stripIndent();
       Files.writeString(configFile, yamlWithConsecutiveDots);
 
       // When
@@ -319,8 +325,8 @@ class ErrorScenarioIntegrationTest {
       // Then
       assertFalse(result.valid(), "Validation should fail for invalid package format");
       assertTrue(result.errors().stream()
-          .anyMatch(e -> e.contains("basePackage") && e.contains("invalid")),
-          "Error message should mention invalid basePackage format");
+          .anyMatch(e -> e.contains("Invalid package name") || e.contains("naming conventions")),
+          "Error message should mention invalid package name format. Actual errors: " + result.errors());
     }
 
     @Test

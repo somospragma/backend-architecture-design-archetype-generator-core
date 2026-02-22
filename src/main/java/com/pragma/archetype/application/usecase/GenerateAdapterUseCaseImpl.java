@@ -827,26 +827,20 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * @return adapter type category string
    */
   private String determineAdapterTypeCategory(AdapterConfig config) {
-    // Driven adapters (output/infrastructure adapters)
-    return switch (config.type()) {
-      case MONGODB, REDIS, POSTGRESQL, DYNAMODB, S3, SQS_PRODUCER, SQS_CONSUMER,
-          HTTP_CLIENT, KAFKA_PRODUCER, KAFKA_CONSUMER ->
-        "driven-adapters";
-      // Entry points (input/driving adapters)
-      case REST, GRAPHQL, GRPC, WEBSOCKET -> "entry-points";
-      default -> "driven-adapters"; // Default to driven-adapters for unknown types
-    };
+    // All current adapter types are driven adapters (output/infrastructure
+    // adapters)
+    // In the future, entry points (REST, GRAPHQL, GRPC, WEBSOCKET) will be added
+    return "driven-adapters";
   }
 
-}
-
   /**
-   * Loads adapter metadata using framework-aware path if projectConfig is available,
+   * Loads adapter metadata using framework-aware path if projectConfig is
+   * available,
    * otherwise falls back to legacy loading.
    * 
    * @param adapterTypeLower adapter type in lowercase
-   * @param projectPath path to project (to read config if needed)
-   * @param config adapter configuration
+   * @param projectPath      path to project (to read config if needed)
+   * @param config           adapter configuration
    * @return AdapterMetadata
    */
   private AdapterMetadata loadAdapterMetadataWithFallback(
@@ -856,13 +850,13 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
     try {
       // Try to read project config
       var projectConfig = configurationPort.readConfiguration(projectPath).orElse(null);
-      
+
       if (projectConfig != null) {
         // Use framework-aware loading
         String framework = projectConfig.framework().name().toLowerCase();
         String paradigm = projectConfig.paradigm().name().toLowerCase();
         String adapterTypeCategory = determineAdapterTypeCategory(config);
-        
+
         return templateRepository.loadAdapterMetadata(
             adapterTypeLower,
             framework,
@@ -872,7 +866,8 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
     } catch (Exception e) {
       logger.debug("Could not load with framework-aware path, falling back to legacy: {}", e.getMessage());
     }
-    
+
     // Fallback to legacy loading
     return templateRepository.loadAdapterMetadata(adapterTypeLower);
   }
+}

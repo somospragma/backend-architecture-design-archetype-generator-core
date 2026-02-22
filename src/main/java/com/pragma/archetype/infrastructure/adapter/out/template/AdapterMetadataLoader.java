@@ -8,6 +8,8 @@ import org.yaml.snakeyaml.Yaml;
 
 import com.pragma.archetype.domain.model.AdapterMetadata;
 import com.pragma.archetype.domain.model.AdapterMetadata.ConfigurationClass;
+import com.pragma.archetype.domain.model.AdapterMetadata.Dependency;
+import com.pragma.archetype.domain.model.ValidationResult;
 import com.pragma.archetype.domain.port.out.TemplateRepository.TemplateNotFoundException;
 
 /**
@@ -101,11 +103,6 @@ public class AdapterMetadataLoader {
       }
     }
   }
-
-  /**
-   * Loads metadata from a specific path.
-   */
-  private AdapterMetadata loadMetadataFromPath(String metadataPath, String adapterName) {
 
   /**
    * Loads metadata from a specific path.
@@ -266,9 +263,10 @@ public class AdapterMetadataLoader {
   /**
    * Parses a list of dependencies.
    * 
-   * @param depsList list of dependency maps
-   * @param defaultScope default scope if not specified
-   * @param isNestedFormat true if using nested format (groupId/artifactId), false for flat format (group/artifact)
+   * @param depsList       list of dependency maps
+   * @param defaultScope   default scope if not specified
+   * @param isNestedFormat true if using nested format (groupId/artifactId), false
+   *                       for flat format (group/artifact)
    * @return list of parsed dependencies
    */
   private List<Dependency> parseDependencyList(
@@ -286,26 +284,27 @@ public class AdapterMetadataLoader {
 
   /**
    * Parses a single dependency from YAML data.
-   * Supports both flat format (group/artifact) and nested format (groupId/artifactId).
+   * Supports both flat format (group/artifact) and nested format
+   * (groupId/artifactId).
    * 
-   * @param depData dependency data map
-   * @param defaultScope default scope if not specified
+   * @param depData        dependency data map
+   * @param defaultScope   default scope if not specified
    * @param isNestedFormat true if using nested format (groupId/artifactId)
    * @return parsed Dependency
    */
   private Dependency parseDependency(Map<String, Object> depData, String defaultScope, boolean isNestedFormat) {
     // Extract group/groupId
-    String group = isNestedFormat 
+    String group = isNestedFormat
         ? extractOptionalString(depData, "groupId")
         : extractOptionalString(depData, "group");
-    
+
     // Fallback: try the other format if not found
     if (group == null) {
-      group = isNestedFormat 
+      group = isNestedFormat
           ? extractOptionalString(depData, "group")
           : extractOptionalString(depData, "groupId");
     }
-    
+
     if (group == null) {
       throw new IllegalArgumentException("Required field 'group' or 'groupId' is missing");
     }
@@ -314,14 +313,14 @@ public class AdapterMetadataLoader {
     String artifact = isNestedFormat
         ? extractOptionalString(depData, "artifactId")
         : extractOptionalString(depData, "artifact");
-    
+
     // Fallback: try the other format if not found
     if (artifact == null) {
       artifact = isNestedFormat
           ? extractOptionalString(depData, "artifact")
           : extractOptionalString(depData, "artifactId");
     }
-    
+
     if (artifact == null) {
       throw new IllegalArgumentException("Required field 'artifact' or 'artifactId' is missing");
     }
@@ -343,12 +342,6 @@ public class AdapterMetadataLoader {
   @Deprecated
   private Dependency parseDependency(Map<String, Object> depData, String defaultScope) {
     return parseDependency(depData, defaultScope, false);
-  }    // Use provided scope or default scope
-    if (scope == null || scope.isBlank()) {
-      scope = defaultScope;
-    }
-
-    return new Dependency(group, artifact, version, scope);
   }
 
   /**

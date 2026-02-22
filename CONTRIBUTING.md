@@ -4,9 +4,9 @@ Thank you for your interest in contributing! This document provides guidelines f
 
 ## Quick Links
 
-- [Full Contributing Guide](docs/contributing/README.md) - Detailed contribution guidelines
-- [Adding Adapters](docs/contributing/adding-adapters.md) - How to add new adapter types
-- [Adding Architectures](docs/contributing/adding-architectures.md) - How to add new architecture patterns
+- [Development Guide](docs/development.md) - Setup and development workflow
+- [Testing Strategy](docs/testing.md) - Testing approach
+- [Template System](docs/templates.md) - Creating templates
 
 ## Getting Started
 
@@ -96,12 +96,8 @@ This enables hot reload - changes to templates are immediately available without
 
 - Open an issue for bugs
 - Start a discussion for questions
-- Check existing documentation
+- Check [documentation](docs/)
 
 ## License
 
 By contributing, you agree that your contributions will be licensed under the project's license.
-
----
-
-For detailed guidelines, see the [Full Contributing Guide](docs/contributing/README.md).

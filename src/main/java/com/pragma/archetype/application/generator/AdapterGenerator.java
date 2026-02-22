@@ -58,7 +58,6 @@ public class AdapterGenerator {
     List<GeneratedFile> generatedFiles = new ArrayList<>();
 
     // Determine module path based on adapter type
-    // driven-adapters go in: infrastructure/driven-adapters/{adapter-name}
     String moduleName = config.name().toLowerCase().replaceAll("([a-z])([A-Z])", "$1-$2").toLowerCase();
     String modulePath = "infrastructure/driven-adapters/" + moduleName;
 
@@ -67,16 +66,16 @@ public class AdapterGenerator {
     generatedFiles.add(buildFile);
 
     // 2. Generate adapter implementation in the module
-    GeneratedFile adapterFile = generateAdapterInModule(projectPath, config, modulePath);
+    GeneratedFile adapterFile = generateAdapterInModule(projectPath, config, modulePath, projectConfig);
     generatedFiles.add(adapterFile);
 
     // 3. Generate entity mapper if needed
     if (config.type() == AdapterConfig.AdapterType.REDIS ||
         config.type() == AdapterConfig.AdapterType.MONGODB) {
-      GeneratedFile mapperFile = generateMapperInModule(projectPath, config, modulePath);
+      GeneratedFile mapperFile = generateMapperInModule(projectPath, config, modulePath, projectConfig);
       generatedFiles.add(mapperFile);
 
-      GeneratedFile entityFile = generateDataEntityInModule(projectPath, config, modulePath);
+      GeneratedFile entityFile = generateDataEntityInModule(projectPath, config, modulePath, projectConfig);
       generatedFiles.add(entityFile);
     }
 
@@ -97,8 +96,8 @@ public class AdapterGenerator {
       ProjectConfig projectConfig) {
     List<GeneratedFile> generatedFiles = new ArrayList<>();
 
-    // Prepare template data
-    Map<String, Object> data = prepareTemplateData(config);
+    // Prepare template data with complete context
+    Map<String, Object> data = prepareTemplateData(config, projectConfig);
 
     // Generate adapter implementation
     GeneratedFile adapterFile = generateAdapter(projectPath, config, data, projectConfig);
@@ -137,8 +136,9 @@ public class AdapterGenerator {
   /**
    * Generates adapter implementation in module.
    */
-  private GeneratedFile generateAdapterInModule(Path projectPath, AdapterConfig config, String modulePath) {
-    Map<String, Object> data = prepareTemplateData(config);
+  private GeneratedFile generateAdapterInModule(Path projectPath, AdapterConfig config, String modulePath,
+      ProjectConfig projectConfig) {
+    Map<String, Object> data = prepareTemplateData(config, projectConfig);
     String templatePath = getAdapterTemplate(config.type());
     String content = templateRepository.processTemplate(templatePath, data);
 
@@ -155,8 +155,9 @@ public class AdapterGenerator {
   /**
    * Generates mapper in module.
    */
-  private GeneratedFile generateMapperInModule(Path projectPath, AdapterConfig config, String modulePath) {
-    Map<String, Object> data = prepareTemplateData(config);
+  private GeneratedFile generateMapperInModule(Path projectPath, AdapterConfig config, String modulePath,
+      ProjectConfig projectConfig) {
+    Map<String, Object> data = prepareTemplateData(config, projectConfig);
     String content = templateRepository.processTemplate(getMapperTemplate(), data);
 
     String mapperPackage = config.packageName() + ".mapper";
@@ -173,8 +174,9 @@ public class AdapterGenerator {
   /**
    * Generates data entity in module.
    */
-  private GeneratedFile generateDataEntityInModule(Path projectPath, AdapterConfig config, String modulePath) {
-    Map<String, Object> data = prepareTemplateData(config);
+  private GeneratedFile generateDataEntityInModule(Path projectPath, AdapterConfig config, String modulePath,
+      ProjectConfig projectConfig) {
+    Map<String, Object> data = prepareTemplateData(config, projectConfig);
     String templatePath = getDataEntityTemplate(config.type());
     String content = templateRepository.processTemplate(templatePath, data);
 
@@ -358,12 +360,32 @@ public class AdapterGenerator {
     return "frameworks/spring/reactive/adapters/driven-adapters/generic/Mapper.java.ftl";
   }
 
-  private Map<String, Object> prepareTemplateData(AdapterConfig config) {
+  /**
+   * Prepares template data with complete context including project-level
+   * variables.
+   * This ensures all FreeMarker templates have access to required variables.
+   * 
+   * @param config        adapter configuration
+   * @param projectConfig project configuration (can be null)
+   * @return complete template context map
+   */
+  private Map<String, Object> prepareTemplateData(AdapterConfig config, ProjectConfig projectConfig) {
     Map<String, Object> data = new HashMap<>();
+
+    // Adapter-specific variables
     data.put("adapterName", config.name());
     data.put("packageName", config.packageName());
     data.put("entityName", config.entityName());
     data.put("adapterType", config.type().name().toLowerCase());
+
+    // Project-level variables (if available)
+    if (projectConfig != null) {
+      data.put("basePackage", projectConfig.basePackage());
+      data.put("projectName", projectConfig.name());
+      data.put("framework", projectConfig.framework().name().toLowerCase());
+      data.put("paradigm", projectConfig.paradigm().name().toLowerCase());
+      data.put("architecture", projectConfig.architecture().name().toLowerCase());
+    }
 
     // Convert methods to Maps for Freemarker
     List<Map<String, Object>> methodMaps = new ArrayList<>();
