@@ -40,10 +40,14 @@ Follow the interactive prompts to select your architecture, framework, and parad
 
 ## Documentation
 
-- [Architecture](docs/architecture.md) - System architecture and design patterns
-- [Development Guide](docs/development.md) - Setup and development workflow
-- [Testing Strategy](docs/testing.md) - Testing approach and coverage
+- [Getting Started](docs/getting-started.md) - Quick start guide
+- [Commands Reference](docs/commands.md) - All available commands
+- [Configuration Guide](docs/configuration.md) - Configuration options
+- [Architecture Guide](docs/architectures.md) - Architecture patterns explained
 - [Template System](docs/templates.md) - Template structure and creation
+- [Testing Strategy](docs/testing.md) - Testing approach and coverage
+- [Troubleshooting](docs/troubleshooting.md) - Common issues and solutions
+- [Development Guide](docs/development.md) - Setup and development workflow
 - [Contributing Guide](CONTRIBUTING.md) - How to contribute
 
 ## Supported Architectures

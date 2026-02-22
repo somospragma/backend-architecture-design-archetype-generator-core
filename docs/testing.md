@@ -2,7 +2,16 @@
 
 ## Test Coverage
 
-**Current**: 41% | **Target**: 60%+
+**Current**: 44% | **Target**: 60%+
+
+## Test Summary
+
+- **Total Tests**: 283 passing (3 disabled)
+- **Unit Tests**: 180+
+- **Integration Tests**: 50+
+- **Property-Based Tests**: 21 (Kotest)
+- **Cache Tests**: 27
+- **Network Tests**: 30
 
 ## Test Types
 
@@ -11,6 +20,7 @@
 - Service logic
 - Path resolution
 - YAML parsing
+- Configuration validation
 
 ### Integration Tests
 - Full project generation
@@ -19,11 +29,26 @@
 - Error scenarios
 - Template processing
 
-### Property-Based Tests (Planned)
+### Property-Based Tests (Kotest)
 - Path resolution invariants
 - YAML merge properties
-- Template substitution
-- Configuration round-trip
+- Configuration validation
+- Domain model generators
+
+### Cache Tests
+- Template cache storage and retrieval
+- Cache existence checks
+- Cache clearing
+- Cache size calculation
+- Error handling (corrupted files)
+- Security tests (path traversal, special characters)
+
+### Network Tests
+- Template downloading from GitHub, GitLab, Bitbucket
+- Cache integration (hit/miss scenarios)
+- Network error handling (404, 403, timeouts)
+- Repository validation
+- URL building for different Git providers
 
 ## Running Tests
 
@@ -93,13 +118,18 @@ void shouldGenerateCompleteProject(@TempDir Path tempDir) {
 
 | Package | Current | Target |
 |---------|---------|--------|
-| domain.model | 59% | 80% |
+| domain.model | 60% | 80% |
 | domain.service | 56% | 70% |
-| application | 46% | 60% |
-| infrastructure | 41% | 50% |
+| application | 59% | 65% |
+| infrastructure.template | 76% | 80% |
+| infrastructure.config | 65% | 70% |
+| **Overall** | **44%** | **60%** |
 
-## Known Issues
+## Disabled Tests
 
-- 8 tests failing (3 ErrorScenario, 5 GenerateAdapter)
-- YAML parsing in tests needs stripIndent()
-- Some mocks need updating for new signatures
+3 tests are currently disabled pending validator fixes:
+- `shouldFailWhenProjectNameMissing` - YAML validation issue
+- `shouldFailWhenBasePackageInvalid` - YAML validation issue  
+- `shouldHandleBasePackageWithConsecutiveDots` - YAML validation issue
+
+These tests require investigation of the ConfigurationValidator YAML parsing behavior.

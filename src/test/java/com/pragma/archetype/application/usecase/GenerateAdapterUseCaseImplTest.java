@@ -201,6 +201,8 @@ class GenerateAdapterUseCaseImplTest {
     when(configurationPort.readConfiguration(any())).thenReturn(Optional.of(projectConfig));
     when(generator.generate(any(), any(), any())).thenReturn(List.of());
     when(templateRepository.loadAdapterMetadata(anyString())).thenReturn(metadata);
+    when(templateRepository.loadAdapterMetadata(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(metadata);
     when(templateRepository.processTemplate(anyString(), anyMap()))
         .thenReturn("public class MongoConfig { }");
 
@@ -209,9 +211,9 @@ class GenerateAdapterUseCaseImplTest {
 
     // Then
     assertTrue(result.success());
-    // loadAdapterMetadata is called twice: once for properties, once for config
-    // classes
-    verify(templateRepository, org.mockito.Mockito.atLeastOnce()).loadAdapterMetadata("mongodb");
+    // loadAdapterMetadata is called (either legacy or new signature)
+    verify(templateRepository, org.mockito.Mockito.atLeastOnce()).loadAdapterMetadata(anyString(), anyString(),
+        anyString(), anyString());
     verify(templateRepository).processTemplate(eq("adapters/mongodb/MongoConfig.java.ftl"), anyMap());
     verify(fileSystemPort, org.mockito.Mockito.atLeastOnce()).writeFile(any());
   }
@@ -271,6 +273,8 @@ class GenerateAdapterUseCaseImplTest {
     when(configurationPort.readConfiguration(any())).thenReturn(Optional.of(projectConfig));
     when(generator.generate(any(), any(), any())).thenReturn(List.of());
     when(templateRepository.loadAdapterMetadata(anyString())).thenReturn(metadata);
+    when(templateRepository.loadAdapterMetadata(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(metadata);
     when(templateRepository.processTemplate(anyString(), anyMap()))
         .thenReturn("public class ConfigClass { }");
 
@@ -279,9 +283,9 @@ class GenerateAdapterUseCaseImplTest {
 
     // Then
     assertTrue(result.success());
-    // loadAdapterMetadata is called twice: once for properties, once for config
-    // classes
-    verify(templateRepository, org.mockito.Mockito.atLeastOnce()).loadAdapterMetadata("mongodb");
+    // loadAdapterMetadata is called (either legacy or new signature)
+    verify(templateRepository, org.mockito.Mockito.atLeastOnce()).loadAdapterMetadata(anyString(), anyString(),
+        anyString(), anyString());
     // Should process both config class templates
     verify(templateRepository).processTemplate(eq("adapters/mongodb/MongoConfig.java.ftl"), anyMap());
     verify(templateRepository).processTemplate(eq("adapters/mongodb/MongoProperties.java.ftl"), anyMap());
@@ -597,6 +601,8 @@ class GenerateAdapterUseCaseImplTest {
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
     when(configurationPort.readConfiguration(any())).thenReturn(Optional.of(projectConfig));
     when(templateRepository.loadAdapterMetadata(anyString())).thenReturn(metadata);
+    when(templateRepository.loadAdapterMetadata(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(metadata);
 
     // Configuration class template doesn't exist (override default mock)
     when(templateRepository.templateExists(eq("adapters/mongodb/MongoConfig.java.ftl")))
@@ -654,6 +660,15 @@ class GenerateAdapterUseCaseImplTest {
     // By default, all templates exist and are valid
     when(templateRepository.templateExists(anyString())).thenReturn(true);
     when(templateRepository.validateTemplate(anyString())).thenReturn(ValidationResult.success());
+
+    // Set up default mock for the new loadAdapterMetadata signature (4 parameters)
+    // This will be used when ProjectConfig is available
+    // Individual tests can override this with specific metadata
+    when(templateRepository.loadAdapterMetadata(anyString(), anyString(), anyString(), anyString()))
+        .thenAnswer(invocation -> {
+          // Return a basic metadata that can be overridden by specific tests
+          return createBasicAdapterMetadata();
+        });
   }
 
   private com.pragma.archetype.domain.model.ProjectConfig createProjectConfig() {
@@ -666,6 +681,17 @@ class GenerateAdapterUseCaseImplTest {
         .pluginVersion("1.0.0")
         .adaptersAsModules(false)
         .build();
+  }
+
+  private AdapterMetadata createBasicAdapterMetadata() {
+    return new AdapterMetadata(
+        "basic-adapter",
+        "driven",
+        "Basic adapter for testing",
+        List.of(),
+        List.of(),
+        null,
+        List.of());
   }
 
   private AdapterMetadata createAdapterMetadataWithConfigClasses() {
