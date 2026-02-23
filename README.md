@@ -123,3 +123,34 @@ Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines
 - 📖 [Documentation](docs/)
 - 🐛 [Issue Tracker](https://github.com/somospragma/backend-architecture-design-archetype-generator-core/issues)
 - 💬 [Discussions](https://github.com/somospragma/backend-architecture-design-archetype-generator-core/discussions)
+
+## 📄 Licencia
+
+Este proyecto está licenciado bajo la **Apache License 2.0** - ver el archivo [LICENSE](LICENSE) para más detalles.
+
+```
+Copyright 2025 Pragma S.A. and Contributors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+```
+
+### ¿Qué puedes hacer con este proyecto?
+
+- ✅ Usar en proyectos personales y comerciales
+- ✅ Modificar y crear obras derivadas
+- ✅ Distribuir copias originales o modificadas
+- ✅ Hacer fork y evolucionar el proyecto
+- ✅ Usar en tu empresa sin restricciones
+
+### ¿Qué debes hacer?
+
+- 📋 Mantener los avisos de copyright y licencia
+- 📋 Incluir el archivo [NOTICE](NOTICE) en distribuciones
+- 📋 Documentar cambios significativos realizados
+- 📋 Dar atribución al proyecto original
+
+Ver [NOTICE](NOTICE) para información de atribución.
