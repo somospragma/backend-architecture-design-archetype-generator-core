@@ -1,4 +1,0 @@
-rootProject.name = 'test-local-template'
-
-// Include the plugin from the parent directory
-includeBuild('../')
