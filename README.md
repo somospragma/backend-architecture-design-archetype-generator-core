@@ -110,6 +110,33 @@ See [Contributing Guide](CONTRIBUTING.md) for details.
 - Java 21 or higher
 - Gradle 8.5 or higher
 
+## Publishing
+
+This plugin is published to:
+- **Gradle Plugin Portal**: https://plugins.gradle.org/plugin/com.pragma.archetype-generator
+- **Maven Central**: https://search.maven.org/artifact/com.pragma/archetype-generator
+
+### For Maintainers
+
+- 📦 [Publishing Guide](PUBLISHING.md) - Complete guide for publishing to Gradle Plugin Portal and Maven Central
+- 🚀 [Quick Start Publishing](PUBLISHING_QUICKSTART.md) - Quick reference for publishing
+- 🔐 [GitHub Secrets Setup](GITHUB_SECRETS_SETUP.md) - Configure automated publishing with GitHub Actions
+
+### Automated Publishing
+
+The plugin is automatically published when you create a tag:
+
+```bash
+git tag v1.0.0-PRERELEASE
+git push origin v1.0.0-PRERELEASE
+```
+
+The GitHub Actions workflow will:
+1. Build and test the project
+2. Publish to Gradle Plugin Portal
+3. Publish to Maven Central (if configured)
+4. Create a GitHub Release
+
 ## License
 
 [Add your license here]
