@@ -15,9 +15,22 @@ import lombok.Builder;
  */
 @Builder
 public record EntityConfig(
-    String name,
-    List<EntityField> fields,
-    boolean hasId,
-    String idType,
-    String packageName) {
+        String name,
+        List<EntityField> fields,
+        boolean hasId,
+        String idType,
+        String packageName) {
+
+    private static final boolean DEFAULT_HAS_ID = true;
+    private static final String DEFAULT_ID_TYPE = "String";
+
+    /**
+     * Compact constructor with defaults.
+     */
+    public EntityConfig {
+        // Apply defaults if not set
+        if (idType == null || idType.isBlank()) {
+            idType = DEFAULT_ID_TYPE;
+        }
+    }
 }
