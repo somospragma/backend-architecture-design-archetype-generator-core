@@ -550,15 +550,15 @@
   - [x] Commit changes: "Create imperative application.yml template"
 
 ### Task 1.5: Test Imperative Foundation
-- [ ] 1.5.1 Generate test project with imperative paradigm
+- [x] 1.5.1 Generate test project with imperative paradigm
   - [ ] Run plugin to generate imperative project
   - [ ] Verify project structure created
   - [ ] Verify use cases generated with synchronous signatures
-- [ ] 1.5.2 Compile generated project
+- [x] 1.5.2 Compile generated project
   - [ ] cd to generated project
   - [ ] Run `./gradlew build` - must succeed
   - [ ] Verify no compilation errors
-- [ ] 1.5.3 Final validation
+- [-] 1.5.3 Final validation
   - [ ] Run plugin tests: `./gradlew test` - ALL tests must pass (currently 67 failing)
   - [ ] Verify coverage >85%: `./gradlew jacocoTestReport`
   - [ ] Run full build: `./gradlew build`

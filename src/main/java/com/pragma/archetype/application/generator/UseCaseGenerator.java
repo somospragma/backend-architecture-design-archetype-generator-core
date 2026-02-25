@@ -50,8 +50,12 @@ public class UseCaseGenerator {
   }
 
   private GeneratedFile generatePort(Path projectPath, UseCaseConfig config, Map<String, Object> data) {
+    // Determine template path based on paradigm
+    String paradigmPath = config.paradigm().name().toLowerCase();
+    String templatePath = String.format("frameworks/spring/%s/usecase/InputPort.java.ftl", paradigmPath);
+
     // Process template with new structure
-    String content = templateRepository.processTemplate("frameworks/spring/reactive/usecase/InputPort.java.ftl", data);
+    String content = templateRepository.processTemplate(templatePath, data);
 
     // Calculate file path: domain/port/in/{UseCaseName}UseCase.java
     String packagePath = config.packageName().replace('.', '/');
@@ -72,8 +76,12 @@ public class UseCaseGenerator {
     // Update data with implementation package
     data.put("implPackage", implPackage);
 
+    // Determine template path based on paradigm
+    String paradigmPath = config.paradigm().name().toLowerCase();
+    String templatePath = String.format("frameworks/spring/%s/usecase/UseCase.java.ftl", paradigmPath);
+
     // Process template with new structure
-    String content = templateRepository.processTemplate("frameworks/spring/reactive/usecase/UseCase.java.ftl", data);
+    String content = templateRepository.processTemplate(templatePath, data);
 
     // Calculate file path: application/usecase/{UseCaseName}UseCaseImpl.java
     String packagePath = implPackage.replace('.', '/');

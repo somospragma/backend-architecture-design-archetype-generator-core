@@ -2,6 +2,8 @@ package com.pragma.archetype.domain.model.usecase;
 
 import java.util.List;
 
+import com.pragma.archetype.domain.model.project.Paradigm;
+
 import lombok.Builder;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -15,30 +17,31 @@ import lombok.experimental.Accessors;
 @Accessors(fluent = true)
 @Builder
 public class UseCaseConfig {
-    /**
-     * Represents a method in the use case.
-     */
-    public record UseCaseMethod(
-            String name,
-            String returnType,
-            List<MethodParameter> parameters) {
-    }
+        /**
+         * Represents a method in the use case.
+         */
+        public record UseCaseMethod(
+                        String name,
+                        String returnType,
+                        List<MethodParameter> parameters) {
+        }
 
-    /**
-     * Represents a parameter in a use case method.
-     */
-    public record MethodParameter(
-            String name,
-            String type) {
-    }
+        /**
+         * Represents a parameter in a use case method.
+         */
+        public record MethodParameter(
+                        String name,
+                        String type) {
+        }
 
-    private final String name;
-    private final String packageName;
-    private final List<UseCaseMethod> methods;
+        private final String name;
+        private final String packageName;
+        private final List<UseCaseMethod> methods;
+        private final Paradigm paradigm;
 
-    @Builder.Default
-    private final boolean generatePort = true;
+        @Builder.Default
+        private final boolean generatePort = true;
 
-    @Builder.Default
-    private final boolean generateImpl = true;
+        @Builder.Default
+        private final boolean generateImpl = true;
 }
