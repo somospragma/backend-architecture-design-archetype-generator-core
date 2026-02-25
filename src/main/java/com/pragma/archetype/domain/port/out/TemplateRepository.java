@@ -2,8 +2,8 @@ package com.pragma.archetype.domain.port.out;
 
 import java.util.Map;
 
-import com.pragma.archetype.domain.model.StructureMetadata;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
+import com.pragma.archetype.domain.model.structure.StructureMetadata;
 
 /**
  * Port for accessing and processing templates.
@@ -105,7 +105,7 @@ public interface TemplateRepository {
    * @param templatePath path to the template file
    * @return ValidationResult indicating if the template is valid
    */
-  com.pragma.archetype.domain.model.ValidationResult validateTemplate(String templatePath);
+  com.pragma.archetype.domain.model.validation.ValidationResult validateTemplate(String templatePath);
 
   /**
    * Extracts required variables from a template.

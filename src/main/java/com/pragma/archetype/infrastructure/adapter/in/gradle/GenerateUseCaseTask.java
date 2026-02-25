@@ -12,9 +12,9 @@ import org.gradle.api.tasks.options.Option;
 
 import com.pragma.archetype.application.generator.UseCaseGenerator;
 import com.pragma.archetype.application.usecase.GenerateUseCaseUseCaseImpl;
-import com.pragma.archetype.domain.model.ValidationResult;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.usecase.UseCaseConfig;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateUseCaseUseCase;
 import com.pragma.archetype.domain.port.in.GenerateUseCaseUseCase.GenerationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;

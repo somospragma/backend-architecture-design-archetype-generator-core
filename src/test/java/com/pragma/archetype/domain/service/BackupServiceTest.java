@@ -234,7 +234,7 @@ class BackupServiceTest {
   private static class TestFileSystemPort implements FileSystemPort {
 
     @Override
-    public void writeFile(com.pragma.archetype.domain.model.GeneratedFile file) {
+    public void writeFile(com.pragma.archetype.domain.model.file.GeneratedFile file) {
       try {
         Path parent = file.path().getParent();
         if (parent != null && !Files.exists(parent)) {
@@ -247,7 +247,7 @@ class BackupServiceTest {
     }
 
     @Override
-    public void writeFiles(List<com.pragma.archetype.domain.model.GeneratedFile> files) {
+    public void writeFiles(List<com.pragma.archetype.domain.model.file.GeneratedFile> files) {
       files.forEach(this::writeFile);
     }
 

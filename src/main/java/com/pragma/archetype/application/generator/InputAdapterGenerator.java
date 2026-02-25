@@ -6,8 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.pragma.archetype.domain.model.GeneratedFile;
 import com.pragma.archetype.domain.model.adapter.InputAdapterConfig;
+import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 

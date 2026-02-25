@@ -8,6 +8,8 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import com.pragma.archetype.domain.model.validation.ValidationResult;
+
 class ValidationResultTest {
 
   @Test

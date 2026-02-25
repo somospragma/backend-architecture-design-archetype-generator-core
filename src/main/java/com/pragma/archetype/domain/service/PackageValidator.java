@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 
 /**
  * Domain service responsible for validating Java package names and structure.

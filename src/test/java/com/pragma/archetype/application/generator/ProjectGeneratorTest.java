@@ -2,6 +2,7 @@ package com.pragma.archetype.application.generator;
 
 import com.pragma.archetype.domain.model.*;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
+import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.model.project.Framework;
 import com.pragma.archetype.domain.model.project.Paradigm;

@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 
 /**
  * Metadata describing an adapter's properties and dependencies.

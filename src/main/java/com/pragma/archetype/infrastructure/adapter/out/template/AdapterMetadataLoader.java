@@ -6,10 +6,10 @@ import java.util.Map;
 
 import org.yaml.snakeyaml.Yaml;
 
-import com.pragma.archetype.domain.model.ValidationResult;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata.ConfigurationClass;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata.Dependency;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.TemplateRepository.TemplateNotFoundException;
 
 /**

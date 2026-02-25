@@ -12,9 +12,9 @@ import org.gradle.api.tasks.options.Option;
 
 import com.pragma.archetype.application.generator.EntityGenerator;
 import com.pragma.archetype.application.usecase.GenerateEntityUseCaseImpl;
-import com.pragma.archetype.domain.model.ValidationResult;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.entity.EntityConfig;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateEntityUseCase;
 import com.pragma.archetype.domain.port.in.GenerateEntityUseCase.GenerationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;

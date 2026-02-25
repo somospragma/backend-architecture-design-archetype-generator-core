@@ -90,16 +90,16 @@
   - [ ] Commit changes: "Move entity, usecase, project classes to respective packages"
 
 ### Task 0.6: Move Classes to New Packages (File, Validation, Structure)
-- [ ] 0.6.1 Move file-related classes
+- [x] 0.6.1 Move file-related classes
   - [ ] Move GeneratedFile.java to domain/model/file/
-- [ ] 0.6.2 Move validation-related classes
+- [x] 0.6.2 Move validation-related classes
   - [ ] Move ValidationResult.java to domain/model/validation/
-- [ ] 0.6.3 Move structure-related classes
+- [x] 0.6.3 Move structure-related classes
   - [ ] Move StructureMetadata.java to domain/model/structure/
   - [ ] Move LayerDependencies.java to domain/model/structure/
   - [ ] Move NamingConventions.java to domain/model/structure/
   - [ ] Move MergeResult.java to domain/model/structure/
-- [ ] 0.6.4 Update imports for all moved classes
+- [x] 0.6.4 Update imports for all moved classes
   - [ ] Update imports for GeneratedFile
   - [ ] Update imports for ValidationResult
   - [ ] Update imports for StructureMetadata
@@ -109,7 +109,7 @@
   - [ ] Update application layer files
   - [ ] Update infrastructure layer files
   - [ ] Update test files
-- [ ] 0.6.5 Validation
+- [x] 0.6.5 Validation
   - [ ] Run `./gradlew build` - must succeed
   - [ ] Run `./gradlew test` - all tests must pass
   - [ ] Run `./gradlew jacocoTestReport` - verify coverage >85%

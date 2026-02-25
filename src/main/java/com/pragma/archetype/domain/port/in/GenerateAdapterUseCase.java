@@ -4,7 +4,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import com.pragma.archetype.domain.model.AdapterConfig;
-import com.pragma.archetype.domain.model.GeneratedFile;
+import com.pragma.archetype.domain.model.file.GeneratedFile;
 
 /**
  * Use case for generating output adapters (Redis, MongoDB, etc.).

@@ -13,7 +13,7 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.pragma.archetype.domain.model.MergeResult;
+import com.pragma.archetype.domain.model.structure.MergeResult;
 
 class YamlMergerTest {
 

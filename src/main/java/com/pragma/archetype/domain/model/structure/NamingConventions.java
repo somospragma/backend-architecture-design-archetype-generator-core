@@ -1,4 +1,4 @@
-package com.pragma.archetype.domain.model;
+package com.pragma.archetype.domain.model.structure;
 
 import java.util.Collections;
 import java.util.Map;

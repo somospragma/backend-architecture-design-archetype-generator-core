@@ -3,8 +3,8 @@ package com.pragma.archetype.domain.port.in;
 import java.nio.file.Path;
 import java.util.List;
 
-import com.pragma.archetype.domain.model.GeneratedFile;
 import com.pragma.archetype.domain.model.adapter.InputAdapterConfig;
+import com.pragma.archetype.domain.model.file.GeneratedFile;
 
 /**
  * Use case for generating input adapters (REST, GraphQL, etc.).

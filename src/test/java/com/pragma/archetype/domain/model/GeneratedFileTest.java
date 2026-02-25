@@ -7,6 +7,8 @@ import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 
+import com.pragma.archetype.domain.model.file.GeneratedFile;
+
 class GeneratedFileTest {
 
   @Test

@@ -2,7 +2,7 @@ package com.pragma.archetype.domain.port.in;
 
 import java.nio.file.Path;
 
-import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 
 /**
  * Use case for validating templates.

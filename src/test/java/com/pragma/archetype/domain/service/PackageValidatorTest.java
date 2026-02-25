@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 
 class PackageValidatorTest {
 

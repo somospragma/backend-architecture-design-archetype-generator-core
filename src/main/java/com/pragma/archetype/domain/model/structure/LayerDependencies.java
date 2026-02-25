@@ -1,9 +1,11 @@
-package com.pragma.archetype.domain.model;
+package com.pragma.archetype.domain.model.structure;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 
 /**
  * Defines allowed dependencies between architectural layers.

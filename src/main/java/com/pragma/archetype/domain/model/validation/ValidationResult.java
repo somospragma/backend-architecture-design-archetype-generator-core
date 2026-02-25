@@ -1,4 +1,4 @@
-package com.pragma.archetype.domain.model;
+package com.pragma.archetype.domain.model.validation;
 
 import java.util.ArrayList;
 import java.util.Collections;

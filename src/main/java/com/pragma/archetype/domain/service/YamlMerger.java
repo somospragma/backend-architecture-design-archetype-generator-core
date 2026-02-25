@@ -8,7 +8,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.pragma.archetype.domain.model.MergeResult;
+import com.pragma.archetype.domain.model.structure.MergeResult;
 
 /**
  * Service for intelligently merging YAML configurations.

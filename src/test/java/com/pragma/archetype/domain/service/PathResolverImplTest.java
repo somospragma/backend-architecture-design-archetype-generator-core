@@ -19,10 +19,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.pragma.archetype.domain.model.LayerDependencies;
-import com.pragma.archetype.domain.model.StructureMetadata;
-import com.pragma.archetype.domain.model.ValidationResult;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
+import com.pragma.archetype.domain.model.structure.LayerDependencies;
+import com.pragma.archetype.domain.model.structure.StructureMetadata;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.PathResolver;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 

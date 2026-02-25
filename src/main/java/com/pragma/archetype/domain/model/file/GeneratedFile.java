@@ -1,4 +1,4 @@
-package com.pragma.archetype.domain.model;
+package com.pragma.archetype.domain.model.file;
 
 import java.nio.file.Path;
 import java.util.Objects;

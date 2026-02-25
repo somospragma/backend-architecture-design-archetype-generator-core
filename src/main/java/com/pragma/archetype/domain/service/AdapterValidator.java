@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.pragma.archetype.domain.model.AdapterConfig;
-import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 
