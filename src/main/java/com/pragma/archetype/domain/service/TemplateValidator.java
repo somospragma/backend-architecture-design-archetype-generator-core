@@ -7,10 +7,10 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.pragma.archetype.domain.model.AdapterMetadata;
-import com.pragma.archetype.domain.model.ArchitectureType;
-import com.pragma.archetype.domain.model.StructureMetadata;
-import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
+import com.pragma.archetype.domain.model.project.ArchitectureType;
+import com.pragma.archetype.domain.model.structure.StructureMetadata;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 
 /**

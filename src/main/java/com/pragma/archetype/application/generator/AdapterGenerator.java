@@ -6,9 +6,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.pragma.archetype.domain.model.AdapterConfig;
-import com.pragma.archetype.domain.model.GeneratedFile;
-import com.pragma.archetype.domain.model.ProjectConfig;
+import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.AdapterMethod;
+import com.pragma.archetype.domain.model.adapter.AdapterType;
+import com.pragma.archetype.domain.model.adapter.MethodParameter;
+import com.pragma.archetype.domain.model.config.ProjectConfig;
+import com.pragma.archetype.domain.model.file.FileType;
+import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.PathResolver;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
@@ -70,8 +74,8 @@ public class AdapterGenerator {
     generatedFiles.add(adapterFile);
 
     // 3. Generate entity mapper if needed
-    if (config.type() == AdapterConfig.AdapterType.REDIS ||
-        config.type() == AdapterConfig.AdapterType.MONGODB) {
+    if (config.type() == AdapterType.REDIS ||
+        config.type() == AdapterType.MONGODB) {
       GeneratedFile mapperFile = generateMapperInModule(projectPath, config, modulePath, projectConfig);
       generatedFiles.add(mapperFile);
 
@@ -104,8 +108,8 @@ public class AdapterGenerator {
     generatedFiles.add(adapterFile);
 
     // Generate entity mapper if needed
-    if (config.type() == AdapterConfig.AdapterType.REDIS ||
-        config.type() == AdapterConfig.AdapterType.MONGODB) {
+    if (config.type() == AdapterType.REDIS ||
+        config.type() == AdapterType.MONGODB) {
       GeneratedFile mapperFile = generateMapper(projectPath, config, data, projectConfig);
       generatedFiles.add(mapperFile);
 
@@ -130,7 +134,7 @@ public class AdapterGenerator {
     String content = templateRepository.processTemplate(templatePath, data);
 
     Path filePath = projectPath.resolve(modulePath).resolve("build.gradle.kts");
-    return new GeneratedFile(filePath, content, GeneratedFile.FileType.GRADLE_BUILD);
+    return new GeneratedFile(filePath, content, FileType.GRADLE_BUILD);
   }
 
   /**
@@ -331,7 +335,7 @@ public class AdapterGenerator {
     return GeneratedFile.javaSource(filePath, content);
   }
 
-  private String getAdapterTemplate(AdapterConfig.AdapterType type) {
+  private String getAdapterTemplate(AdapterType type) {
     // New structure:
     // frameworks/spring/reactive/adapters/driven-adapters/{type}/Adapter.java.ftl
     return switch (type) {
@@ -343,7 +347,7 @@ public class AdapterGenerator {
     };
   }
 
-  private String getDataEntityTemplate(AdapterConfig.AdapterType type) {
+  private String getDataEntityTemplate(AdapterType type) {
     // New structure:
     // frameworks/spring/reactive/adapters/driven-adapters/{type}/Entity.java.ftl
     return switch (type) {
@@ -390,7 +394,7 @@ public class AdapterGenerator {
     // Convert methods to Maps for Freemarker
     List<Map<String, Object>> methodMaps = new ArrayList<>();
     if (config.methods() != null) {
-      for (AdapterConfig.AdapterMethod method : config.methods()) {
+      for (AdapterMethod method : config.methods()) {
         Map<String, Object> methodMap = new HashMap<>();
         methodMap.put("name", method.name());
         methodMap.put("returnType", method.returnType());
@@ -398,7 +402,7 @@ public class AdapterGenerator {
         // Convert parameters to Maps
         List<Map<String, Object>> paramMaps = new ArrayList<>();
         if (method.parameters() != null) {
-          for (AdapterConfig.MethodParameter param : method.parameters()) {
+          for (MethodParameter param : method.parameters()) {
             Map<String, Object> paramMap = new HashMap<>();
             paramMap.put("name", param.name());
             paramMap.put("type", param.type());

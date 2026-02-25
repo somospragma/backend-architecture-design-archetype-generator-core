@@ -8,21 +8,26 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.AdapterMethod;
+import com.pragma.archetype.domain.model.adapter.AdapterType;
+import com.pragma.archetype.domain.model.adapter.MethodParameter;
+
 class AdapterConfigTest {
 
   @Test
   void shouldBuildAdapterConfigWithAllFields() {
     // Given
-    AdapterConfig.AdapterMethod method = new AdapterConfig.AdapterMethod(
+    AdapterMethod method = new AdapterMethod(
         "findById",
         "Mono<User>",
-        List.of(new AdapterConfig.MethodParameter("id", "String")));
+        List.of(new MethodParameter("id", "String")));
 
     // When
     AdapterConfig config = AdapterConfig.builder()
         .name("UserRepository")
         .packageName("com.test.infrastructure.redis")
-        .type(AdapterConfig.AdapterType.REDIS)
+        .type(AdapterType.REDIS)
         .entityName("User")
         .methods(List.of(method))
         .build();
@@ -30,7 +35,7 @@ class AdapterConfigTest {
     // Then
     assertEquals("UserRepository", config.name());
     assertEquals("com.test.infrastructure.redis", config.packageName());
-    assertEquals(AdapterConfig.AdapterType.REDIS, config.type());
+    assertEquals(AdapterType.REDIS, config.type());
     assertEquals("User", config.entityName());
     assertEquals(1, config.methods().size());
     assertEquals("findById", config.methods().get(0).name());
@@ -42,7 +47,7 @@ class AdapterConfigTest {
     AdapterConfig config = AdapterConfig.builder()
         .name("UserRepository")
         .packageName("com.test.infrastructure.redis")
-        .type(AdapterConfig.AdapterType.REDIS)
+        .type(AdapterType.REDIS)
         .entityName("User")
         .methods(List.of())
         .build();
@@ -55,12 +60,12 @@ class AdapterConfigTest {
   @Test
   void shouldCreateAdapterMethodWithParameters() {
     // Given
-    List<AdapterConfig.MethodParameter> params = List.of(
-        new AdapterConfig.MethodParameter("id", "String"),
-        new AdapterConfig.MethodParameter("status", "Status"));
+    List<MethodParameter> params = List.of(
+        new MethodParameter("id", "String"),
+        new MethodParameter("status", "Status"));
 
     // When
-    AdapterConfig.AdapterMethod method = new AdapterConfig.AdapterMethod(
+    AdapterMethod method = new AdapterMethod(
         "findByIdAndStatus",
         "Mono<User>",
         params);
@@ -76,7 +81,7 @@ class AdapterConfigTest {
   @Test
   void shouldCreateMethodParameter() {
     // When
-    AdapterConfig.MethodParameter param = new AdapterConfig.MethodParameter("email", "String");
+    MethodParameter param = new MethodParameter("email", "String");
 
     // Then
     assertEquals("email", param.name());
@@ -85,16 +90,16 @@ class AdapterConfigTest {
 
   @Test
   void shouldSupportAllAdapterTypes() {
-    assertNotNull(AdapterConfig.AdapterType.REDIS);
-    assertNotNull(AdapterConfig.AdapterType.MONGODB);
-    assertNotNull(AdapterConfig.AdapterType.POSTGRESQL);
-    assertNotNull(AdapterConfig.AdapterType.REST_CLIENT);
-    assertNotNull(AdapterConfig.AdapterType.KAFKA);
+    assertNotNull(AdapterType.REDIS);
+    assertNotNull(AdapterType.MONGODB);
+    assertNotNull(AdapterType.POSTGRESQL);
+    assertNotNull(AdapterType.REST_CLIENT);
+    assertNotNull(AdapterType.KAFKA);
   }
 
   @Test
   void shouldBuildConfigForEachAdapterType() {
-    for (AdapterConfig.AdapterType type : AdapterConfig.AdapterType.values()) {
+    for (AdapterType type : AdapterType.values()) {
       AdapterConfig config = AdapterConfig.builder()
           .name("TestAdapter")
           .packageName("com.test")

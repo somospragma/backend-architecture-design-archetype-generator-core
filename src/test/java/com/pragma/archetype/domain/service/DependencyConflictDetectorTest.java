@@ -11,7 +11,7 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.pragma.archetype.domain.model.AdapterMetadata;
+import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
 
 class DependencyConflictDetectorTest {
 

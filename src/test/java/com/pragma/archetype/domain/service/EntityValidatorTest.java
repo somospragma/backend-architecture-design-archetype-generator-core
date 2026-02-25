@@ -14,8 +14,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.pragma.archetype.domain.model.EntityConfig;
-import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.entity.EntityConfig;
+import com.pragma.archetype.domain.model.entity.EntityField;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 
@@ -46,8 +47,8 @@ class EntityValidatorTest {
         .hasId(true)
         .idType("String")
         .fields(List.of(
-            new EntityConfig.EntityField("name", "String", false),
-            new EntityConfig.EntityField("email", "String", false)))
+            new EntityField("name", "String", false),
+            new EntityField("email", "String", false)))
         .build();
 
     // When
@@ -69,7 +70,7 @@ class EntityValidatorTest {
         .hasId(true)
         .idType("String")
         .fields(List.of(
-            new EntityConfig.EntityField("name", "String", false)))
+            new EntityField("name", "String", false)))
         .build();
 
     // When
@@ -91,7 +92,7 @@ class EntityValidatorTest {
         .hasId(true)
         .idType("String")
         .fields(List.of(
-            new EntityConfig.EntityField("name", "String", false)))
+            new EntityField("name", "String", false)))
         .build();
 
     // When
@@ -134,7 +135,7 @@ class EntityValidatorTest {
         .hasId(true)
         .idType("String")
         .fields(List.of(
-            new EntityConfig.EntityField("Name", "String", false))) // uppercase - invalid
+            new EntityField("Name", "String", false))) // uppercase - invalid
         .build();
 
     // When
@@ -156,7 +157,7 @@ class EntityValidatorTest {
         .hasId(true)
         .idType("Integer") // invalid
         .fields(List.of(
-            new EntityConfig.EntityField("name", "String", false)))
+            new EntityField("name", "String", false)))
         .build();
 
     // When
@@ -178,7 +179,7 @@ class EntityValidatorTest {
         .hasId(true)
         .idType("UUID")
         .fields(List.of(
-            new EntityConfig.EntityField("name", "String", false)))
+            new EntityField("name", "String", false)))
         .build();
 
     // When
@@ -199,7 +200,7 @@ class EntityValidatorTest {
         .hasId(true)
         .idType("Long")
         .fields(List.of(
-            new EntityConfig.EntityField("total", "BigDecimal", false)))
+            new EntityField("total", "BigDecimal", false)))
         .build();
 
     // When

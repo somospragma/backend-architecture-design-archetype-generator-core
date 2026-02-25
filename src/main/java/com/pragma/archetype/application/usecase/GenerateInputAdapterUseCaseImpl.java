@@ -4,9 +4,9 @@ import java.nio.file.Path;
 import java.util.List;
 
 import com.pragma.archetype.application.generator.InputAdapterGenerator;
-import com.pragma.archetype.domain.model.GeneratedFile;
-import com.pragma.archetype.domain.model.InputAdapterConfig;
-import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.adapter.InputAdapterConfig;
+import com.pragma.archetype.domain.model.file.GeneratedFile;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateInputAdapterUseCase;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;

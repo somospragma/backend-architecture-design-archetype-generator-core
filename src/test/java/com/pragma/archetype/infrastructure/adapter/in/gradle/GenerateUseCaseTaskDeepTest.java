@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -17,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.pragma.archetype.domain.model.UseCaseConfig;
+import com.pragma.archetype.domain.model.usecase.UseCaseConfig;
 
 class GenerateUseCaseTaskDeepTest {
 
@@ -126,11 +127,17 @@ class GenerateUseCaseTaskDeepTest {
     // Given
     String methodsStr = "";
 
-    // When
-    List<UseCaseConfig.UseCaseMethod> methods = invokeParseMethods(methodsStr);
-
-    // Then
-    assertTrue(methods.isEmpty());
+    // When/Then - empty string should throw exception (wrapped in
+    // InvocationTargetException)
+    try {
+      invokeParseMethods(methodsStr);
+      fail("Expected IllegalArgumentException to be thrown");
+    } catch (Exception e) {
+      // Reflection wraps the exception in InvocationTargetException
+      assertTrue(e.getCause() instanceof IllegalArgumentException ||
+          e instanceof IllegalArgumentException,
+          "Expected IllegalArgumentException but got: " + e.getClass());
+    }
   }
 
   @Test
@@ -266,7 +273,7 @@ class GenerateUseCaseTaskDeepTest {
           paradigm: reactive
           framework: spring
           pluginVersion: 1.0.0
-          createdAt: 2024-01-01T00:00:00
+          createdAt: '2024-01-01T00:00:00'
         architecture:
           type: hexagonal-single
           paradigm: reactive

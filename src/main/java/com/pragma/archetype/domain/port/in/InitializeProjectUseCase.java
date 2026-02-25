@@ -3,7 +3,7 @@ package com.pragma.archetype.domain.port.in;
 import java.nio.file.Path;
 
 import com.pragma.archetype.application.usecase.InitializeProjectUseCaseImpl.InitializationResult;
-import com.pragma.archetype.domain.model.ProjectConfig;
+import com.pragma.archetype.domain.model.config.ProjectConfig;
 
 /**
  * Use case for initializing a new clean architecture project.

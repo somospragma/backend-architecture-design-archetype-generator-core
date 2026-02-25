@@ -17,8 +17,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import com.pragma.archetype.domain.model.TemplateConfig;
-import com.pragma.archetype.domain.model.TemplateMode;
+import com.pragma.archetype.domain.model.config.TemplateConfig;
+import com.pragma.archetype.domain.model.config.TemplateMode;
 import com.pragma.archetype.domain.port.out.HttpClientPort;
 
 /**

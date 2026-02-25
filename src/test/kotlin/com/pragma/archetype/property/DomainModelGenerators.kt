@@ -1,6 +1,11 @@
 package com.pragma.archetype.property
 
 import com.pragma.archetype.domain.model.*
+import com.pragma.archetype.domain.model.adapter.*
+import com.pragma.archetype.domain.model.config.*
+import com.pragma.archetype.domain.model.entity.*
+import com.pragma.archetype.domain.model.project.*
+import com.pragma.archetype.domain.model.usecase.*
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.*
 
@@ -66,8 +71,8 @@ object DomainModelGenerators {
     /**
      * Generates adapter types.
      */
-    fun adapterType(): Arb<AdapterConfig.AdapterType> = 
-        Arb.enum<AdapterConfig.AdapterType>()
+    fun adapterType(): Arb<AdapterType> = 
+        Arb.enum<AdapterType>()
     
     /**
      * Generates complete ProjectConfig instances.

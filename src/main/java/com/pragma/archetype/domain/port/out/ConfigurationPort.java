@@ -3,8 +3,8 @@ package com.pragma.archetype.domain.port.out;
 import java.nio.file.Path;
 import java.util.Optional;
 
-import com.pragma.archetype.domain.model.ProjectConfig;
-import com.pragma.archetype.domain.model.TemplateConfig;
+import com.pragma.archetype.domain.model.config.ProjectConfig;
+import com.pragma.archetype.domain.model.config.TemplateConfig;
 
 /**
  * Output port for reading and writing project configuration.

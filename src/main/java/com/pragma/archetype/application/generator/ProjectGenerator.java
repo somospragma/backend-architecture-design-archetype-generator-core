@@ -6,10 +6,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.pragma.archetype.domain.model.ArchitectureType;
-import com.pragma.archetype.domain.model.GeneratedFile;
-import com.pragma.archetype.domain.model.ProjectConfig;
-import com.pragma.archetype.domain.model.StructureMetadata;
+import com.pragma.archetype.domain.model.config.ProjectConfig;
+import com.pragma.archetype.domain.model.file.GeneratedFile;
+import com.pragma.archetype.domain.model.project.ArchitectureType;
+import com.pragma.archetype.domain.model.structure.StructureMetadata;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 

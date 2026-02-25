@@ -5,7 +5,7 @@ import java.nio.file.Paths;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.TaskAction;
 
-import com.pragma.archetype.domain.model.TemplateConfig;
+import com.pragma.archetype.domain.model.config.TemplateConfig;
 import com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter;
 import com.pragma.archetype.infrastructure.adapter.out.template.TemplateCache;
 

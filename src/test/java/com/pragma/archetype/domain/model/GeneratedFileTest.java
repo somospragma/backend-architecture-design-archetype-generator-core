@@ -7,6 +7,9 @@ import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 
+import com.pragma.archetype.domain.model.file.FileType;
+import com.pragma.archetype.domain.model.file.GeneratedFile;
+
 class GeneratedFileTest {
 
   @Test
@@ -21,7 +24,7 @@ class GeneratedFileTest {
     // Then
     assertEquals(path, file.path());
     assertEquals(content, file.content());
-    assertEquals(GeneratedFile.FileType.JAVA_SOURCE, file.type());
+    assertEquals(FileType.JAVA_SOURCE, file.type());
   }
 
   @Test
@@ -36,7 +39,7 @@ class GeneratedFileTest {
     // Then
     assertEquals(path, file.path());
     assertEquals(content, file.content());
-    assertEquals(GeneratedFile.FileType.YAML_CONFIG, file.type());
+    assertEquals(FileType.YAML_CONFIG, file.type());
   }
 
   @Test
@@ -51,7 +54,7 @@ class GeneratedFileTest {
     // Then
     assertEquals(path, file.path());
     assertEquals(content, file.content());
-    assertEquals(GeneratedFile.FileType.GRADLE_BUILD, file.type());
+    assertEquals(FileType.GRADLE_BUILD, file.type());
   }
 
   @Test
@@ -66,7 +69,7 @@ class GeneratedFileTest {
     // Then
     assertEquals(path, file.path());
     assertEquals(content, file.content());
-    assertEquals(GeneratedFile.FileType.MARKDOWN, file.type());
+    assertEquals(FileType.MARKDOWN, file.type());
   }
 
   @Test
@@ -82,9 +85,9 @@ class GeneratedFileTest {
     GeneratedFile mdFile = GeneratedFile.create(mdPath, "# Title");
 
     // Then
-    assertEquals(GeneratedFile.FileType.JAVA_SOURCE, javaFile.type());
-    assertEquals(GeneratedFile.FileType.YAML_CONFIG, yamlFile.type());
-    assertEquals(GeneratedFile.FileType.MARKDOWN, mdFile.type());
+    assertEquals(FileType.JAVA_SOURCE, javaFile.type());
+    assertEquals(FileType.YAML_CONFIG, yamlFile.type());
+    assertEquals(FileType.MARKDOWN, mdFile.type());
   }
 
   @Test

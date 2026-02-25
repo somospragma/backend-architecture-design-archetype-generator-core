@@ -2,8 +2,8 @@ package com.pragma.archetype.domain.port.out;
 
 import java.util.Map;
 
-import com.pragma.archetype.domain.model.ArchitectureType;
-import com.pragma.archetype.domain.model.StructureMetadata;
+import com.pragma.archetype.domain.model.project.ArchitectureType;
+import com.pragma.archetype.domain.model.structure.StructureMetadata;
 
 /**
  * Port for accessing and processing templates.
@@ -78,7 +78,7 @@ public interface TemplateRepository {
    *             instead
    */
   @Deprecated
-  com.pragma.archetype.domain.model.AdapterMetadata loadAdapterMetadata(String adapterName);
+  com.pragma.archetype.domain.model.adapter.AdapterMetadata loadAdapterMetadata(String adapterName);
 
   /**
    * Loads adapter metadata for a given adapter using framework-aware structure.
@@ -92,7 +92,7 @@ public interface TemplateRepository {
    * @return adapter metadata for the adapter
    * @throws TemplateNotFoundException if metadata.yml is not found
    */
-  com.pragma.archetype.domain.model.AdapterMetadata loadAdapterMetadata(
+  com.pragma.archetype.domain.model.adapter.AdapterMetadata loadAdapterMetadata(
       String adapterName,
       String framework,
       String paradigm,
@@ -105,7 +105,7 @@ public interface TemplateRepository {
    * @param templatePath path to the template file
    * @return ValidationResult indicating if the template is valid
    */
-  com.pragma.archetype.domain.model.ValidationResult validateTemplate(String templatePath);
+  com.pragma.archetype.domain.model.validation.ValidationResult validateTemplate(String templatePath);
 
   /**
    * Extracts required variables from a template.

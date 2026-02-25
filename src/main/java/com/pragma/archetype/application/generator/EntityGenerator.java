@@ -6,9 +6,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.pragma.archetype.domain.model.EntityConfig;
-import com.pragma.archetype.domain.model.GeneratedFile;
-import com.pragma.archetype.domain.model.ProjectConfig;
+import com.pragma.archetype.domain.model.config.ProjectConfig;
+import com.pragma.archetype.domain.model.entity.EntityConfig;
+import com.pragma.archetype.domain.model.entity.EntityField;
+import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 
@@ -80,7 +81,7 @@ public class EntityGenerator {
 
     // Convert fields to Maps for Freemarker
     List<Map<String, Object>> fieldMaps = new ArrayList<>();
-    for (EntityConfig.EntityField field : entityConfig.fields()) {
+    for (EntityField field : entityConfig.fields()) {
       Map<String, Object> fieldMap = new HashMap<>();
       fieldMap.put("name", field.name());
       fieldMap.put("type", field.type());
@@ -126,7 +127,7 @@ public class EntityGenerator {
   /**
    * Checks if any field is LocalDateTime type.
    */
-  private boolean hasLocalDateTimeField(List<EntityConfig.EntityField> fields) {
+  private boolean hasLocalDateTimeField(List<EntityField> fields) {
     return fields.stream()
         .anyMatch(f -> f.type().equals("LocalDateTime"));
   }
@@ -134,7 +135,7 @@ public class EntityGenerator {
   /**
    * Checks if any field is BigDecimal type.
    */
-  private boolean hasBigDecimalField(List<EntityConfig.EntityField> fields) {
+  private boolean hasBigDecimalField(List<EntityField> fields) {
     return fields.stream()
         .anyMatch(f -> f.type().equals("BigDecimal"));
   }
@@ -142,7 +143,7 @@ public class EntityGenerator {
   /**
    * Checks if any field is LocalDate type.
    */
-  private boolean hasLocalDateField(List<EntityConfig.EntityField> fields) {
+  private boolean hasLocalDateField(List<EntityField> fields) {
     return fields.stream()
         .anyMatch(f -> f.type().equals("LocalDate"));
   }

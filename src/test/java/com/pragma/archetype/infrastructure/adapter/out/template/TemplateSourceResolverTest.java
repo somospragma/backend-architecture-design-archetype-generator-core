@@ -17,9 +17,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.pragma.archetype.domain.model.TemplateConfig;
-import com.pragma.archetype.domain.model.TemplateMode;
-import com.pragma.archetype.domain.model.TemplateSource;
+import com.pragma.archetype.domain.model.config.TemplateConfig;
+import com.pragma.archetype.domain.model.config.TemplateMode;
+import com.pragma.archetype.domain.model.config.TemplateSource;
 
 @DisplayName("TemplateSourceResolver Tests")
 class TemplateSourceResolverTest {

@@ -1,6 +1,6 @@
 package com.pragma.archetype.infrastructure.adapter.out.template;
 
-import com.pragma.archetype.domain.model.TemplateConfig;
+import com.pragma.archetype.domain.model.config.TemplateConfig;
 import com.pragma.archetype.domain.port.out.HttpClientPort;
 
 /**

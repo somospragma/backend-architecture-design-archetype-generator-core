@@ -18,8 +18,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.pragma.archetype.domain.model.AdapterConfig;
-import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.AdapterType;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 
@@ -46,7 +47,7 @@ class AdapterValidatorTest {
     validConfig = AdapterConfig.builder()
         .name("MongoDB")
         .packageName("com.company.infrastructure.driven.adapters.mongodb")
-        .type(AdapterConfig.AdapterType.MONGODB)
+        .type(AdapterType.MONGODB)
         .entityName("User")
         .methods(List.of())
         .build();
@@ -106,7 +107,7 @@ class AdapterValidatorTest {
     AdapterConfig invalidConfig = AdapterConfig.builder()
         .name("")
         .packageName("com.company.infrastructure.driven.adapters.mongodb")
-        .type(AdapterConfig.AdapterType.MONGODB)
+        .type(AdapterType.MONGODB)
         .entityName("User")
         .methods(List.of())
         .build();
@@ -125,7 +126,7 @@ class AdapterValidatorTest {
     AdapterConfig invalidConfig = AdapterConfig.builder()
         .name("Mongo-DB")
         .packageName("com.company.infrastructure.driven.adapters.mongodb")
-        .type(AdapterConfig.AdapterType.MONGODB)
+        .type(AdapterType.MONGODB)
         .entityName("User")
         .methods(List.of())
         .build();
@@ -144,7 +145,7 @@ class AdapterValidatorTest {
     AdapterConfig invalidConfig = AdapterConfig.builder()
         .name("MongoDB")
         .packageName("")
-        .type(AdapterConfig.AdapterType.MONGODB)
+        .type(AdapterType.MONGODB)
         .entityName("User")
         .methods(List.of())
         .build();
@@ -163,7 +164,7 @@ class AdapterValidatorTest {
     AdapterConfig invalidConfig = AdapterConfig.builder()
         .name("MongoDB")
         .packageName("com.company.123invalid")
-        .type(AdapterConfig.AdapterType.MONGODB)
+        .type(AdapterType.MONGODB)
         .entityName("User")
         .methods(List.of())
         .build();
@@ -182,7 +183,7 @@ class AdapterValidatorTest {
     AdapterConfig invalidConfig = AdapterConfig.builder()
         .name("")
         .packageName("com.company.infrastructure.driven.adapters.mongodb")
-        .type(AdapterConfig.AdapterType.MONGODB)
+        .type(AdapterType.MONGODB)
         .entityName("User")
         .methods(List.of())
         .build();
@@ -200,7 +201,7 @@ class AdapterValidatorTest {
     AdapterConfig invalidConfig = AdapterConfig.builder()
         .name("MongoDB")
         .packageName("")
-        .type(AdapterConfig.AdapterType.MONGODB)
+        .type(AdapterType.MONGODB)
         .entityName("User")
         .methods(List.of())
         .build();

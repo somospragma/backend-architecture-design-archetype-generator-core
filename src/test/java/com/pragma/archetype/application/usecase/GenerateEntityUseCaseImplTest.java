@@ -20,13 +20,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.pragma.archetype.application.generator.EntityGenerator;
-import com.pragma.archetype.domain.model.ArchitectureType;
-import com.pragma.archetype.domain.model.EntityConfig;
-import com.pragma.archetype.domain.model.Framework;
-import com.pragma.archetype.domain.model.GeneratedFile;
-import com.pragma.archetype.domain.model.Paradigm;
-import com.pragma.archetype.domain.model.ProjectConfig;
-import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.config.ProjectConfig;
+import com.pragma.archetype.domain.model.entity.EntityConfig;
+import com.pragma.archetype.domain.model.entity.EntityField;
+import com.pragma.archetype.domain.model.file.GeneratedFile;
+import com.pragma.archetype.domain.model.project.ArchitectureType;
+import com.pragma.archetype.domain.model.project.Framework;
+import com.pragma.archetype.domain.model.project.Paradigm;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateEntityUseCase.GenerationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
@@ -63,7 +64,7 @@ class GenerateEntityUseCaseImplTest {
         .hasId(true)
         .idType("String")
         .fields(List.of(
-            new EntityConfig.EntityField("name", "String", false)))
+            new EntityField("name", "String", false)))
         .build();
 
     ProjectConfig projectConfig = ProjectConfig.builder()
@@ -124,7 +125,7 @@ class GenerateEntityUseCaseImplTest {
         .hasId(true)
         .idType("String")
         .fields(List.of(
-            new EntityConfig.EntityField("name", "String", false)))
+            new EntityField("name", "String", false)))
         .build();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
@@ -147,7 +148,7 @@ class GenerateEntityUseCaseImplTest {
         .hasId(true)
         .idType("String")
         .fields(List.of(
-            new EntityConfig.EntityField("name", "String", false)))
+            new EntityField("name", "String", false)))
         .build();
 
     ProjectConfig projectConfig = ProjectConfig.builder()

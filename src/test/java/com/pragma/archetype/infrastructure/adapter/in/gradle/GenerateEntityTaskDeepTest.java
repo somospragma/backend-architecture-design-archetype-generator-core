@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -17,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.pragma.archetype.domain.model.EntityConfig;
+import com.pragma.archetype.domain.model.entity.EntityField;
 
 /**
  * Deep tests for GenerateEntityTask using reflection to test private methods
@@ -47,7 +48,7 @@ class GenerateEntityTaskDeepTest {
     String fieldsStr = "name:String";
 
     // When
-    List<EntityConfig.EntityField> fields = invokeParseFields(fieldsStr);
+    List<EntityField> fields = invokeParseFields(fieldsStr);
 
     // Then
     assertNotNull(fields);
@@ -62,7 +63,7 @@ class GenerateEntityTaskDeepTest {
     String fieldsStr = "name:String,age:Integer,email:String";
 
     // When
-    List<EntityConfig.EntityField> fields = invokeParseFields(fieldsStr);
+    List<EntityField> fields = invokeParseFields(fieldsStr);
 
     // Then
     assertEquals(3, fields.size());
@@ -77,7 +78,7 @@ class GenerateEntityTaskDeepTest {
     String fieldsStr = " name : String , age : Integer ";
 
     // When
-    List<EntityConfig.EntityField> fields = invokeParseFields(fieldsStr);
+    List<EntityField> fields = invokeParseFields(fieldsStr);
 
     // Then
     assertEquals(2, fields.size());
@@ -91,7 +92,7 @@ class GenerateEntityTaskDeepTest {
     String fieldsStr = "items:List<OrderItem>,total:BigDecimal,status:OrderStatus";
 
     // When
-    List<EntityConfig.EntityField> fields = invokeParseFields(fieldsStr);
+    List<EntityField> fields = invokeParseFields(fieldsStr);
 
     // Then
     assertEquals(3, fields.size());
@@ -104,11 +105,17 @@ class GenerateEntityTaskDeepTest {
     // Given
     String fieldsStr = "";
 
-    // When
-    List<EntityConfig.EntityField> fields = invokeParseFields(fieldsStr);
-
-    // Then
-    assertTrue(fields.isEmpty());
+    // When/Then - empty string should throw exception (wrapped in
+    // InvocationTargetException)
+    try {
+      invokeParseFields(fieldsStr);
+      fail("Expected IllegalArgumentException to be thrown");
+    } catch (Exception e) {
+      // Reflection wraps the exception in InvocationTargetException
+      assertTrue(e.getCause() instanceof IllegalArgumentException ||
+          e instanceof IllegalArgumentException,
+          "Expected IllegalArgumentException but got: " + e.getClass());
+    }
   }
 
   @Test
@@ -118,7 +125,7 @@ class GenerateEntityTaskDeepTest {
 
     // When/Then - should handle gracefully or throw
     try {
-      List<EntityConfig.EntityField> fields = invokeParseFields(fieldsStr);
+      List<EntityField> fields = invokeParseFields(fieldsStr);
       // If it doesn't throw, verify it handled it somehow
       assertNotNull(fields);
     } catch (Exception e) {
@@ -245,10 +252,10 @@ class GenerateEntityTaskDeepTest {
   // Helper methods using reflection to access private methods
 
   @SuppressWarnings("unchecked")
-  private List<EntityConfig.EntityField> invokeParseFields(String fieldsStr) throws Exception {
+  private List<EntityField> invokeParseFields(String fieldsStr) throws Exception {
     Method method = GenerateEntityTask.class.getDeclaredMethod("parseFields", String.class);
     method.setAccessible(true);
-    return (List<EntityConfig.EntityField>) method.invoke(task, fieldsStr);
+    return (List<EntityField>) method.invoke(task, fieldsStr);
   }
 
   private String invokeResolvePackageName() throws Exception {
@@ -278,7 +285,7 @@ class GenerateEntityTaskDeepTest {
           paradigm: reactive
           framework: spring
           pluginVersion: 1.0.0
-          createdAt: 2024-01-01T00:00:00
+          createdAt: '2024-01-01T00:00:00'
         architecture:
           type: hexagonal-single
           paradigm: reactive

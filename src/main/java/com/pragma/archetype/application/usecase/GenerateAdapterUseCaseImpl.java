@@ -10,10 +10,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.pragma.archetype.application.generator.AdapterGenerator;
-import com.pragma.archetype.domain.model.AdapterConfig;
-import com.pragma.archetype.domain.model.AdapterMetadata;
-import com.pragma.archetype.domain.model.GeneratedFile;
-import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.AdapterType;
+import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
+import com.pragma.archetype.domain.model.file.GeneratedFile;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateAdapterUseCase;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
@@ -162,7 +163,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * @return ValidationResult with all validation errors collected
    */
   private ValidationResult validateAllTemplates(AdapterConfig config,
-      com.pragma.archetype.domain.model.ProjectConfig projectConfig) {
+      com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
     List<String> errors = new ArrayList<>();
     List<String> warnings = new ArrayList<>();
 
@@ -299,7 +300,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * Gets the adapter template path for a given adapter type.
    * This mirrors the logic in AdapterGenerator.getAdapterTemplate().
    */
-  private String getAdapterTemplatePath(AdapterConfig.AdapterType type) {
+  private String getAdapterTemplatePath(AdapterType type) {
     return switch (type) {
       case REDIS -> "frameworks/spring/reactive/adapters/driven-adapters/redis/Adapter.java.ftl";
       case MONGODB -> "frameworks/spring/reactive/adapters/driven-adapters/mongodb/Adapter.java.ftl";
@@ -313,7 +314,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * Gets the data entity template path for a given adapter type.
    * This mirrors the logic in AdapterGenerator.getDataEntityTemplate().
    */
-  private String getDataEntityTemplatePath(AdapterConfig.AdapterType type) {
+  private String getDataEntityTemplatePath(AdapterType type) {
     return switch (type) {
       case REDIS -> "frameworks/spring/reactive/adapters/driven-adapters/redis/Entity.java.ftl";
       case MONGODB -> "frameworks/spring/reactive/adapters/driven-adapters/mongodb/Entity.java.ftl";
@@ -340,7 +341,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * @return list of file paths to backup (relative to project root)
    */
   private List<Path> identifyFilesToBackup(Path projectPath, AdapterConfig config,
-      com.pragma.archetype.domain.model.ProjectConfig projectConfig) {
+      com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
     List<Path> filesToBackup = new ArrayList<>();
 
     try {
@@ -566,7 +567,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * @return template context map
    */
   private Map<String, Object> prepareConfigurationClassContext(AdapterConfig config,
-      com.pragma.archetype.domain.model.ProjectConfig projectConfig) {
+      com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
     Map<String, Object> context = new HashMap<>();
     context.put("adapterName", config.name());
     context.put("adapterType", config.type().name().toLowerCase());
@@ -724,7 +725,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * @param projectConfig the project configuration
    */
   private void checkDependencyConflicts(Path projectPath, AdapterConfig config,
-      com.pragma.archetype.domain.model.ProjectConfig projectConfig) {
+      com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
 
     if (projectConfig == null) {
       return;

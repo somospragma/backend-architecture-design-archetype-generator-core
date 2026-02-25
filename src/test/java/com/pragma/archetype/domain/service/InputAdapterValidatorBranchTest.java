@@ -3,6 +3,7 @@ package com.pragma.archetype.domain.service;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.nio.file.Path;
@@ -15,9 +16,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.pragma.archetype.domain.model.InputAdapterConfig;
-import com.pragma.archetype.domain.model.ProjectConfig;
-import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.adapter.Endpoint;
+import com.pragma.archetype.domain.model.adapter.EndpointParameter;
+import com.pragma.archetype.domain.model.adapter.HttpMethod;
+import com.pragma.archetype.domain.model.adapter.InputAdapterConfig;
+import com.pragma.archetype.domain.model.adapter.InputAdapterType;
+import com.pragma.archetype.domain.model.adapter.ParameterType;
+import com.pragma.archetype.domain.model.config.ProjectConfig;
+import com.pragma.archetype.domain.model.project.ArchitectureType;
+import com.pragma.archetype.domain.model.project.Framework;
+import com.pragma.archetype.domain.model.project.Paradigm;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 
@@ -40,6 +49,12 @@ class InputAdapterValidatorBranchTest {
   void setUp() {
     validator = new InputAdapterValidator(fileSystemPort, configurationPort, packageValidator);
     projectPath = Path.of("/test/project");
+
+    // Mock packageValidator to return success by default (lenient to avoid
+    // UnnecessaryStubbingException)
+    lenient().when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
+    lenient().when(packageValidator.validateBasePackageConsistency(any(), any()))
+        .thenReturn(ValidationResult.success());
   }
 
   @Test
@@ -49,7 +64,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of())
         .build();
@@ -69,7 +84,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name(null)
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of())
         .build();
@@ -89,7 +104,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("123Invalid")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of())
         .build();
@@ -109,7 +124,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName(null)
         .endpoints(List.of())
         .build();
@@ -130,7 +145,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.adapter.out.rest")
         .endpoints(List.of())
         .build();
@@ -151,7 +166,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.adapter.in.rest")
         .endpoints(List.of())
         .build();
@@ -173,6 +188,10 @@ class InputAdapterValidatorBranchTest {
     ProjectConfig projectConfig = ProjectConfig.builder()
         .name("test-project")
         .basePackage("com.test")
+        .architecture(ArchitectureType.HEXAGONAL_SINGLE)
+        .paradigm(Paradigm.REACTIVE)
+        .framework(Framework.SPRING)
+        .pluginVersion("1.0.0")
         .build();
     when(configurationPort.readConfiguration(projectPath)).thenReturn(Optional.of(projectConfig));
     when(packageValidator.validateBasePackageConsistency(any(), any()))
@@ -181,7 +200,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.wrong.infrastructure.entrypoints.rest")
         .endpoints(List.of())
         .build();
@@ -223,7 +242,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName(null)
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of())
         .build();
@@ -244,7 +263,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(null)
         .build();
@@ -263,16 +282,16 @@ class InputAdapterValidatorBranchTest {
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
 
-    InputAdapterConfig.Endpoint endpoint = new InputAdapterConfig.Endpoint(
+    Endpoint endpoint = new Endpoint(
         null,
-        InputAdapterConfig.HttpMethod.POST,
+        HttpMethod.POST,
         "create",
         "User",
         List.of());
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of(endpoint))
         .build();
@@ -291,16 +310,16 @@ class InputAdapterValidatorBranchTest {
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
 
-    InputAdapterConfig.Endpoint endpoint = new InputAdapterConfig.Endpoint(
+    Endpoint endpoint = new Endpoint(
         "users",
-        InputAdapterConfig.HttpMethod.POST,
+        HttpMethod.POST,
         "create",
         "User",
         List.of());
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of(endpoint))
         .build();
@@ -318,18 +337,17 @@ class InputAdapterValidatorBranchTest {
     // Given
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
-    
-    InputAdapterConfig.Endpoint endpoint = new InputAdapterConfig.Endpoint(
-        "/users", 
-        null, 
-        "create", 
-        "User", 
-        List.of()
-    );
+
+    Endpoint endpoint = new Endpoint(
+        "/users",
+        null,
+        "create",
+        "User",
+        List.of());
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of(endpoint))
         .build();
@@ -342,23 +360,22 @@ class InputAdapterValidatorBranchTest {
     assertTrue(result.errors().stream().anyMatch(e -> e.contains("HTTP method is required")));
   }
 
-@Test
+  @Test
   void shouldFailWhenUseCaseMethodIsNull() {
     // Given
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
-    
-    InputAdapterConfig.Endpoint endpoint = new InputAdapterConfig.Endpoint(
-        "/users", 
-        InputAdapterConfig.HttpMethod.POST, 
-        null, 
-        "User", 
-        List.of()
-    );
+
+    Endpoint endpoint = new Endpoint(
+        "/users",
+        HttpMethod.POST,
+        null,
+        "User",
+        List.of());
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of(endpoint))
         .build();
@@ -376,18 +393,17 @@ class InputAdapterValidatorBranchTest {
     // Given
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
-    
-    InputAdapterConfig.Endpoint endpoint = new InputAdapterConfig.Endpoint(
-        "/users", 
-        InputAdapterConfig.HttpMethod.POST, 
-        "create", 
-        null, 
-        List.of()
-    );
+
+    Endpoint endpoint = new Endpoint(
+        "/users",
+        HttpMethod.POST,
+        "create",
+        null,
+        List.of());
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of(endpoint))
         .build();
@@ -405,23 +421,21 @@ class InputAdapterValidatorBranchTest {
     // Given
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
-    
-    InputAdapterConfig.EndpointParameter param = new InputAdapterConfig.EndpointParameter(
-        null, 
-        "User", 
-        InputAdapterConfig.ParameterType.BODY
-    );
-    InputAdapterConfig.Endpoint endpoint = new InputAdapterConfig.Endpoint(
-        "/users", 
-        InputAdapterConfig.HttpMethod.POST, 
-        "create", 
-        "User", 
-        List.of(param)
-    );
+
+    EndpointParameter param = new EndpointParameter(
+        null,
+        "User",
+        ParameterType.BODY);
+    Endpoint endpoint = new Endpoint(
+        "/users",
+        HttpMethod.POST,
+        "create",
+        "User",
+        List.of(param));
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of(endpoint))
         .build();
@@ -439,23 +453,21 @@ class InputAdapterValidatorBranchTest {
     // Given
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
-    
-    InputAdapterConfig.EndpointParameter param = new InputAdapterConfig.EndpointParameter(
-        "user", 
-        null, 
-        InputAdapterConfig.ParameterType.BODY
-    );
-    InputAdapterConfig.Endpoint endpoint = new InputAdapterConfig.Endpoint(
-        "/users", 
-        InputAdapterConfig.HttpMethod.POST, 
-        "create", 
-        "User", 
-        List.of(param)
-    );
+
+    EndpointParameter param = new EndpointParameter(
+        "user",
+        null,
+        ParameterType.BODY);
+    Endpoint endpoint = new Endpoint(
+        "/users",
+        HttpMethod.POST,
+        "create",
+        "User",
+        List.of(param));
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of(endpoint))
         .build();
@@ -473,23 +485,21 @@ class InputAdapterValidatorBranchTest {
     // Given
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
-    
-    InputAdapterConfig.EndpointParameter param = new InputAdapterConfig.EndpointParameter(
-        "user", 
-        "User", 
-        null
-    );
-    InputAdapterConfig.Endpoint endpoint = new InputAdapterConfig.Endpoint(
-        "/users", 
-        InputAdapterConfig.HttpMethod.POST, 
-        "create", 
-        "User", 
-        List.of(param)
-    );
+
+    EndpointParameter param = new EndpointParameter(
+        "user",
+        "User",
+        null);
+    Endpoint endpoint = new Endpoint(
+        "/users",
+        HttpMethod.POST,
+        "create",
+        "User",
+        List.of(param));
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of(endpoint))
         .build();

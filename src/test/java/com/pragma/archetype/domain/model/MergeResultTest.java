@@ -9,6 +9,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import com.pragma.archetype.domain.model.structure.MergeResult;
+
 class MergeResultTest {
 
   @Test

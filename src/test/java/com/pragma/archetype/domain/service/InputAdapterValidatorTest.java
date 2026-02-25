@@ -16,8 +16,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.pragma.archetype.domain.model.InputAdapterConfig;
-import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.adapter.Endpoint;
+import com.pragma.archetype.domain.model.adapter.HttpMethod;
+import com.pragma.archetype.domain.model.adapter.InputAdapterConfig;
+import com.pragma.archetype.domain.model.adapter.InputAdapterType;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 
@@ -50,12 +53,12 @@ class InputAdapterValidatorTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.rest")
         .endpoints(List.of(
-            new InputAdapterConfig.Endpoint(
+            new Endpoint(
                 "/users",
-                InputAdapterConfig.HttpMethod.POST,
+                HttpMethod.POST,
                 "execute",
                 "User",
                 List.of())))
@@ -76,12 +79,12 @@ class InputAdapterValidatorTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.rest")
         .endpoints(List.of(
-            new InputAdapterConfig.Endpoint(
+            new Endpoint(
                 "/users",
-                InputAdapterConfig.HttpMethod.POST,
+                HttpMethod.POST,
                 "execute",
                 "User",
                 List.of())))
@@ -105,12 +108,12 @@ class InputAdapterValidatorTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("User-Controller") // invalid
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.rest")
         .endpoints(List.of(
-            new InputAdapterConfig.Endpoint(
+            new Endpoint(
                 "/users",
-                InputAdapterConfig.HttpMethod.POST,
+                HttpMethod.POST,
                 "execute",
                 "User",
                 List.of())))
@@ -134,12 +137,12 @@ class InputAdapterValidatorTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.adapter.in.rest") // invalid structure
         .endpoints(List.of(
-            new InputAdapterConfig.Endpoint(
+            new Endpoint(
                 "/users",
-                InputAdapterConfig.HttpMethod.POST,
+                HttpMethod.POST,
                 "execute",
                 "User",
                 List.of())))
@@ -163,7 +166,7 @@ class InputAdapterValidatorTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.rest")
         .endpoints(List.of())
         .build();
@@ -186,12 +189,12 @@ class InputAdapterValidatorTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.rest")
         .endpoints(List.of(
-            new InputAdapterConfig.Endpoint(
+            new Endpoint(
                 "users", // missing leading slash
-                InputAdapterConfig.HttpMethod.POST,
+                HttpMethod.POST,
                 "execute",
                 "User",
                 List.of())))

@@ -8,13 +8,16 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import com.pragma.archetype.domain.model.entity.EntityConfig;
+import com.pragma.archetype.domain.model.entity.EntityField;
+
 class EntityConfigTest {
 
   @Test
   void shouldBuildEntityConfigWithAllFields() {
     // Given
-    EntityConfig.EntityField field1 = new EntityConfig.EntityField("name", "String", false);
-    EntityConfig.EntityField field2 = new EntityConfig.EntityField("email", "String", true);
+    EntityField field1 = new EntityField("name", "String", false);
+    EntityField field2 = new EntityField("email", "String", true);
 
     // When
     EntityConfig config = EntityConfig.builder()
@@ -64,7 +67,7 @@ class EntityConfigTest {
   @Test
   void shouldCreateEntityFieldWithNullable() {
     // When
-    EntityConfig.EntityField field = new EntityConfig.EntityField("description", "String", true);
+    EntityField field = new EntityField("description", "String", true);
 
     // Then
     assertEquals("description", field.name());
@@ -75,7 +78,7 @@ class EntityConfigTest {
   @Test
   void shouldCreateEntityFieldWithNonNullable() {
     // When
-    EntityConfig.EntityField field = new EntityConfig.EntityField("id", "Long", false);
+    EntityField field = new EntityField("id", "Long", false);
 
     // Then
     assertEquals("id", field.name());
@@ -102,11 +105,11 @@ class EntityConfigTest {
   @Test
   void shouldSupportMultipleFields() {
     // Given
-    List<EntityConfig.EntityField> fields = List.of(
-        new EntityConfig.EntityField("name", "String", false),
-        new EntityConfig.EntityField("age", "Integer", false),
-        new EntityConfig.EntityField("email", "String", true),
-        new EntityConfig.EntityField("createdAt", "LocalDateTime", false));
+    List<EntityField> fields = List.of(
+        new EntityField("name", "String", false),
+        new EntityField("age", "Integer", false),
+        new EntityField("email", "String", true),
+        new EntityField("createdAt", "LocalDateTime", false));
 
     // When
     EntityConfig config = EntityConfig.builder()

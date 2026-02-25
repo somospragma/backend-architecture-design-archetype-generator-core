@@ -16,10 +16,10 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.pragma.archetype.domain.model.ArchitectureType;
-import com.pragma.archetype.domain.model.StructureMetadata;
-import com.pragma.archetype.domain.model.TemplateConfig;
-import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.config.TemplateConfig;
+import com.pragma.archetype.domain.model.project.ArchitectureType;
+import com.pragma.archetype.domain.model.structure.StructureMetadata;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.HttpClientPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 import com.pragma.archetype.infrastructure.adapter.out.http.OkHttpClientAdapter;
@@ -224,7 +224,7 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
   }
 
   @Override
-  public com.pragma.archetype.domain.model.AdapterMetadata loadAdapterMetadata(String adapterName) {
+  public com.pragma.archetype.domain.model.adapter.AdapterMetadata loadAdapterMetadata(String adapterName) {
     if (adapterMetadataLoader == null) {
       adapterMetadataLoader = new AdapterMetadataLoader(this);
     }
@@ -232,7 +232,7 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
   }
 
   @Override
-  public com.pragma.archetype.domain.model.AdapterMetadata loadAdapterMetadata(
+  public com.pragma.archetype.domain.model.adapter.AdapterMetadata loadAdapterMetadata(
       String adapterName,
       String framework,
       String paradigm,

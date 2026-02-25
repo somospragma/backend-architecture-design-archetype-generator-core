@@ -1,18 +1,21 @@
 plugins {
     `java-gradle-plugin`
     `maven-publish`
+    signing
     id("com.gradle.plugin-publish") version "1.2.1"
     jacoco
     kotlin("jvm") version "1.9.21"
 }
 
 group = "com.pragma"
-version = "0.1.15-SNAPSHOT"
+version = "1.0.0-PRERELEASE"
 
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
     }
+    withJavadocJar()
+    withSourcesJar()
 }
 
 repositories {
@@ -20,6 +23,13 @@ repositories {
 }
 
 dependencies {
+    // Lombok for reducing boilerplate
+    compileOnly("org.projectlombok:lombok:1.18.30")
+    annotationProcessor("org.projectlombok:lombok:1.18.30")
+    
+    testCompileOnly("org.projectlombok:lombok:1.18.30")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
+    
     // Freemarker for template processing
     implementation("org.freemarker:freemarker:2.3.32")
     
@@ -94,5 +104,58 @@ tasks.withType<JavaCompile> {
 
 tasks.withType<ProcessResources> {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+// Maven Central Publishing Configuration
+publishing {
+    publications {
+        withType<MavenPublication> {
+            pom {
+                name.set("Clean Architecture Generator")
+                description.set("Gradle plugin to generate clean architecture projects with multiple frameworks and adapters")
+                url.set("https://github.com/somospragma/backend-architecture-design-archetype-generator-core")
+                
+                licenses {
+                    license {
+                        name.set("The Apache License, Version 2.0")
+                        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                    }
+                }
+                
+                developers {
+                    developer {
+                        id.set("somospragma")
+                        name.set("Pragma S.A.")
+                        email.set("info@pragma.com.co")
+                    }
+                }
+                
+                scm {
+                    connection.set("scm:git:git://github.com/somospragma/backend-architecture-design-archetype-generator-core.git")
+                    developerConnection.set("scm:git:ssh://github.com/somospragma/backend-architecture-design-archetype-generator-core.git")
+                    url.set("https://github.com/somospragma/backend-architecture-design-archetype-generator-core")
+                }
+            }
+        }
+    }
+    
+    repositories {
+        maven {
+            name = "OSSRH"
+            val releasesRepoUrl = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            val snapshotsRepoUrl = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+            url = if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl
+            
+            credentials {
+                username = project.findProperty("ossrhUsername")?.toString() ?: System.getenv("OSSRH_USERNAME")
+                password = project.findProperty("ossrhPassword")?.toString() ?: System.getenv("OSSRH_PASSWORD")
+            }
+        }
+    }
+}
+
+signing {
+    val publications = publishing.publications.matching { it.name == "cleanArchGeneratorPluginMarkerMaven" || it.name.contains("PluginMarkerMaven") }
+    sign(publications)
 }
 

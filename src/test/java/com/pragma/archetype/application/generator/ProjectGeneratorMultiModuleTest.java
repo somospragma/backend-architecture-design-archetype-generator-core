@@ -20,11 +20,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.pragma.archetype.domain.model.ArchitectureType;
-import com.pragma.archetype.domain.model.Framework;
-import com.pragma.archetype.domain.model.GeneratedFile;
-import com.pragma.archetype.domain.model.Paradigm;
-import com.pragma.archetype.domain.model.ProjectConfig;
+import com.pragma.archetype.domain.model.config.ProjectConfig;
+import com.pragma.archetype.domain.model.file.GeneratedFile;
+import com.pragma.archetype.domain.model.project.ArchitectureType;
+import com.pragma.archetype.domain.model.project.Framework;
+import com.pragma.archetype.domain.model.project.Paradigm;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 
@@ -47,8 +47,6 @@ class ProjectGeneratorMultiModuleTest {
 
     when(templateRepository.processTemplate(anyString(), anyMap()))
         .thenReturn("template content");
-    when(fileSystemPort.readFile(any(Path.class)))
-        .thenReturn("existing content");
   }
 
   @Test
@@ -60,6 +58,7 @@ class ProjectGeneratorMultiModuleTest {
         .architecture(ArchitectureType.HEXAGONAL_MULTI)
         .paradigm(Paradigm.REACTIVE)
         .framework(Framework.SPRING)
+        .pluginVersion("1.0.0")
         .build();
 
     // When
@@ -81,6 +80,7 @@ class ProjectGeneratorMultiModuleTest {
         .architecture(ArchitectureType.ONION_MULTI)
         .paradigm(Paradigm.REACTIVE)
         .framework(Framework.SPRING)
+        .pluginVersion("1.0.0")
         .build();
 
     // When
@@ -101,6 +101,7 @@ class ProjectGeneratorMultiModuleTest {
         .architecture(ArchitectureType.HEXAGONAL_MULTI_GRANULAR)
         .paradigm(Paradigm.REACTIVE)
         .framework(Framework.SPRING)
+        .pluginVersion("1.0.0")
         .build();
 
     // When
@@ -121,6 +122,7 @@ class ProjectGeneratorMultiModuleTest {
         .architecture(ArchitectureType.HEXAGONAL_SINGLE)
         .paradigm(Paradigm.IMPERATIVE)
         .framework(Framework.SPRING)
+        .pluginVersion("1.0.0")
         .build();
 
     // When
@@ -129,6 +131,7 @@ class ProjectGeneratorMultiModuleTest {
     // Then
     assertNotNull(files);
     assertFalse(files.isEmpty());
+    verify(fileSystemPort).writeFiles(anyList());
   }
 
   @Test
@@ -140,6 +143,7 @@ class ProjectGeneratorMultiModuleTest {
         .architecture(ArchitectureType.HEXAGONAL_SINGLE)
         .paradigm(Paradigm.REACTIVE)
         .framework(Framework.QUARKUS)
+        .pluginVersion("1.0.0")
         .build();
 
     // When
@@ -159,6 +163,7 @@ class ProjectGeneratorMultiModuleTest {
         .architecture(ArchitectureType.HEXAGONAL_SINGLE)
         .paradigm(Paradigm.REACTIVE)
         .framework(Framework.SPRING)
+        .pluginVersion("1.0.0")
         .build();
 
     // When
@@ -178,6 +183,7 @@ class ProjectGeneratorMultiModuleTest {
         .architecture(ArchitectureType.HEXAGONAL_SINGLE)
         .paradigm(Paradigm.REACTIVE)
         .framework(Framework.SPRING)
+        .pluginVersion("1.0.0")
         .build();
 
     // When
@@ -197,6 +203,7 @@ class ProjectGeneratorMultiModuleTest {
         .architecture(ArchitectureType.HEXAGONAL_SINGLE)
         .paradigm(Paradigm.REACTIVE)
         .framework(Framework.SPRING)
+        .pluginVersion("1.0.0")
         .build();
 
     // When
@@ -217,6 +224,7 @@ class ProjectGeneratorMultiModuleTest {
         .paradigm(Paradigm.REACTIVE)
         .framework(Framework.SPRING)
         .adaptersAsModules(true)
+        .pluginVersion("1.0.0")
         .build();
 
     // When

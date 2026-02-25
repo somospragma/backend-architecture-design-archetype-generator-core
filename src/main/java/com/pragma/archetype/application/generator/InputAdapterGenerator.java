@@ -6,8 +6,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.pragma.archetype.domain.model.GeneratedFile;
-import com.pragma.archetype.domain.model.InputAdapterConfig;
+import com.pragma.archetype.domain.model.adapter.Endpoint;
+import com.pragma.archetype.domain.model.adapter.EndpointParameter;
+import com.pragma.archetype.domain.model.adapter.InputAdapterConfig;
+import com.pragma.archetype.domain.model.adapter.InputAdapterType;
+import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 
@@ -60,7 +63,7 @@ public class InputAdapterGenerator {
     return GeneratedFile.javaSource(filePath, content);
   }
 
-  private String getControllerTemplate(InputAdapterConfig.InputAdapterType type) {
+  private String getControllerTemplate(InputAdapterType type) {
     // New structure:
     // frameworks/spring/reactive/adapters/entry-points/{type}/Controller.java.ftl
     return switch (type) {
@@ -71,7 +74,7 @@ public class InputAdapterGenerator {
     };
   }
 
-  private String getControllerSuffix(InputAdapterConfig.InputAdapterType type) {
+  private String getControllerSuffix(InputAdapterType type) {
     return switch (type) {
       case REST -> "Controller";
       case GRAPHQL -> "Resolver";
@@ -89,7 +92,7 @@ public class InputAdapterGenerator {
 
     // Convert endpoints to Maps for Freemarker
     List<Map<String, Object>> endpointMaps = new ArrayList<>();
-    for (InputAdapterConfig.Endpoint endpoint : config.endpoints()) {
+    for (Endpoint endpoint : config.endpoints()) {
       Map<String, Object> endpointMap = new HashMap<>();
       endpointMap.put("path", endpoint.path());
       endpointMap.put("method", endpoint.method().name());
@@ -99,7 +102,7 @@ public class InputAdapterGenerator {
       // Convert parameters to Maps
       List<Map<String, Object>> paramMaps = new ArrayList<>();
       if (endpoint.parameters() != null) {
-        for (InputAdapterConfig.EndpointParameter param : endpoint.parameters()) {
+        for (EndpointParameter param : endpoint.parameters()) {
           Map<String, Object> paramMap = new HashMap<>();
           paramMap.put("name", param.name());
           paramMap.put("type", param.type());

@@ -1,8 +1,6 @@
 package com.pragma.archetype.infrastructure.adapter.in.gradle;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,9 +33,8 @@ class UpdateTemplatesTaskIntegrationTest {
   void testTaskExecution_withoutConfiguration() throws Exception {
     // Given - no .cleanarch.yml file
 
-    // When/Then - should fail gracefully
-    Exception exception = assertThrows(Exception.class, () -> task.updateTemplates());
-    assertNotNull(exception);
+    // When/Then - should use default configuration and not throw
+    assertDoesNotThrow(() -> task.updateTemplates());
   }
 
   @Test

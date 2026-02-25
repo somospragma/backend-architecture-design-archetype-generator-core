@@ -4,8 +4,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.pragma.archetype.domain.model.AdapterConfig;
-import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.AdapterMethod;
+import com.pragma.archetype.domain.model.adapter.MethodParameter;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 
@@ -126,8 +128,8 @@ public class AdapterValidator {
         .resolve(config.name() + "Adapter.java");
   }
 
-  private void validateMethods(List<AdapterConfig.AdapterMethod> methods, List<String> errors) {
-    for (AdapterConfig.AdapterMethod method : methods) {
+  private void validateMethods(List<AdapterMethod> methods, List<String> errors) {
+    for (AdapterMethod method : methods) {
       if (method.name() == null || method.name().isBlank()) {
         errors.add("Method name is required");
       } else if (!isValidJavaIdentifier(method.name())) {
@@ -139,7 +141,7 @@ public class AdapterValidator {
       }
 
       if (method.parameters() != null) {
-        for (AdapterConfig.MethodParameter param : method.parameters()) {
+        for (MethodParameter param : method.parameters()) {
           if (param.name() == null || param.name().isBlank()) {
             errors.add("Parameter name is required in method: " + method.name());
           } else if (!isValidJavaIdentifier(param.name())) {

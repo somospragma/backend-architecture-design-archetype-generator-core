@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import com.pragma.archetype.domain.model.AdapterMetadata;
+import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
 
 /**
  * Domain service responsible for detecting dependency conflicts.

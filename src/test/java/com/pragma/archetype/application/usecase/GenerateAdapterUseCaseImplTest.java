@@ -22,9 +22,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import com.pragma.archetype.application.generator.AdapterGenerator;
-import com.pragma.archetype.domain.model.AdapterConfig;
-import com.pragma.archetype.domain.model.AdapterMetadata;
-import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.AdapterType;
+import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateAdapterUseCase.GenerationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
@@ -195,7 +196,7 @@ class GenerateAdapterUseCaseImplTest {
     // Given
     AdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithConfigClasses();
-    com.pragma.archetype.domain.model.ProjectConfig projectConfig = createProjectConfig();
+    com.pragma.archetype.domain.model.config.ProjectConfig projectConfig = createProjectConfig();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
     when(configurationPort.readConfiguration(any())).thenReturn(Optional.of(projectConfig));
@@ -246,7 +247,7 @@ class GenerateAdapterUseCaseImplTest {
     // Given
     AdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithConfigClasses();
-    com.pragma.archetype.domain.model.ProjectConfig projectConfig = createProjectConfig();
+    com.pragma.archetype.domain.model.config.ProjectConfig projectConfig = createProjectConfig();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
     when(configurationPort.readConfiguration(any())).thenReturn(Optional.of(projectConfig));
@@ -267,7 +268,7 @@ class GenerateAdapterUseCaseImplTest {
     // Given
     AdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithMultipleConfigClasses();
-    com.pragma.archetype.domain.model.ProjectConfig projectConfig = createProjectConfig();
+    com.pragma.archetype.domain.model.config.ProjectConfig projectConfig = createProjectConfig();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
     when(configurationPort.readConfiguration(any())).thenReturn(Optional.of(projectConfig));
@@ -596,7 +597,7 @@ class GenerateAdapterUseCaseImplTest {
     // Given
     AdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithConfigClasses();
-    com.pragma.archetype.domain.model.ProjectConfig projectConfig = createProjectConfig();
+    com.pragma.archetype.domain.model.config.ProjectConfig projectConfig = createProjectConfig();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
     when(configurationPort.readConfiguration(any())).thenReturn(Optional.of(projectConfig));
@@ -625,7 +626,7 @@ class GenerateAdapterUseCaseImplTest {
     // Given
     AdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithConfigClasses();
-    com.pragma.archetype.domain.model.ProjectConfig projectConfig = createProjectConfig();
+    com.pragma.archetype.domain.model.config.ProjectConfig projectConfig = createProjectConfig();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
     when(configurationPort.readConfiguration(any())).thenReturn(Optional.of(projectConfig));
@@ -671,13 +672,13 @@ class GenerateAdapterUseCaseImplTest {
         });
   }
 
-  private com.pragma.archetype.domain.model.ProjectConfig createProjectConfig() {
-    return com.pragma.archetype.domain.model.ProjectConfig.builder()
+  private com.pragma.archetype.domain.model.config.ProjectConfig createProjectConfig() {
+    return com.pragma.archetype.domain.model.config.ProjectConfig.builder()
         .name("test-project")
         .basePackage("com.test")
-        .architecture(com.pragma.archetype.domain.model.ArchitectureType.HEXAGONAL_SINGLE)
-        .paradigm(com.pragma.archetype.domain.model.Paradigm.REACTIVE)
-        .framework(com.pragma.archetype.domain.model.Framework.SPRING)
+        .architecture(com.pragma.archetype.domain.model.project.ArchitectureType.HEXAGONAL_SINGLE)
+        .paradigm(com.pragma.archetype.domain.model.project.Paradigm.REACTIVE)
+        .framework(com.pragma.archetype.domain.model.project.Framework.SPRING)
         .pluginVersion("1.0.0")
         .adaptersAsModules(false)
         .build();
@@ -745,7 +746,7 @@ class GenerateAdapterUseCaseImplTest {
   private AdapterConfig createAdapterConfig(String type) {
     return AdapterConfig.builder()
         .name("TestAdapter")
-        .type(AdapterConfig.AdapterType.valueOf(type.toUpperCase()))
+        .type(AdapterType.valueOf(type.toUpperCase()))
         .packageName("com.test.adapter")
         .entityName("TestEntity")
         .build();

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.gradle.api.Project;
@@ -22,11 +23,14 @@ class GenerateUseCaseTaskTest {
   private GenerateUseCaseTask task;
 
   @BeforeEach
-  void setUp() {
+  void setUp() throws Exception {
     project = ProjectBuilder.builder()
         .withProjectDir(tempDir.toFile())
         .build();
     task = project.getTasks().create("generateUseCase", GenerateUseCaseTask.class);
+
+    // Create a valid .cleanarch.yml configuration for tests that need it
+    createBasicConfiguration();
   }
 
   @Test
@@ -73,11 +77,12 @@ class GenerateUseCaseTaskTest {
     task.setMethods("execute:User");
 
     // When/Then
-    Exception exception = assertThrows(Exception.class, () -> {
+    RuntimeException exception = assertThrows(RuntimeException.class, () -> {
       task.generateUseCase();
     });
-    assertTrue(exception.getMessage().contains("Use case name is required") ||
-        exception.getCause() != null && exception.getCause().getMessage().contains("Use case name is required"));
+    assertTrue(exception.getCause() != null && exception.getCause().getMessage().contains("Use case name is required"),
+        "Expected cause to contain 'Use case name is required' but was: " +
+            (exception.getCause() != null ? exception.getCause().getMessage() : "null"));
   }
 
   @Test
@@ -86,10 +91,30 @@ class GenerateUseCaseTaskTest {
     task.setUseCaseName("CreateUser");
 
     // When/Then
-    Exception exception = assertThrows(Exception.class, () -> {
+    RuntimeException exception = assertThrows(RuntimeException.class, () -> {
       task.generateUseCase();
     });
-    assertTrue(exception.getMessage().contains("Methods are required") ||
-        exception.getCause() != null && exception.getCause().getMessage().contains("Methods are required"));
+    assertTrue(exception.getCause() != null && exception.getCause().getMessage().contains("Methods are required"),
+        "Expected cause to contain 'Methods are required' but was: " +
+            (exception.getCause() != null ? exception.getCause().getMessage() : "null"));
+  }
+
+  private void createBasicConfiguration() throws Exception {
+    String yamlContent = """
+        project:
+          name: test-project
+          basePackage: com.test
+          architecture: hexagonal-single
+          paradigm: reactive
+          framework: spring
+          pluginVersion: 1.0.0
+          createdAt: '2024-01-01T00:00:00'
+        architecture:
+          type: hexagonal-single
+          paradigm: reactive
+          framework: spring
+          adaptersAsModules: false
+        """;
+    Files.writeString(tempDir.resolve(".cleanarch.yml"), yamlContent);
   }
 }

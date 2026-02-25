@@ -12,9 +12,10 @@ import org.gradle.api.tasks.options.Option;
 
 import com.pragma.archetype.application.generator.EntityGenerator;
 import com.pragma.archetype.application.usecase.GenerateEntityUseCaseImpl;
-import com.pragma.archetype.domain.model.EntityConfig;
-import com.pragma.archetype.domain.model.ProjectConfig;
-import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.config.ProjectConfig;
+import com.pragma.archetype.domain.model.entity.EntityConfig;
+import com.pragma.archetype.domain.model.entity.EntityField;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateEntityUseCase;
 import com.pragma.archetype.domain.port.in.GenerateEntityUseCase.GenerationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
@@ -118,7 +119,7 @@ public class GenerateEntityTask extends DefaultTask {
       String resolvedPackageName = resolvePackageName();
 
       // 4. Parse fields
-      List<EntityConfig.EntityField> entityFields = parseFields(fields);
+      List<EntityField> entityFields = parseFields(fields);
 
       // 5. Filter out 'id' field if hasId is true (to avoid duplication)
       if (hasId) {
@@ -211,8 +212,8 @@ public class GenerateEntityTask extends DefaultTask {
    * Parses field string into EntityField list.
    * Format: "name:String,email:String,age:Integer"
    */
-  private List<EntityConfig.EntityField> parseFields(String fieldsStr) {
-    List<EntityConfig.EntityField> result = new ArrayList<>();
+  private List<EntityField> parseFields(String fieldsStr) {
+    List<EntityField> result = new ArrayList<>();
 
     String[] fieldPairs = fieldsStr.split(",");
     for (String pair : fieldPairs) {
@@ -232,7 +233,7 @@ public class GenerateEntityTask extends DefaultTask {
         fieldType = fieldType.substring(0, fieldType.length() - 1);
       }
 
-      result.add(new EntityConfig.EntityField(fieldName, fieldType, nullable));
+      result.add(new EntityField(fieldName, fieldType, nullable));
     }
 
     return result;

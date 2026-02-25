@@ -12,9 +12,10 @@ import org.gradle.api.tasks.options.Option;
 
 import com.pragma.archetype.application.generator.UseCaseGenerator;
 import com.pragma.archetype.application.usecase.GenerateUseCaseUseCaseImpl;
-import com.pragma.archetype.domain.model.ProjectConfig;
-import com.pragma.archetype.domain.model.UseCaseConfig;
-import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.config.ProjectConfig;
+import com.pragma.archetype.domain.model.project.Paradigm;
+import com.pragma.archetype.domain.model.usecase.UseCaseConfig;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateUseCaseUseCase;
 import com.pragma.archetype.domain.port.in.GenerateUseCaseUseCase.GenerationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
@@ -118,6 +119,9 @@ public class GenerateUseCaseTask extends DefaultTask {
       // 3. Resolve package name (auto-detect if not provided)
       String resolvedPackageName = resolvePackageName();
 
+      // 3.5. Read paradigm from .cleanarch.yml
+      Paradigm paradigm = readParadigmFromConfig(projectPath, configurationPort);
+
       // 4. Parse methods
       List<UseCaseConfig.UseCaseMethod> useCaseMethods = parseMethods(methods);
 
@@ -126,6 +130,7 @@ public class GenerateUseCaseTask extends DefaultTask {
           .name(useCaseName)
           .packageName(resolvedPackageName)
           .methods(useCaseMethods)
+          .paradigm(paradigm)
           .generatePort(generatePort)
           .generateImpl(generateImpl)
           .build();
@@ -199,6 +204,20 @@ public class GenerateUseCaseTask extends DefaultTask {
     } catch (Exception e) {
       throw new IllegalArgumentException(
           "Could not auto-detect package name. Please provide --packageName or ensure .cleanarch.yml exists", e);
+    }
+  }
+
+  /**
+   * Reads paradigm from .cleanarch.yml configuration.
+   */
+  private Paradigm readParadigmFromConfig(Path projectPath, ConfigurationPort configurationPort) {
+    try {
+      ProjectConfig projectConfig = configurationPort.readConfiguration(projectPath)
+          .orElseThrow(() -> new IllegalArgumentException(".cleanarch.yml not found"));
+      return projectConfig.paradigm();
+    } catch (Exception e) {
+      throw new IllegalArgumentException(
+          "Could not read paradigm from .cleanarch.yml", e);
     }
   }
 

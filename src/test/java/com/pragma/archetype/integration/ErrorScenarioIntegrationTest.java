@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.pragma.archetype.domain.model.TemplateConfig;
-import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.config.TemplateConfig;
+import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.service.ConfigurationValidator;
@@ -101,13 +101,13 @@ class ErrorScenarioIntegrationTest {
       Path configFile = projectPath.resolve(".cleanarch.yml");
 
       String yamlWithoutName = """
-        project:
-          basePackage: com.example.test
-        architecture:
-          type: hexagonal-single
-          paradigm: reactive
-          framework: spring
-        """;
+          project:
+            basePackage: com.example.test
+          architecture:
+            type: hexagonal-single
+            paradigm: reactive
+            framework: spring
+          """;
       Files.writeString(configFile, yamlWithoutName);
 
       // When
@@ -157,15 +157,15 @@ class ErrorScenarioIntegrationTest {
       Path configFile = projectPath.resolve(".cleanarch.yml");
 
       String yamlWithInvalidPackage = """
-        project:
-          name: test-project
-          basePackage: Com.Example.Test
-        architecture:
-          type: hexagonal-single
-          paradigm: reactive
-          framework: spring
-        """;
-      
+          project:
+            name: test-project
+            basePackage: Com.Example.Test
+          architecture:
+            type: hexagonal-single
+            paradigm: reactive
+            framework: spring
+          """;
+
       Files.writeString(configFile, yamlWithInvalidPackage);
 
       // When
@@ -313,14 +313,14 @@ class ErrorScenarioIntegrationTest {
       Path configFile = projectPath.resolve(".cleanarch.yml");
 
       String yamlWithConsecutiveDots = """
-        project:
-          name: test-project
-          basePackage: com..example..test
-        architecture:
-          type: hexagonal-single
-          paradigm: reactive
-          framework: spring
-        """;
+          project:
+            name: test-project
+            basePackage: com..example..test
+          architecture:
+            type: hexagonal-single
+            paradigm: reactive
+            framework: spring
+          """;
       Files.writeString(configFile, yamlWithConsecutiveDots);
 
       // When

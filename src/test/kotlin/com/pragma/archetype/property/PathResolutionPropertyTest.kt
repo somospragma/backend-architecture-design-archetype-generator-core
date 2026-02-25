@@ -1,7 +1,7 @@
 package com.pragma.archetype.property
 
-import com.pragma.archetype.domain.model.ArchitectureType
-import com.pragma.archetype.domain.model.StructureMetadata
+import com.pragma.archetype.domain.model.project.ArchitectureType
+import com.pragma.archetype.domain.model.structure.StructureMetadata
 import com.pragma.archetype.domain.port.out.PathResolver
 import com.pragma.archetype.domain.port.out.TemplateRepository
 import com.pragma.archetype.domain.service.PathResolverImpl
