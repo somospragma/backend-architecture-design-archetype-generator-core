@@ -180,7 +180,8 @@ signing {
 // SonarQube Configuration
 sonar {
     properties {
-        property("sonar.projectKey", "com.pragma:archetype-generator-core")
+        property("sonar.projectKey", System.getenv("SONAR_PROJECT_KEY") ?: "com.pragma:archetype-generator-core")
+        property("sonar.organization", System.getenv("SONAR_ORGANIZATION") ?: "somospragma")
         property("sonar.projectName", "Clean Architecture Generator Core")
         property("sonar.projectVersion", version.toString())
         property("sonar.sources", "src/main/java")
@@ -191,20 +192,20 @@ sonar {
         property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
         property("sonar.java.binaries", "build/classes/java/main")
         property("sonar.java.test.binaries", "build/classes/java/test")
-        property("sonar.exclusions", listOf(
-            "**/*Test.java",
-            "**/*Tests.java",
-            "**/test/**",
+        property("sonar.exclusions", 
+            "**/*Test.java," +
+            "**/*Tests.java," +
+            "**/test/**," +
             "**/build/**"
-        ))
-        property("sonar.coverage.exclusions", listOf(
-            "**/config/**",
-            "**/infrastructure/config/**",
-            "**/*Plugin.java",
-            "**/*Task.java",
-            "**/domain/model/**",
+        )
+        property("sonar.coverage.exclusions", 
+            "**/config/**," +
+            "**/infrastructure/config/**," +
+            "**/*Plugin.java," +
+            "**/*Task.java," +
+            "**/domain/model/**," +
             "**/domain/port/**"
-        ))
+        )
         property("sonar.gradle.skipCompile", "true")
     }
 }
