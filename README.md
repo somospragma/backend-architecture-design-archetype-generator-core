@@ -62,19 +62,22 @@ Follow the interactive prompts to select your architecture, framework, and parad
 ## Supported Adapters
 
 ### Output Adapters (Driven)
-- MongoDB
-- PostgreSQL
-- MySQL
-- Redis
-- REST Client
-- Kafka Producer
+
+**Reactive & Imperative:**
+- MongoDB (Reactive: Spring Data MongoDB Reactive | Imperative: Spring Data MongoDB)
+- PostgreSQL (Reactive: Spring Data R2DBC | Imperative: Spring Data JPA)
+- Redis (Reactive: Spring Data Redis Reactive | Imperative: Spring Data Redis)
+- HTTP Client (Reactive: WebClient | Imperative: RestTemplate)
+- DynamoDB (Reactive: DynamoDbAsyncClient | Imperative: DynamoDbClient)
+- SQS Producer (Reactive: SqsAsyncClient | Imperative: SqsClient)
 
 ### Input Adapters (Driving)
-- REST Controller
-- GraphQL
-- gRPC
-- Kafka Consumer
-- Event Listener
+
+**Reactive & Imperative:**
+- REST API (Reactive: Spring WebFlux | Imperative: Spring MVC)
+- GraphQL (Reactive: Mono/Flux returns | Imperative: Synchronous returns)
+- gRPC (Reactive: ReactorStub | Imperative: BlockingStub)
+- SQS Consumer (Reactive: Async processing | Imperative: Sync processing)
 
 ## Example
 
