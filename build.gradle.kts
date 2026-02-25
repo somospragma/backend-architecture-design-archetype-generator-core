@@ -163,9 +163,10 @@ publishing {
     repositories {
         maven {
             name = "OSSRH"
-            // Using OSSRH Staging API (compatible with new Central Portal)
-            val releasesRepoUrl = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
-            val snapshotsRepoUrl = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+            // Using OSSRH Staging API (compatible with new Central Portal tokens)
+            // See: https://mvysny.github.io/ossrh-deprecated/
+            val releasesRepoUrl = uri("https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/")
+            val snapshotsRepoUrl = uri("https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots/")
             url = if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl
             
             credentials {
