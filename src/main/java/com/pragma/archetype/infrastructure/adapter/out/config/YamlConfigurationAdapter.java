@@ -21,9 +21,9 @@ import com.pragma.archetype.domain.model.ArchitectureType;
 import com.pragma.archetype.domain.model.Framework;
 import com.pragma.archetype.domain.model.MergeResult;
 import com.pragma.archetype.domain.model.Paradigm;
-import com.pragma.archetype.domain.model.ProjectConfig;
-import com.pragma.archetype.domain.model.TemplateConfig;
-import com.pragma.archetype.domain.model.TemplateMode;
+import com.pragma.archetype.domain.model.config.ProjectConfig;
+import com.pragma.archetype.domain.model.config.TemplateConfig;
+import com.pragma.archetype.domain.model.config.TemplateMode;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.service.YamlMerger;
 

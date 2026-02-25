@@ -1,8 +1,12 @@
-package com.pragma.archetype.domain.model;
+package com.pragma.archetype.domain.model.config;
 
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Objects;
+
+import com.pragma.archetype.domain.model.ArchitectureType;
+import com.pragma.archetype.domain.model.Framework;
+import com.pragma.archetype.domain.model.Paradigm;
 
 /**
  * Configuration for a clean architecture project.

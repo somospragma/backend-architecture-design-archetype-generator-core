@@ -8,7 +8,7 @@ import java.util.Map;
 
 import com.pragma.archetype.domain.model.EntityConfig;
 import com.pragma.archetype.domain.model.GeneratedFile;
-import com.pragma.archetype.domain.model.ProjectConfig;
+import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 

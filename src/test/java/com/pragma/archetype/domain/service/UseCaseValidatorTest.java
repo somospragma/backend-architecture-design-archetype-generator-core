@@ -20,9 +20,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.pragma.archetype.domain.model.ArchitectureType;
 import com.pragma.archetype.domain.model.Framework;
 import com.pragma.archetype.domain.model.Paradigm;
-import com.pragma.archetype.domain.model.ProjectConfig;
 import com.pragma.archetype.domain.model.UseCaseConfig;
 import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 

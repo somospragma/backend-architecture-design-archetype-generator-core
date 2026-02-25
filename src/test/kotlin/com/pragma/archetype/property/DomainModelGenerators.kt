@@ -1,6 +1,8 @@
 package com.pragma.archetype.property
 
 import com.pragma.archetype.domain.model.*
+import com.pragma.archetype.domain.model.adapter.*
+import com.pragma.archetype.domain.model.config.*
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.*
 

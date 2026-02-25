@@ -162,7 +162,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * @return ValidationResult with all validation errors collected
    */
   private ValidationResult validateAllTemplates(AdapterConfig config,
-      com.pragma.archetype.domain.model.ProjectConfig projectConfig) {
+      com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
     List<String> errors = new ArrayList<>();
     List<String> warnings = new ArrayList<>();
 
@@ -340,7 +340,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * @return list of file paths to backup (relative to project root)
    */
   private List<Path> identifyFilesToBackup(Path projectPath, AdapterConfig config,
-      com.pragma.archetype.domain.model.ProjectConfig projectConfig) {
+      com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
     List<Path> filesToBackup = new ArrayList<>();
 
     try {
@@ -566,7 +566,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * @return template context map
    */
   private Map<String, Object> prepareConfigurationClassContext(AdapterConfig config,
-      com.pragma.archetype.domain.model.ProjectConfig projectConfig) {
+      com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
     Map<String, Object> context = new HashMap<>();
     context.put("adapterName", config.name());
     context.put("adapterType", config.type().name().toLowerCase());
@@ -724,7 +724,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * @param projectConfig the project configuration
    */
   private void checkDependencyConflicts(Path projectPath, AdapterConfig config,
-      com.pragma.archetype.domain.model.ProjectConfig projectConfig) {
+      com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
 
     if (projectConfig == null) {
       return;

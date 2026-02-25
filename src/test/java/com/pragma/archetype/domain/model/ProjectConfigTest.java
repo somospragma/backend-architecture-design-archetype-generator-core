@@ -11,6 +11,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import com.pragma.archetype.domain.model.config.ProjectConfig;
+
 class ProjectConfigTest {
 
   @Test

@@ -1,4 +1,4 @@
-package com.pragma.archetype.domain.model;
+package com.pragma.archetype.domain.model.config;
 
 /**
  * Represents the source from which templates are loaded.

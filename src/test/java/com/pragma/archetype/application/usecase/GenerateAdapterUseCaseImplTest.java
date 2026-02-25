@@ -195,7 +195,7 @@ class GenerateAdapterUseCaseImplTest {
     // Given
     AdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithConfigClasses();
-    com.pragma.archetype.domain.model.ProjectConfig projectConfig = createProjectConfig();
+    com.pragma.archetype.domain.model.config.ProjectConfig projectConfig = createProjectConfig();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
     when(configurationPort.readConfiguration(any())).thenReturn(Optional.of(projectConfig));
@@ -246,7 +246,7 @@ class GenerateAdapterUseCaseImplTest {
     // Given
     AdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithConfigClasses();
-    com.pragma.archetype.domain.model.ProjectConfig projectConfig = createProjectConfig();
+    com.pragma.archetype.domain.model.config.ProjectConfig projectConfig = createProjectConfig();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
     when(configurationPort.readConfiguration(any())).thenReturn(Optional.of(projectConfig));
@@ -267,7 +267,7 @@ class GenerateAdapterUseCaseImplTest {
     // Given
     AdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithMultipleConfigClasses();
-    com.pragma.archetype.domain.model.ProjectConfig projectConfig = createProjectConfig();
+    com.pragma.archetype.domain.model.config.ProjectConfig projectConfig = createProjectConfig();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
     when(configurationPort.readConfiguration(any())).thenReturn(Optional.of(projectConfig));
@@ -596,7 +596,7 @@ class GenerateAdapterUseCaseImplTest {
     // Given
     AdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithConfigClasses();
-    com.pragma.archetype.domain.model.ProjectConfig projectConfig = createProjectConfig();
+    com.pragma.archetype.domain.model.config.ProjectConfig projectConfig = createProjectConfig();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
     when(configurationPort.readConfiguration(any())).thenReturn(Optional.of(projectConfig));
@@ -625,7 +625,7 @@ class GenerateAdapterUseCaseImplTest {
     // Given
     AdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithConfigClasses();
-    com.pragma.archetype.domain.model.ProjectConfig projectConfig = createProjectConfig();
+    com.pragma.archetype.domain.model.config.ProjectConfig projectConfig = createProjectConfig();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
     when(configurationPort.readConfiguration(any())).thenReturn(Optional.of(projectConfig));
@@ -671,8 +671,8 @@ class GenerateAdapterUseCaseImplTest {
         });
   }
 
-  private com.pragma.archetype.domain.model.ProjectConfig createProjectConfig() {
-    return com.pragma.archetype.domain.model.ProjectConfig.builder()
+  private com.pragma.archetype.domain.model.config.ProjectConfig createProjectConfig() {
+    return com.pragma.archetype.domain.model.config.ProjectConfig.builder()
         .name("test-project")
         .basePackage("com.test")
         .architecture(com.pragma.archetype.domain.model.ArchitectureType.HEXAGONAL_SINGLE)

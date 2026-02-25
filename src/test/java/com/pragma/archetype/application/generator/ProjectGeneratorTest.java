@@ -1,6 +1,7 @@
 package com.pragma.archetype.application.generator;
 
 import com.pragma.archetype.domain.model.*;
+import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 import org.junit.jupiter.api.BeforeEach;

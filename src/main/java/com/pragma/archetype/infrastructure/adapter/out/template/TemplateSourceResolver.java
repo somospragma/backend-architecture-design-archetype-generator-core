@@ -4,9 +4,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import com.pragma.archetype.domain.model.TemplateConfig;
-import com.pragma.archetype.domain.model.TemplateMode;
-import com.pragma.archetype.domain.model.TemplateSource;
+import com.pragma.archetype.domain.model.config.TemplateConfig;
+import com.pragma.archetype.domain.model.config.TemplateMode;
+import com.pragma.archetype.domain.model.config.TemplateSource;
 
 /**
  * Resolves the source from which templates should be loaded.

@@ -1,4 +1,4 @@
-package com.pragma.archetype.domain.model;
+package com.pragma.archetype.domain.model.config;
 
 /**
  * Configuration for template repository.

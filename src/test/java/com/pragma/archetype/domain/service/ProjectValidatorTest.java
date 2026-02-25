@@ -1,6 +1,7 @@
 package com.pragma.archetype.domain.service;
 
 import com.pragma.archetype.domain.model.*;
+import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import org.junit.jupiter.api.BeforeEach;

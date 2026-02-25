@@ -19,7 +19,7 @@ import org.junit.jupiter.api.io.TempDir;
 import com.pragma.archetype.domain.model.ArchitectureType;
 import com.pragma.archetype.domain.model.Framework;
 import com.pragma.archetype.domain.model.Paradigm;
-import com.pragma.archetype.domain.model.ProjectConfig;
+import com.pragma.archetype.domain.model.config.ProjectConfig;
 
 class YamlConfigurationAdapterExtendedTest {
 

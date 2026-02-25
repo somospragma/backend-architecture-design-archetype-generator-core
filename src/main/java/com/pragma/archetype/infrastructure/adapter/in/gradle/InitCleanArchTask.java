@@ -14,8 +14,8 @@ import com.pragma.archetype.application.usecase.InitializeProjectUseCaseImpl.Ini
 import com.pragma.archetype.domain.model.ArchitectureType;
 import com.pragma.archetype.domain.model.Framework;
 import com.pragma.archetype.domain.model.Paradigm;
-import com.pragma.archetype.domain.model.ProjectConfig;
-import com.pragma.archetype.domain.model.TemplateConfig;
+import com.pragma.archetype.domain.model.config.ProjectConfig;
+import com.pragma.archetype.domain.model.config.TemplateConfig;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;

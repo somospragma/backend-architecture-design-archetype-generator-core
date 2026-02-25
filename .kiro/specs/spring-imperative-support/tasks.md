@@ -46,12 +46,12 @@
   - [ ] Commit changes: "Move adapter classes to domain/model/adapter/"
 
 ### Task 0.4: Move Classes to New Packages (Config Domain)
-- [ ] 0.4.1 Move config-related classes
+- [x] 0.4.1 Move config-related classes
   - [ ] Move ProjectConfig.java to domain/model/config/
   - [ ] Move TemplateConfig.java to domain/model/config/
   - [ ] Move TemplateMode.java to domain/model/config/
   - [ ] Move TemplateSource.java to domain/model/config/
-- [ ] 0.4.2 Update imports in all files that use config classes
+- [x] 0.4.2 Update imports in all files that use config classes
   - [ ] Search and replace all imports for ProjectConfig
   - [ ] Search and replace all imports for TemplateConfig
   - [ ] Search and replace all imports for TemplateMode
@@ -59,7 +59,7 @@
   - [ ] Update application layer files
   - [ ] Update infrastructure layer files
   - [ ] Update test files
-- [ ] 0.4.3 Validation
+- [x] 0.4.3 Validation
   - [ ] Run `./gradlew build` - must succeed
   - [ ] Run `./gradlew test` - all tests must pass
   - [ ] Run `./gradlew jacocoTestReport` - verify coverage >85%
