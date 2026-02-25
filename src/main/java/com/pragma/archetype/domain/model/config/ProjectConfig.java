@@ -26,6 +26,8 @@ public record ProjectConfig(
     boolean adaptersAsModules,
     Map<String, String> dependencyOverrides) {
 
+  private static final String DEFAULT_PLUGIN_VERSION = "0.1.0-SNAPSHOT";
+
   /**
    * Compact constructor with validation.
    */
@@ -35,7 +37,10 @@ public record ProjectConfig(
     Objects.requireNonNull(architecture, "Architecture type cannot be null");
     Objects.requireNonNull(paradigm, "Paradigm cannot be null");
     Objects.requireNonNull(framework, "Framework cannot be null");
-    Objects.requireNonNull(pluginVersion, "Plugin version cannot be null");
+
+    if (pluginVersion == null || pluginVersion.isBlank()) {
+      pluginVersion = DEFAULT_PLUGIN_VERSION;
+    }
 
     if (name.isBlank()) {
       throw new IllegalArgumentException("Project name cannot be blank");
