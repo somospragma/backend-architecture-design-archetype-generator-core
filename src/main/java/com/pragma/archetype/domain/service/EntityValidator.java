@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.pragma.archetype.domain.model.entity.EntityConfig;
+import com.pragma.archetype.domain.model.entity.EntityField;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
@@ -88,8 +89,8 @@ public class EntityValidator {
   /**
    * Validates entity fields.
    */
-  private void validateFields(List<EntityConfig.EntityField> fields, List<String> errors) {
-    for (EntityConfig.EntityField field : fields) {
+  private void validateFields(List<EntityField> fields, List<String> errors) {
+    for (EntityField field : fields) {
       if (field.name() == null || field.name().isBlank()) {
         errors.add("Field name cannot be empty");
       } else if (!isValidJavaFieldName(field.name())) {

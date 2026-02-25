@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.pragma.archetype.application.generator.EntityGenerator;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.entity.EntityConfig;
+import com.pragma.archetype.domain.model.entity.EntityField;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.model.project.Framework;
@@ -63,7 +64,7 @@ class GenerateEntityUseCaseImplTest {
         .hasId(true)
         .idType("String")
         .fields(List.of(
-            new EntityConfig.EntityField("name", "String", false)))
+            new EntityField("name", "String", false)))
         .build();
 
     ProjectConfig projectConfig = ProjectConfig.builder()
@@ -124,7 +125,7 @@ class GenerateEntityUseCaseImplTest {
         .hasId(true)
         .idType("String")
         .fields(List.of(
-            new EntityConfig.EntityField("name", "String", false)))
+            new EntityField("name", "String", false)))
         .build();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
@@ -147,7 +148,7 @@ class GenerateEntityUseCaseImplTest {
         .hasId(true)
         .idType("String")
         .fields(List.of(
-            new EntityConfig.EntityField("name", "String", false)))
+            new EntityField("name", "String", false)))
         .build();
 
     ProjectConfig projectConfig = ProjectConfig.builder()

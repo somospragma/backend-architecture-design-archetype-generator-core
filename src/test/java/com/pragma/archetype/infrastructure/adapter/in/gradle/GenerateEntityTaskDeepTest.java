@@ -17,7 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.pragma.archetype.domain.model.entity.EntityConfig;
+import com.pragma.archetype.domain.model.entity.EntityField;
 
 /**
  * Deep tests for GenerateEntityTask using reflection to test private methods
@@ -47,7 +47,7 @@ class GenerateEntityTaskDeepTest {
     String fieldsStr = "name:String";
 
     // When
-    List<EntityConfig.EntityField> fields = invokeParseFields(fieldsStr);
+    List<EntityField> fields = invokeParseFields(fieldsStr);
 
     // Then
     assertNotNull(fields);
@@ -62,7 +62,7 @@ class GenerateEntityTaskDeepTest {
     String fieldsStr = "name:String,age:Integer,email:String";
 
     // When
-    List<EntityConfig.EntityField> fields = invokeParseFields(fieldsStr);
+    List<EntityField> fields = invokeParseFields(fieldsStr);
 
     // Then
     assertEquals(3, fields.size());
@@ -77,7 +77,7 @@ class GenerateEntityTaskDeepTest {
     String fieldsStr = " name : String , age : Integer ";
 
     // When
-    List<EntityConfig.EntityField> fields = invokeParseFields(fieldsStr);
+    List<EntityField> fields = invokeParseFields(fieldsStr);
 
     // Then
     assertEquals(2, fields.size());
@@ -91,7 +91,7 @@ class GenerateEntityTaskDeepTest {
     String fieldsStr = "items:List<OrderItem>,total:BigDecimal,status:OrderStatus";
 
     // When
-    List<EntityConfig.EntityField> fields = invokeParseFields(fieldsStr);
+    List<EntityField> fields = invokeParseFields(fieldsStr);
 
     // Then
     assertEquals(3, fields.size());
@@ -105,7 +105,7 @@ class GenerateEntityTaskDeepTest {
     String fieldsStr = "";
 
     // When
-    List<EntityConfig.EntityField> fields = invokeParseFields(fieldsStr);
+    List<EntityField> fields = invokeParseFields(fieldsStr);
 
     // Then
     assertTrue(fields.isEmpty());
@@ -118,7 +118,7 @@ class GenerateEntityTaskDeepTest {
 
     // When/Then - should handle gracefully or throw
     try {
-      List<EntityConfig.EntityField> fields = invokeParseFields(fieldsStr);
+      List<EntityField> fields = invokeParseFields(fieldsStr);
       // If it doesn't throw, verify it handled it somehow
       assertNotNull(fields);
     } catch (Exception e) {
@@ -245,10 +245,10 @@ class GenerateEntityTaskDeepTest {
   // Helper methods using reflection to access private methods
 
   @SuppressWarnings("unchecked")
-  private List<EntityConfig.EntityField> invokeParseFields(String fieldsStr) throws Exception {
+  private List<EntityField> invokeParseFields(String fieldsStr) throws Exception {
     Method method = GenerateEntityTask.class.getDeclaredMethod("parseFields", String.class);
     method.setAccessible(true);
-    return (List<EntityConfig.EntityField>) method.invoke(task, fieldsStr);
+    return (List<EntityField>) method.invoke(task, fieldsStr);
   }
 
   private String invokeResolvePackageName() throws Exception {

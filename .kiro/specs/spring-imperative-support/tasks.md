@@ -178,12 +178,12 @@
   - [ ] Commit changes: "Extract nested classes from InputAdapterConfig"
 
 ### Task 0.10: Extract Nested Classes from EntityConfig
-- [ ] 0.10.1 Extract EntityField record
+- [x] 0.10.1 Extract EntityField record
   - [ ] Create EntityField.java in domain/model/entity/
   - [ ] Copy record content from EntityConfig
   - [ ] Update EntityConfig to reference the new record
   - [ ] Update all imports that use EntityConfig.EntityField
-- [ ] 0.10.2 Validation
+- [x] 0.10.2 Validation
   - [ ] Run `./gradlew build` - must succeed
   - [ ] Run `./gradlew test` - all tests must pass
   - [ ] Run `./gradlew jacocoTestReport` - verify coverage >85%
