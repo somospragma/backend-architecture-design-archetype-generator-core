@@ -190,12 +190,12 @@
   - [ ] Commit changes: "Extract EntityField record from EntityConfig"
 
 ### Task 0.11: Extract FileType Enum from GeneratedFile
-- [-] 0.11.1 Extract FileType enum
+- [x] 0.11.1 Extract FileType enum
   - [ ] Create FileType.java in domain/model/file/
   - [ ] Copy enum content from GeneratedFile
   - [ ] Update GeneratedFile to reference the new enum
   - [ ] Update all imports that use GeneratedFile.FileType
-- [ ] 0.11.2 Validation
+- [x] 0.11.2 Validation
   - [ ] Run `./gradlew build` - must succeed
   - [ ] Run `./gradlew test` - all tests must pass
   - [ ] Run `./gradlew jacocoTestReport` - verify coverage >85%
