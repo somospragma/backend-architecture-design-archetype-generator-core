@@ -190,7 +190,7 @@
   - [ ] Commit changes: "Extract EntityField record from EntityConfig"
 
 ### Task 0.11: Extract FileType Enum from GeneratedFile
-- [ ] 0.11.1 Extract FileType enum
+- [-] 0.11.1 Extract FileType enum
   - [ ] Create FileType.java in domain/model/file/
   - [ ] Copy enum content from GeneratedFile
   - [ ] Update GeneratedFile to reference the new enum

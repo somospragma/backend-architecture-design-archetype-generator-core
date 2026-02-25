@@ -18,18 +18,6 @@ public record GeneratedFile(
     Objects.requireNonNull(type, "File type cannot be null");
   }
 
-  public enum FileType {
-    JAVA_SOURCE,
-    KOTLIN_SOURCE,
-    GRADLE_BUILD,
-    GRADLE_SETTINGS,
-    YAML_CONFIG,
-    PROPERTIES_CONFIG,
-    MARKDOWN,
-    GITIGNORE,
-    OTHER
-  }
-
   /**
    * Creates a Java source file.
    */

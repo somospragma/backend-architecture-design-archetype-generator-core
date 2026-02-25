@@ -11,6 +11,7 @@ import com.pragma.archetype.domain.model.adapter.AdapterMethod;
 import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.adapter.MethodParameter;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
+import com.pragma.archetype.domain.model.file.FileType;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.PathResolver;
@@ -133,7 +134,7 @@ public class AdapterGenerator {
     String content = templateRepository.processTemplate(templatePath, data);
 
     Path filePath = projectPath.resolve(modulePath).resolve("build.gradle.kts");
-    return new GeneratedFile(filePath, content, GeneratedFile.FileType.GRADLE_BUILD);
+    return new GeneratedFile(filePath, content, FileType.GRADLE_BUILD);
   }
 
   /**
