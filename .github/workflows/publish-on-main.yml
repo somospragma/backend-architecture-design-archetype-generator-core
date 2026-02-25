@@ -51,9 +51,22 @@ jobs:
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_PRIVATE_KEY }}
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository \
+          # Generate signed artifacts and create bundle
+          ./gradlew publishPluginMavenPublicationToBuildRepository \
             --no-daemon \
             --stacktrace
+          
+          # Create ZIP bundle for Maven Central Portal
+          cd build/repo
+          zip -r ../../maven-central-bundle.zip .
+          cd ../..
+          
+          # Upload bundle to Maven Central Portal API
+          curl --request POST \
+            --verbose \
+            --header "Authorization: Bearer $OSSRH_USERNAME:$OSSRH_PASSWORD" \
+            --form bundle=@maven-central-bundle.zip \
+            https://central.sonatype.com/api/v1/publisher/upload
       
       - name: Create Summary
         if: success()

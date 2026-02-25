@@ -4,7 +4,6 @@ plugins {
     signing
     id("com.gradle.plugin-publish") version "1.2.1"
     id("org.sonarqube") version "4.4.1.3373"
-    id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
     jacoco
     kotlin("jvm") version "1.9.21"
 }
@@ -160,6 +159,13 @@ publishing {
             }
         }
     }
+    
+    repositories {
+        maven {
+            name = "build"
+            url = uri(layout.buildDirectory.dir("repo"))
+        }
+    }
 }
 
 signing {
@@ -190,14 +196,19 @@ sonar {
     }
 }
 
-// Nexus Publishing Configuration for Maven Central Portal
-nexusPublishing {
-    repositories {
-        sonatype {
-            nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
-            snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
-            username.set(project.findProperty("ossrhUsername")?.toString() ?: System.getenv("OSSRH_USERNAME"))
-            password.set(project.findProperty("ossrhPassword")?.toString() ?: System.getenv("OSSRH_PASSWORD"))
-        }
+// Task to create a bundle for Maven Central Portal manual upload
+tasks.register<Zip>("createMavenCentralBundle") {
+    dependsOn("publishToMavenLocal")
+    
+    archiveFileName.set("maven-central-bundle-${version}.zip")
+    destinationDirectory.set(layout.buildDirectory.dir("distributions"))
+    
+    from(layout.buildDirectory.dir("repo")) {
+        include("**/*")
+    }
+    
+    doLast {
+        println("Maven Central bundle created at: ${archiveFile.get().asFile.absolutePath}")
+        println("Upload this file manually to: https://central.sonatype.com/publishing/deployments")
     }
 }
