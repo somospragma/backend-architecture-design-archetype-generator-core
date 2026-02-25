@@ -191,7 +191,20 @@ sonar {
         property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
         property("sonar.java.binaries", "build/classes/java/main")
         property("sonar.java.test.binaries", "build/classes/java/test")
-        property("sonar.exclusions", "**/*Test.java,**/*Tests.java,**/test/**,**/build/**")
-        property("sonar.coverage.exclusions", "**/config/**,**/infrastructure/config/**,**/*Plugin.java,**/*Task.java,**/domain/model/**,**/domain/port/**")
+        property("sonar.exclusions", listOf(
+            "**/*Test.java",
+            "**/*Tests.java",
+            "**/test/**",
+            "**/build/**"
+        ))
+        property("sonar.coverage.exclusions", listOf(
+            "**/config/**",
+            "**/infrastructure/config/**",
+            "**/*Plugin.java",
+            "**/*Task.java",
+            "**/domain/model/**",
+            "**/domain/port/**"
+        ))
+        property("sonar.gradle.skipCompile", "true")
     }
 }
