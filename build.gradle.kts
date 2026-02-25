@@ -23,6 +23,13 @@ repositories {
 }
 
 dependencies {
+    // Lombok for reducing boilerplate
+    compileOnly("org.projectlombok:lombok:1.18.30")
+    annotationProcessor("org.projectlombok:lombok:1.18.30")
+    
+    testCompileOnly("org.projectlombok:lombok:1.18.30")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
+    
     // Freemarker for template processing
     implementation("org.freemarker:freemarker:2.3.32")
     
@@ -102,13 +109,7 @@ tasks.withType<ProcessResources> {
 // Maven Central Publishing Configuration
 publishing {
     publications {
-        create<MavenPublication>("pluginMaven") {
-            groupId = "com.pragma"
-            artifactId = "archetype-generator"
-            version = project.version.toString()
-
-            from(components["java"])
-
+        withType<MavenPublication> {
             pom {
                 name.set("Clean Architecture Generator")
                 description.set("Gradle plugin to generate clean architecture projects with multiple frameworks and adapters")
@@ -154,6 +155,7 @@ publishing {
 }
 
 signing {
-    sign(publishing.publications["pluginMaven"])
+    val publications = publishing.publications.matching { it.name == "cleanArchGeneratorPluginMarkerMaven" || it.name.contains("PluginMarkerMaven") }
+    sign(publications)
 }
 

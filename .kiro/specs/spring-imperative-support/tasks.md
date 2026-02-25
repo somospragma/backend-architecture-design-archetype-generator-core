@@ -3,12 +3,12 @@
 ## PHASE 0: Domain Layer Refactoring (Technical Debt)
 
 ### Task 0.1: Add Lombok Dependency and Configuration
-- [ ] 0.1.1 Add Lombok dependency to build.gradle.kts
+- [x] 0.1.1 Add Lombok dependency to build.gradle.kts
   - [ ] Add compileOnly("org.projectlombok:lombok:1.18.30")
   - [ ] Add annotationProcessor("org.projectlombok:lombok:1.18.30")
   - [ ] Add testCompileOnly("org.projectlombok:lombok:1.18.30")
   - [ ] Add testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
-- [ ] 0.1.2 Verify Lombok configuration
+- [x] 0.1.2 Verify Lombok configuration
   - [ ] Run `./gradlew build` - must succeed
   - [ ] Run `./gradlew test` - all tests must pass
   - [ ] Run `./gradlew jacocoTestReport` - verify coverage >85%
