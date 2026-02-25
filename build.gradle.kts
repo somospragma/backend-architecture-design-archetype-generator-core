@@ -8,8 +8,8 @@ plugins {
     kotlin("jvm") version "1.9.21"
 }
 
-group = "com.pragma"
-version = "1.0.0-PRERELEASE"
+group = "co.com.pragma"
+version = "1.0.0"
 
 java {
     toolchain {
@@ -64,12 +64,16 @@ dependencies {
 }
 
 gradlePlugin {
+    website.set("https://github.com/somospragma/backend-architecture-design-archetype-generator-core")
+    vcsUrl.set("https://github.com/somospragma/backend-architecture-design-archetype-generator-core.git")
+    
     plugins {
         create("cleanArchGenerator") {
-            id = "com.pragma.archetype-generator"
+            id = "co.com.pragma.archetype-generator"
             implementationClass = "com.pragma.archetype.infrastructure.config.CleanArchPlugin"
             displayName = "Clean Architecture Generator"
-            description = "Gradle plugin to generate clean architecture projects"
+            description = "Gradle plugin to generate clean architecture projects with multiple frameworks and adapters"
+            tags.set(listOf("clean-architecture", "hexagonal", "ddd", "code-generator", "spring-boot"))
         }
     }
 }
