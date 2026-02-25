@@ -3,6 +3,7 @@ package com.pragma.archetype.domain.model;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDateTime;
@@ -16,15 +17,21 @@ import com.pragma.archetype.domain.model.project.Paradigm;
 
 class ProjectConfigBranchTest {
 
+  private static final String VALID_NAME = "test";
+  private static final String VALID_PACKAGE = "com.test";
+  private static final ArchitectureType VALID_ARCHITECTURE = ArchitectureType.HEXAGONAL_SINGLE;
+  private static final Paradigm VALID_PARADIGM = Paradigm.REACTIVE;
+  private static final Framework VALID_FRAMEWORK = Framework.SPRING;
+
   @Test
   void shouldCreateWithAllFields() {
     // When
     ProjectConfig config = ProjectConfig.builder()
         .name("test-project")
-        .basePackage("com.test")
-        .architecture(ArchitectureType.HEXAGONAL_SINGLE)
-        .paradigm(Paradigm.REACTIVE)
-        .framework(Framework.SPRING)
+        .basePackage(VALID_PACKAGE)
+        .architecture(VALID_ARCHITECTURE)
+        .paradigm(VALID_PARADIGM)
+        .framework(VALID_FRAMEWORK)
         .pluginVersion("1.0.0")
         .createdAt(LocalDateTime.now())
         .build();
@@ -32,96 +39,115 @@ class ProjectConfigBranchTest {
     // Then
     assertNotNull(config);
     assertEquals("test-project", config.name());
-    assertEquals("com.test", config.basePackage());
+    assertEquals(VALID_PACKAGE, config.basePackage());
   }
 
   @Test
   void shouldCreateWithMinimalFields() {
     // When
     ProjectConfig config = ProjectConfig.builder()
-        .name("test")
-        .basePackage("com.test")
+        .name(VALID_NAME)
+        .basePackage(VALID_PACKAGE)
+        .architecture(VALID_ARCHITECTURE)
+        .paradigm(VALID_PARADIGM)
+        .framework(VALID_FRAMEWORK)
         .build();
 
     // Then
     assertNotNull(config);
+    assertEquals("0.1.0-SNAPSHOT", config.pluginVersion()); // Default value
+    assertNotNull(config.createdAt()); // Auto-generated
   }
 
   @Test
   void shouldHandleNullArchitecture() {
-    // When
-    ProjectConfig config = ProjectConfig.builder()
-        .name("test")
-        .basePackage("com.test")
+    // When/Then
+    assertThrows(NullPointerException.class, () -> ProjectConfig.builder()
+        .name(VALID_NAME)
+        .basePackage(VALID_PACKAGE)
         .architecture(null)
-        .build();
-
-    // Then
-    assertNotNull(config);
+        .paradigm(VALID_PARADIGM)
+        .framework(VALID_FRAMEWORK)
+        .build());
   }
 
   @Test
   void shouldHandleNullParadigm() {
-    // When
-    ProjectConfig config = ProjectConfig.builder()
-        .name("test")
-        .basePackage("com.test")
+    // When/Then
+    assertThrows(NullPointerException.class, () -> ProjectConfig.builder()
+        .name(VALID_NAME)
+        .basePackage(VALID_PACKAGE)
+        .architecture(VALID_ARCHITECTURE)
         .paradigm(null)
-        .build();
-
-    // Then
-    assertNotNull(config);
+        .framework(VALID_FRAMEWORK)
+        .build());
   }
 
   @Test
   void shouldHandleNullFramework() {
-    // When
-    ProjectConfig config = ProjectConfig.builder()
-        .name("test")
-        .basePackage("com.test")
+    // When/Then
+    assertThrows(NullPointerException.class, () -> ProjectConfig.builder()
+        .name(VALID_NAME)
+        .basePackage(VALID_PACKAGE)
+        .architecture(VALID_ARCHITECTURE)
+        .paradigm(VALID_PARADIGM)
         .framework(null)
-        .build();
-
-    // Then
-    assertNotNull(config);
+        .build());
   }
 
   @Test
   void shouldHandleNullPluginVersion() {
-    // When
+    // When - null pluginVersion should use default
     ProjectConfig config = ProjectConfig.builder()
-        .name("test")
-        .basePackage("com.test")
+        .name(VALID_NAME)
+        .basePackage(VALID_PACKAGE)
+        .architecture(VALID_ARCHITECTURE)
+        .paradigm(VALID_PARADIGM)
+        .framework(VALID_FRAMEWORK)
         .pluginVersion(null)
         .build();
 
     // Then
     assertNotNull(config);
+    assertEquals("0.1.0-SNAPSHOT", config.pluginVersion());
   }
 
   @Test
   void shouldHandleNullCreatedAt() {
-    // When
+    // When - null createdAt should use current time
     ProjectConfig config = ProjectConfig.builder()
-        .name("test")
-        .basePackage("com.test")
+        .name(VALID_NAME)
+        .basePackage(VALID_PACKAGE)
+        .architecture(VALID_ARCHITECTURE)
+        .paradigm(VALID_PARADIGM)
+        .framework(VALID_FRAMEWORK)
         .createdAt(null)
         .build();
 
     // Then
     assertNotNull(config);
+    assertNotNull(config.createdAt());
   }
 
   @Test
   void shouldTestEquality() {
     // Given
+    LocalDateTime now = LocalDateTime.now();
     ProjectConfig config1 = ProjectConfig.builder()
-        .name("test")
-        .basePackage("com.test")
+        .name(VALID_NAME)
+        .basePackage(VALID_PACKAGE)
+        .architecture(VALID_ARCHITECTURE)
+        .paradigm(VALID_PARADIGM)
+        .framework(VALID_FRAMEWORK)
+        .createdAt(now)
         .build();
     ProjectConfig config2 = ProjectConfig.builder()
-        .name("test")
-        .basePackage("com.test")
+        .name(VALID_NAME)
+        .basePackage(VALID_PACKAGE)
+        .architecture(VALID_ARCHITECTURE)
+        .paradigm(VALID_PARADIGM)
+        .framework(VALID_FRAMEWORK)
+        .createdAt(now)
         .build();
 
     // Then
@@ -134,11 +160,17 @@ class ProjectConfigBranchTest {
     // Given
     ProjectConfig config1 = ProjectConfig.builder()
         .name("test1")
-        .basePackage("com.test")
+        .basePackage(VALID_PACKAGE)
+        .architecture(VALID_ARCHITECTURE)
+        .paradigm(VALID_PARADIGM)
+        .framework(VALID_FRAMEWORK)
         .build();
     ProjectConfig config2 = ProjectConfig.builder()
         .name("test2")
-        .basePackage("com.test")
+        .basePackage(VALID_PACKAGE)
+        .architecture(VALID_ARCHITECTURE)
+        .paradigm(VALID_PARADIGM)
+        .framework(VALID_FRAMEWORK)
         .build();
 
     // Then
@@ -149,8 +181,11 @@ class ProjectConfigBranchTest {
   void shouldTestToString() {
     // Given
     ProjectConfig config = ProjectConfig.builder()
-        .name("test")
-        .basePackage("com.test")
+        .name(VALID_NAME)
+        .basePackage(VALID_PACKAGE)
+        .architecture(VALID_ARCHITECTURE)
+        .paradigm(VALID_PARADIGM)
+        .framework(VALID_FRAMEWORK)
         .build();
 
     // When
@@ -158,17 +193,19 @@ class ProjectConfigBranchTest {
 
     // Then
     assertNotNull(str);
-    assertTrue(str.contains("test"));
-    assertTrue(str.contains("com.test"));
+    assertTrue(str.contains(VALID_NAME));
+    assertTrue(str.contains(VALID_PACKAGE));
   }
 
   @Test
   void shouldHandleAllArchitectureTypes() {
     for (ArchitectureType type : ArchitectureType.values()) {
       ProjectConfig config = ProjectConfig.builder()
-          .name("test")
-          .basePackage("com.test")
+          .name(VALID_NAME)
+          .basePackage(VALID_PACKAGE)
           .architecture(type)
+          .paradigm(VALID_PARADIGM)
+          .framework(VALID_FRAMEWORK)
           .build();
       assertNotNull(config);
       assertEquals(type, config.architecture());
@@ -179,9 +216,11 @@ class ProjectConfigBranchTest {
   void shouldHandleAllParadigms() {
     for (Paradigm paradigm : Paradigm.values()) {
       ProjectConfig config = ProjectConfig.builder()
-          .name("test")
-          .basePackage("com.test")
+          .name(VALID_NAME)
+          .basePackage(VALID_PACKAGE)
+          .architecture(VALID_ARCHITECTURE)
           .paradigm(paradigm)
+          .framework(VALID_FRAMEWORK)
           .build();
       assertNotNull(config);
       assertEquals(paradigm, config.paradigm());
@@ -192,8 +231,10 @@ class ProjectConfigBranchTest {
   void shouldHandleAllFrameworks() {
     for (Framework framework : Framework.values()) {
       ProjectConfig config = ProjectConfig.builder()
-          .name("test")
-          .basePackage("com.test")
+          .name(VALID_NAME)
+          .basePackage(VALID_PACKAGE)
+          .architecture(VALID_ARCHITECTURE)
+          .paradigm(VALID_PARADIGM)
           .framework(framework)
           .build();
       assertNotNull(config);
@@ -203,28 +244,26 @@ class ProjectConfigBranchTest {
 
   @Test
   void shouldHandleEmptyName() {
-    // When
-    ProjectConfig config = ProjectConfig.builder()
+    // When/Then - empty name should throw exception
+    assertThrows(IllegalArgumentException.class, () -> ProjectConfig.builder()
         .name("")
-        .basePackage("com.test")
-        .build();
-
-    // Then
-    assertNotNull(config);
-    assertEquals("", config.name());
+        .basePackage(VALID_PACKAGE)
+        .architecture(VALID_ARCHITECTURE)
+        .paradigm(VALID_PARADIGM)
+        .framework(VALID_FRAMEWORK)
+        .build());
   }
 
   @Test
   void shouldHandleEmptyBasePackage() {
-    // When
-    ProjectConfig config = ProjectConfig.builder()
-        .name("test")
+    // When/Then - empty package should throw exception
+    assertThrows(IllegalArgumentException.class, () -> ProjectConfig.builder()
+        .name(VALID_NAME)
         .basePackage("")
-        .build();
-
-    // Then
-    assertNotNull(config);
-    assertEquals("", config.basePackage());
+        .architecture(VALID_ARCHITECTURE)
+        .paradigm(VALID_PARADIGM)
+        .framework(VALID_FRAMEWORK)
+        .build());
   }
 
   @Test
@@ -235,7 +274,10 @@ class ProjectConfigBranchTest {
     // When
     ProjectConfig config = ProjectConfig.builder()
         .name(longName)
-        .basePackage("com.test")
+        .basePackage(VALID_PACKAGE)
+        .architecture(VALID_ARCHITECTURE)
+        .paradigm(VALID_PARADIGM)
+        .framework(VALID_FRAMEWORK)
         .build();
 
     // Then
@@ -250,8 +292,11 @@ class ProjectConfigBranchTest {
 
     // When
     ProjectConfig config = ProjectConfig.builder()
-        .name("test")
+        .name(VALID_NAME)
         .basePackage(longPackage)
+        .architecture(VALID_ARCHITECTURE)
+        .paradigm(VALID_PARADIGM)
+        .framework(VALID_FRAMEWORK)
         .build();
 
     // Then
@@ -264,7 +309,10 @@ class ProjectConfigBranchTest {
     // When
     ProjectConfig config = ProjectConfig.builder()
         .name("test-project_123")
-        .basePackage("com.test")
+        .basePackage(VALID_PACKAGE)
+        .architecture(VALID_ARCHITECTURE)
+        .paradigm(VALID_PARADIGM)
+        .framework(VALID_FRAMEWORK)
         .build();
 
     // Then
@@ -280,8 +328,11 @@ class ProjectConfigBranchTest {
 
     // When
     ProjectConfig config = ProjectConfig.builder()
-        .name("test")
-        .basePackage("com.test")
+        .name(VALID_NAME)
+        .basePackage(VALID_PACKAGE)
+        .architecture(VALID_ARCHITECTURE)
+        .paradigm(VALID_PARADIGM)
+        .framework(VALID_FRAMEWORK)
         .createdAt(future)
         .build();
 
@@ -297,8 +348,11 @@ class ProjectConfigBranchTest {
 
     // When
     ProjectConfig config = ProjectConfig.builder()
-        .name("test")
-        .basePackage("com.test")
+        .name(VALID_NAME)
+        .basePackage(VALID_PACKAGE)
+        .architecture(VALID_ARCHITECTURE)
+        .paradigm(VALID_PARADIGM)
+        .framework(VALID_FRAMEWORK)
         .createdAt(past)
         .build();
 
