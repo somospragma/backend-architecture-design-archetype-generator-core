@@ -205,18 +205,6 @@ Valor: [tu-gradle-api-secret]
 
 **Cuándo usar**: Cuando solo quieres actualizar en Maven Central
 
-### 4. Publicación por Tags (`publish.yml` - existente)
-
-**Trigger**: Cuando creas un tag `v*` (ej: `v1.0.0`)
-
-**Qué hace**:
-- ✅ Ejecuta tests
-- ✅ Publica en Gradle Plugin Portal
-- ✅ Publica en Maven Central
-- ✅ Crea un GitHub Release
-
-**Cuándo usar**: Para releases oficiales versionadas
-
 ---
 
 ## Proceso de Publicación
@@ -253,23 +241,23 @@ git push origin main
 # 6. Click en "Run workflow"
 ```
 
-### Opción 3: Publicación por Tag (Release)
+### Opción 3: Publicación con Versionado Semántico
+
+Si quieres crear una release oficial con versionado:
 
 ```bash
 # 1. Actualiza la versión en build.gradle.kts
-# version = "1.0.0"  # Quita -PRERELEASE
+# version = "1.1.0"  # Nueva versión
 
 # 2. Commit
 git add build.gradle.kts
-git commit -m "chore: release version 1.0.0"
+git commit -m "chore: bump version to 1.1.0"
 git push
 
-# 3. Crea y push el tag
-git tag -a v1.0.0 -m "Release version 1.0.0"
-git push origin v1.0.0
-
-# 4. El workflow se ejecutará automáticamente
-# 5. Se creará un GitHub Release
+# 3. El workflow publish-on-main.yml se ejecutará automáticamente
+# 4. Opcionalmente, crea un tag para marcar la release
+git tag -a v1.1.0 -m "Release version 1.1.0"
+git push origin v1.1.0
 ```
 
 ---

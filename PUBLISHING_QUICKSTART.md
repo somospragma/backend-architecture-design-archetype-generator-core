@@ -93,7 +93,6 @@ https://central.sonatype.com/artifact/co.com.pragma/archetype-generator-core
 1. **`publish-on-main.yml`** - Automático en cada push a main
 2. **`publish-gradle-only.yml`** - Manual, solo Gradle
 3. **`publish-maven-only.yml`** - Manual, solo Maven
-4. **`publish.yml`** - Automático con tags, crea GitHub Release
 
 ## 📋 Checklist
 

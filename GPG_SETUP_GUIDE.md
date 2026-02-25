@@ -104,8 +104,8 @@ Maven Central necesita verificar tu firma, así que debes publicar tu clave púb
 
 ```bash
 # Reemplaza ABCD1234EFGH5678 con tu KEY_ID real
-gpg --keyserver keyserver.ubuntu.com --send-keys ABCD1234EFGH5678
-gpg --keyserver keys.openpgp.org --send-keys ABCD1234EFGH5678
+gpg --keyserver keyserver.ubuntu.com --send-keys B5CB0A7BB53CB282
+gpg --keyserver keys.openpgp.org --send-keys B5CB0A7BB53CB282
 ```
 
 **Nota**: Puede tardar unos minutos en propagarse.
