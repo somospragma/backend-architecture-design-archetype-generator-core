@@ -15,7 +15,7 @@
   - [ ] Commit changes: "Add Lombok dependency"
 
 ### Task 0.2: Create New Package Structure
-- [ ] 0.2.1 Create new package directories
+- [x] 0.2.1 Create new package directories
   - [ ] Create domain/model/adapter/
   - [ ] Create domain/model/config/
   - [ ] Create domain/model/entity/
@@ -24,7 +24,7 @@
   - [ ] Create domain/model/file/
   - [ ] Create domain/model/validation/
   - [ ] Create domain/model/structure/
-- [ ] 0.2.2 Validation
+- [x] 0.2.2 Validation
   - [ ] Verify directory structure created correctly
   - [ ] Commit changes: "Create new domain package structure"
 
