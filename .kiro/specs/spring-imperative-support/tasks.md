@@ -550,20 +550,20 @@
   - [x] Commit changes: "Create imperative application.yml template"
 
 ### Task 1.5: Test Imperative Foundation
-- [ ] 1.5.1 Generate test project with imperative paradigm
-  - [ ] Run plugin to generate imperative project
-  - [ ] Verify project structure created
-  - [ ] Verify use cases generated with synchronous signatures
-- [ ] 1.5.2 Compile generated project
-  - [ ] cd to generated project
-  - [ ] Run `./gradlew build` - must succeed
-  - [ ] Verify no compilation errors
-- [ ] 1.5.3 Final validation
-  - [ ] Run plugin tests: `./gradlew test`
-  - [ ] Verify coverage >85%: `./gradlew jacocoTestReport`
-  - [ ] Run full build: `./gradlew build`
-  - [ ] Commit changes: "Complete Phase 1: Imperative foundation"
-  - [ ] Tag: "phase-1-complete"
+- [x] 1.5.1 Generate test project with imperative paradigm
+  - [x] Run plugin to generate imperative project
+  - [x] Verify project structure created
+  - [x] Verify use cases generated with synchronous signatures
+- [x] 1.5.2 Compile generated project
+  - [x] cd to generated project
+  - [x] Run `./gradlew build` - must succeed
+  - [x] Verify no compilation errors
+- [x] 1.5.3 Final validation
+  - [x] Run plugin tests: `./gradlew test`
+  - [x] Verify coverage >85%: `./gradlew jacocoTestReport`
+  - [x] Run full build: `./gradlew build`
+  - [x] Commit changes: "Complete Phase 1: Imperative foundation"
+  - [x] Tag: "phase-1-complete"
 
 ## PHASE 2: Essential Adapters (Imperative)
 
