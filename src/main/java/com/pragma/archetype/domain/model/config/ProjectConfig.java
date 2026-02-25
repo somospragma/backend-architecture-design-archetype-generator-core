@@ -53,6 +53,10 @@ public record ProjectConfig(
     if (createdAt == null) {
       createdAt = LocalDateTime.now();
     }
+
+    if (dependencyOverrides == null) {
+      dependencyOverrides = Map.of();
+    }
   }
 
   /**
