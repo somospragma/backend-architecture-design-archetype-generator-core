@@ -129,7 +129,7 @@
   - [ ] Commit changes: "Extract AdapterType enum from AdapterConfig"
 
 ### Task 0.8: Extract Nested Records from AdapterConfig
-- [ ] 0.8.1 Extract AdapterMethod record
+- [x] 0.8.1 Extract AdapterMethod record
   - [ ] Create AdapterMethod.java in domain/model/adapter/
   - [ ] Copy record content from AdapterConfig
   - [ ] Update AdapterConfig to reference the new record
@@ -139,34 +139,34 @@
   - [ ] Copy record content from AdapterConfig
   - [ ] Update AdapterConfig to reference the new record
   - [ ] Update all imports that use AdapterConfig.MethodParameter
-- [ ] 0.8.3 Validation
+- [x] 0.8.3 Validation
   - [ ] Run `./gradlew build` - must succeed
   - [ ] Run `./gradlew test` - all tests must pass
   - [ ] Run `./gradlew jacocoTestReport` - verify coverage >85%
   - [ ] Commit changes: "Extract AdapterMethod and MethodParameter records"
 
 ### Task 0.9: Extract Nested Classes from InputAdapterConfig
-- [ ] 0.9.1 Extract InputAdapterType enum
+- [x] 0.9.1 Extract InputAdapterType enum
   - [ ] Create InputAdapterType.java in domain/model/adapter/
   - [ ] Copy enum content from InputAdapterConfig
   - [ ] Update InputAdapterConfig to reference the new enum
   - [ ] Update all imports
-- [ ] 0.9.2 Extract HttpMethod enum
+- [x] 0.9.2 Extract HttpMethod enum
   - [ ] Create HttpMethod.java in domain/model/adapter/
   - [ ] Copy enum content from InputAdapterConfig
   - [ ] Update InputAdapterConfig to reference the new enum
   - [ ] Update all imports
-- [ ] 0.9.3 Extract ParameterType enum
+- [x] 0.9.3 Extract ParameterType enum
   - [ ] Create ParameterType.java in domain/model/adapter/
   - [ ] Copy enum content from InputAdapterConfig
   - [ ] Update InputAdapterConfig to reference the new enum
   - [ ] Update all imports
-- [ ] 0.9.4 Extract Endpoint record
+- [x] 0.9.4 Extract Endpoint record
   - [ ] Create Endpoint.java in domain/model/adapter/
   - [ ] Copy record content from InputAdapterConfig
   - [ ] Update InputAdapterConfig to reference the new record
   - [ ] Update all imports
-- [ ] 0.9.5 Extract EndpointParameter record
+- [x] 0.9.5 Extract EndpointParameter record
   - [ ] Create EndpointParameter.java in domain/model/adapter/
   - [ ] Copy record content from InputAdapterConfig
   - [ ] Update InputAdapterConfig to reference the new record
