@@ -12,7 +12,8 @@ import org.gradle.api.tasks.options.Option;
 
 import com.pragma.archetype.application.generator.AdapterGenerator;
 import com.pragma.archetype.application.usecase.GenerateAdapterUseCaseImpl;
-import com.pragma.archetype.domain.model.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateAdapterUseCase;
@@ -121,7 +122,7 @@ public class GenerateOutputAdapterTask extends DefaultTask {
       String resolvedPackageName = resolvePackageName(type);
 
       // 4. Parse adapter type
-      AdapterConfig.AdapterType adapterType = parseAdapterType(type);
+      AdapterType adapterType = parseAdapterType(type);
 
       // 5. Parse methods (if provided)
       List<AdapterConfig.AdapterMethod> adapterMethods = new ArrayList<>();
@@ -221,13 +222,13 @@ public class GenerateOutputAdapterTask extends DefaultTask {
   /**
    * Parses adapter type string.
    */
-  private AdapterConfig.AdapterType parseAdapterType(String typeStr) {
+  private AdapterType parseAdapterType(String typeStr) {
     return switch (typeStr.toLowerCase()) {
-      case "redis" -> AdapterConfig.AdapterType.REDIS;
-      case "mongodb", "mongo" -> AdapterConfig.AdapterType.MONGODB;
-      case "postgresql", "postgres" -> AdapterConfig.AdapterType.POSTGRESQL;
-      case "rest-client", "rest" -> AdapterConfig.AdapterType.REST_CLIENT;
-      case "kafka" -> AdapterConfig.AdapterType.KAFKA;
+      case "redis" -> AdapterType.REDIS;
+      case "mongodb", "mongo" -> AdapterType.MONGODB;
+      case "postgresql", "postgres" -> AdapterType.POSTGRESQL;
+      case "rest-client", "rest" -> AdapterType.REST_CLIENT;
+      case "kafka" -> AdapterType.KAFKA;
       default -> throw new IllegalArgumentException(
           "Invalid adapter type: " + typeStr + ". Valid values: redis, mongodb, postgresql, rest-client, kafka");
     };

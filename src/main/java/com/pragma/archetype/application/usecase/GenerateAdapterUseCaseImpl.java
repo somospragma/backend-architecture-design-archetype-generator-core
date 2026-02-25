@@ -10,7 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.pragma.archetype.application.generator.AdapterGenerator;
-import com.pragma.archetype.domain.model.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
@@ -299,7 +300,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * Gets the adapter template path for a given adapter type.
    * This mirrors the logic in AdapterGenerator.getAdapterTemplate().
    */
-  private String getAdapterTemplatePath(AdapterConfig.AdapterType type) {
+  private String getAdapterTemplatePath(AdapterType type) {
     return switch (type) {
       case REDIS -> "frameworks/spring/reactive/adapters/driven-adapters/redis/Adapter.java.ftl";
       case MONGODB -> "frameworks/spring/reactive/adapters/driven-adapters/mongodb/Adapter.java.ftl";
@@ -313,7 +314,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * Gets the data entity template path for a given adapter type.
    * This mirrors the logic in AdapterGenerator.getDataEntityTemplate().
    */
-  private String getDataEntityTemplatePath(AdapterConfig.AdapterType type) {
+  private String getDataEntityTemplatePath(AdapterType type) {
     return switch (type) {
       case REDIS -> "frameworks/spring/reactive/adapters/driven-adapters/redis/Entity.java.ftl";
       case MONGODB -> "frameworks/spring/reactive/adapters/driven-adapters/mongodb/Entity.java.ftl";

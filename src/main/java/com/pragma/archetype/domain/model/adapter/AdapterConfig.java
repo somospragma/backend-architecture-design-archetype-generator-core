@@ -1,4 +1,4 @@
-package com.pragma.archetype.domain.model;
+package com.pragma.archetype.domain.model.adapter;
 
 import java.util.List;
 
@@ -13,17 +13,6 @@ public record AdapterConfig(
     AdapterType type,
     String entityName,
     List<AdapterMethod> methods) {
-
-  /**
-   * Type of adapter to generate.
-   */
-  public enum AdapterType {
-    REDIS,
-    MONGODB,
-    POSTGRESQL,
-    REST_CLIENT,
-    KAFKA
-  }
 
   /**
    * Represents a method in the adapter.

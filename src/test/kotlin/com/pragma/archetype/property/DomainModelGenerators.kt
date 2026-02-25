@@ -71,8 +71,8 @@ object DomainModelGenerators {
     /**
      * Generates adapter types.
      */
-    fun adapterType(): Arb<AdapterConfig.AdapterType> = 
-        Arb.enum<AdapterConfig.AdapterType>()
+    fun adapterType(): Arb<AdapterType> = 
+        Arb.enum<AdapterType>()
     
     /**
      * Generates complete ProjectConfig instances.

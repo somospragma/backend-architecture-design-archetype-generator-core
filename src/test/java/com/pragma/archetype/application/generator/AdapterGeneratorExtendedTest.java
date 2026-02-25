@@ -17,7 +17,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.pragma.archetype.domain.model.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
@@ -65,7 +66,7 @@ class AdapterGeneratorExtendedTest {
     AdapterConfig config = AdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
-        .type(AdapterConfig.AdapterType.REDIS)
+        .type(AdapterType.REDIS)
         .packageName("com.test.infrastructure.redis")
         .methods(List.of())
         .build();
@@ -93,7 +94,7 @@ class AdapterGeneratorExtendedTest {
     AdapterConfig config = AdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
-        .type(AdapterConfig.AdapterType.POSTGRESQL)
+        .type(AdapterType.POSTGRESQL)
         .packageName("com.test.infrastructure.postgresql")
         .methods(List.of())
         .build();
@@ -121,7 +122,7 @@ class AdapterGeneratorExtendedTest {
     AdapterConfig config = AdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
-        .type(AdapterConfig.AdapterType.MONGODB)
+        .type(AdapterType.MONGODB)
         .packageName("com.test.infrastructure.mongodb")
         .methods(List.of())
         .build();
@@ -149,7 +150,7 @@ class AdapterGeneratorExtendedTest {
     AdapterConfig config = AdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
-        .type(AdapterConfig.AdapterType.POSTGRESQL)
+        .type(AdapterType.POSTGRESQL)
         .packageName("com.test.infrastructure.postgresql")
         .methods(List.of())
         .build();
@@ -177,7 +178,7 @@ class AdapterGeneratorExtendedTest {
     AdapterConfig config = AdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
-        .type(AdapterConfig.AdapterType.POSTGRESQL)
+        .type(AdapterType.POSTGRESQL)
         .packageName("com.test.infrastructure.postgresql")
         .methods(List.of())
         .build();
@@ -205,7 +206,7 @@ class AdapterGeneratorExtendedTest {
     AdapterConfig config = AdapterConfig.builder()
         .name("EventPublisher")
         .entityName("Event")
-        .type(AdapterConfig.AdapterType.KAFKA)
+        .type(AdapterType.KAFKA)
         .packageName("com.test.infrastructure.kafka")
         .methods(List.of())
         .build();
@@ -243,7 +244,7 @@ class AdapterGeneratorExtendedTest {
     AdapterConfig config = AdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
-        .type(AdapterConfig.AdapterType.POSTGRESQL)
+        .type(AdapterType.POSTGRESQL)
         .packageName("com.test.infrastructure.postgresql")
         .methods(List.of(method1, method2))
         .build();
@@ -271,7 +272,7 @@ class AdapterGeneratorExtendedTest {
     AdapterConfig config = AdapterConfig.builder()
         .name("PaymentClient")
         .entityName("Payment")
-        .type(AdapterConfig.AdapterType.REST_CLIENT)
+        .type(AdapterType.REST_CLIENT)
         .packageName("com.test.infrastructure.restclient")
         .methods(List.of())
         .build();
@@ -300,7 +301,7 @@ class AdapterGeneratorExtendedTest {
     AdapterConfig config = AdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
-        .type(AdapterConfig.AdapterType.REDIS)
+        .type(AdapterType.REDIS)
         .packageName("com.test.infrastructure.redis")
         .methods(List.of())
         .build();

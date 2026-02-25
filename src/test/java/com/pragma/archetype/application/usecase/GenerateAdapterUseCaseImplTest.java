@@ -22,7 +22,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import com.pragma.archetype.application.generator.AdapterGenerator;
-import com.pragma.archetype.domain.model.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateAdapterUseCase.GenerationResult;
@@ -745,7 +746,7 @@ class GenerateAdapterUseCaseImplTest {
   private AdapterConfig createAdapterConfig(String type) {
     return AdapterConfig.builder()
         .name("TestAdapter")
-        .type(AdapterConfig.AdapterType.valueOf(type.toUpperCase()))
+        .type(AdapterType.valueOf(type.toUpperCase()))
         .packageName("com.test.adapter")
         .entityName("TestEntity")
         .build();

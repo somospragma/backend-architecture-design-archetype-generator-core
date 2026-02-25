@@ -116,13 +116,13 @@
   - [ ] Commit changes: "Move file, validation, structure classes to respective packages"
 
 ### Task 0.7: Extract Nested Enums from AdapterConfig
-- [ ] 0.7.1 Extract AdapterType enum
+- [x] 0.7.1 Extract AdapterType enum
   - [ ] Create AdapterType.java in domain/model/adapter/
   - [ ] Copy enum content from AdapterConfig
   - [ ] Make it a top-level enum
   - [ ] Update AdapterConfig to reference the new enum
   - [ ] Update all imports that use AdapterConfig.AdapterType
-- [ ] 0.7.2 Validation
+- [x] 0.7.2 Validation
   - [ ] Run `./gradlew build` - must succeed
   - [ ] Run `./gradlew test` - all tests must pass
   - [ ] Run `./gradlew jacocoTestReport` - verify coverage >85%
