@@ -4,9 +4,9 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Objects;
 
-import com.pragma.archetype.domain.model.ArchitectureType;
-import com.pragma.archetype.domain.model.Framework;
-import com.pragma.archetype.domain.model.Paradigm;
+import com.pragma.archetype.domain.model.project.ArchitectureType;
+import com.pragma.archetype.domain.model.project.Framework;
+import com.pragma.archetype.domain.model.project.Paradigm;
 
 /**
  * Configuration for a clean architecture project.

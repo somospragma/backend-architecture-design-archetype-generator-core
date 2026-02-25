@@ -2,8 +2,8 @@ package com.pragma.archetype.domain.port.out;
 
 import java.util.Map;
 
-import com.pragma.archetype.domain.model.ArchitectureType;
 import com.pragma.archetype.domain.model.StructureMetadata;
+import com.pragma.archetype.domain.model.project.ArchitectureType;
 
 /**
  * Port for accessing and processing templates.

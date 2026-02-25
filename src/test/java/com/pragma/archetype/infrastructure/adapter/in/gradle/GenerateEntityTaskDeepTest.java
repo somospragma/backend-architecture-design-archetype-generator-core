@@ -17,7 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.pragma.archetype.domain.model.EntityConfig;
+import com.pragma.archetype.domain.model.entity.EntityConfig;
 
 /**
  * Deep tests for GenerateEntityTask using reflection to test private methods

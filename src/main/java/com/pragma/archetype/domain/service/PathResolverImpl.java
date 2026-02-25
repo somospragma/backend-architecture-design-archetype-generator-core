@@ -7,9 +7,9 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.pragma.archetype.domain.model.ArchitectureType;
 import com.pragma.archetype.domain.model.StructureMetadata;
 import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.port.out.PathResolver;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 

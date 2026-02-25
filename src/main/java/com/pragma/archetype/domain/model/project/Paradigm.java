@@ -1,4 +1,4 @@
-package com.pragma.archetype.domain.model;
+package com.pragma.archetype.domain.model.project;
 
 /**
  * Programming paradigm for the generated project.

@@ -66,15 +66,15 @@
   - [ ] Commit changes: "Move config classes to domain/model/config/"
 
 ### Task 0.5: Move Classes to New Packages (Entity, UseCase, Project)
-- [ ] 0.5.1 Move entity-related classes
+- [x] 0.5.1 Move entity-related classes
   - [ ] Move EntityConfig.java to domain/model/entity/
-- [ ] 0.5.2 Move usecase-related classes
+- [x] 0.5.2 Move usecase-related classes
   - [ ] Move UseCaseConfig.java to domain/model/usecase/
-- [ ] 0.5.3 Move project-related classes
+- [x] 0.5.3 Move project-related classes
   - [ ] Move ArchitectureType.java to domain/model/project/
   - [ ] Move Framework.java to domain/model/project/
   - [ ] Move Paradigm.java to domain/model/project/
-- [ ] 0.5.4 Update imports for all moved classes
+- [x] 0.5.4 Update imports for all moved classes
   - [ ] Update imports for EntityConfig
   - [ ] Update imports for UseCaseConfig
   - [ ] Update imports for ArchitectureType
@@ -83,7 +83,7 @@
   - [ ] Update application layer files
   - [ ] Update infrastructure layer files
   - [ ] Update test files
-- [ ] 0.5.5 Validation
+- [x] 0.5.5 Validation
   - [ ] Run `./gradlew build` - must succeed
   - [ ] Run `./gradlew test` - all tests must pass
   - [ ] Run `./gradlew jacocoTestReport` - verify coverage >85%

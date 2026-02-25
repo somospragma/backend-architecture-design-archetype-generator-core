@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+import com.pragma.archetype.domain.model.project.ArchitectureType;
+
 class ArchitectureTypeTest {
 
   @Test

@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import com.pragma.archetype.domain.model.ArchitectureType;
 import com.pragma.archetype.domain.model.StructureMetadata;
+import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.port.out.TemplateRepository.TemplateNotFoundException;
 
 /**

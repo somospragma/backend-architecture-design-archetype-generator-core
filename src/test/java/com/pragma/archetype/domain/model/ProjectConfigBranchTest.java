@@ -10,6 +10,9 @@ import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 
 import com.pragma.archetype.domain.model.config.ProjectConfig;
+import com.pragma.archetype.domain.model.project.ArchitectureType;
+import com.pragma.archetype.domain.model.project.Framework;
+import com.pragma.archetype.domain.model.project.Paradigm;
 
 class ProjectConfigBranchTest {
 

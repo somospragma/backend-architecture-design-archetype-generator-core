@@ -5,11 +5,11 @@ import java.util.Map;
 
 import org.yaml.snakeyaml.Yaml;
 
-import com.pragma.archetype.domain.model.ArchitectureType;
 import com.pragma.archetype.domain.model.LayerDependencies;
 import com.pragma.archetype.domain.model.NamingConventions;
 import com.pragma.archetype.domain.model.StructureMetadata;
 import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.port.out.TemplateRepository.TemplateNotFoundException;
 
 /**

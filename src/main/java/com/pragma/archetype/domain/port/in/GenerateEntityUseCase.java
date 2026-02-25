@@ -3,8 +3,8 @@ package com.pragma.archetype.domain.port.in;
 import java.nio.file.Path;
 import java.util.List;
 
-import com.pragma.archetype.domain.model.EntityConfig;
 import com.pragma.archetype.domain.model.GeneratedFile;
+import com.pragma.archetype.domain.model.entity.EntityConfig;
 
 /**
  * Use case for generating domain entities.

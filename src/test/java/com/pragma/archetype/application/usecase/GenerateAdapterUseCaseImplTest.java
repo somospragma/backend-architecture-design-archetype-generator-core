@@ -675,9 +675,9 @@ class GenerateAdapterUseCaseImplTest {
     return com.pragma.archetype.domain.model.config.ProjectConfig.builder()
         .name("test-project")
         .basePackage("com.test")
-        .architecture(com.pragma.archetype.domain.model.ArchitectureType.HEXAGONAL_SINGLE)
-        .paradigm(com.pragma.archetype.domain.model.Paradigm.REACTIVE)
-        .framework(com.pragma.archetype.domain.model.Framework.SPRING)
+        .architecture(com.pragma.archetype.domain.model.project.ArchitectureType.HEXAGONAL_SINGLE)
+        .paradigm(com.pragma.archetype.domain.model.project.Paradigm.REACTIVE)
+        .framework(com.pragma.archetype.domain.model.project.Framework.SPRING)
         .pluginVersion("1.0.0")
         .adaptersAsModules(false)
         .build();

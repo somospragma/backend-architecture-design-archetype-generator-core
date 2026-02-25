@@ -17,13 +17,13 @@ import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
-import com.pragma.archetype.domain.model.ArchitectureType;
-import com.pragma.archetype.domain.model.Framework;
 import com.pragma.archetype.domain.model.MergeResult;
-import com.pragma.archetype.domain.model.Paradigm;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.config.TemplateConfig;
 import com.pragma.archetype.domain.model.config.TemplateMode;
+import com.pragma.archetype.domain.model.project.ArchitectureType;
+import com.pragma.archetype.domain.model.project.Framework;
+import com.pragma.archetype.domain.model.project.Paradigm;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.service.YamlMerger;
 

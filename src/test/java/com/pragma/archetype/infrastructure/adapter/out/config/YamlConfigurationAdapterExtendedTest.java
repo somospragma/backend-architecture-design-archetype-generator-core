@@ -16,10 +16,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.pragma.archetype.domain.model.ArchitectureType;
-import com.pragma.archetype.domain.model.Framework;
-import com.pragma.archetype.domain.model.Paradigm;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
+import com.pragma.archetype.domain.model.project.ArchitectureType;
+import com.pragma.archetype.domain.model.project.Framework;
+import com.pragma.archetype.domain.model.project.Paradigm;
 
 class YamlConfigurationAdapterExtendedTest {
 
