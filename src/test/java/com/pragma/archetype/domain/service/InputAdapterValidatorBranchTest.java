@@ -3,6 +3,7 @@ package com.pragma.archetype.domain.service;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.nio.file.Path;
@@ -45,6 +46,12 @@ class InputAdapterValidatorBranchTest {
   void setUp() {
     validator = new InputAdapterValidator(fileSystemPort, configurationPort, packageValidator);
     projectPath = Path.of("/test/project");
+
+    // Mock packageValidator to return success by default (lenient to avoid
+    // UnnecessaryStubbingException)
+    lenient().when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
+    lenient().when(packageValidator.validateBasePackageConsistency(any(), any()))
+        .thenReturn(ValidationResult.success());
   }
 
   @Test

@@ -47,8 +47,6 @@ class ProjectGeneratorMultiModuleTest {
 
     when(templateRepository.processTemplate(anyString(), anyMap()))
         .thenReturn("template content");
-    when(fileSystemPort.readFile(any(Path.class)))
-        .thenReturn("existing content");
   }
 
   @Test

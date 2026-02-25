@@ -2,6 +2,7 @@ package com.pragma.archetype.application.generator;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -43,6 +44,10 @@ class AdapterGeneratorTest {
   @BeforeEach
   void setUp() {
     generator = new AdapterGenerator(templateRepository, fileSystemPort, pathResolver);
+
+    // Configure pathResolver mock to return a valid path
+    when(pathResolver.resolveAdapterPath(any(ArchitectureType.class), anyString(), anyString(), anyMap()))
+        .thenReturn(Path.of("infrastructure/adapter"));
   }
 
   @Test

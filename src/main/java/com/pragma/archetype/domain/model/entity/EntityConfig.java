@@ -13,7 +13,7 @@ import lombok.Builder;
  * @param idType      Type of ID field (String, Long, UUID)
  * @param packageName Package where entity will be generated
  */
-@Builder
+@Builder(toBuilder = true)
 public record EntityConfig(
         String name,
         List<EntityField> fields,
@@ -32,5 +32,13 @@ public record EntityConfig(
         if (idType == null || idType.isBlank()) {
             idType = DEFAULT_ID_TYPE;
         }
+    }
+
+    /**
+     * Custom builder class to provide default values.
+     */
+    public static class EntityConfigBuilder {
+        // Lombok generates the builder, we just need to set defaults
+        private boolean hasId = DEFAULT_HAS_ID;
     }
 }
