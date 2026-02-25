@@ -11,9 +11,9 @@ import org.slf4j.LoggerFactory;
 
 import com.pragma.archetype.application.generator.AdapterGenerator;
 import com.pragma.archetype.domain.model.AdapterConfig;
-import com.pragma.archetype.domain.model.AdapterMetadata;
 import com.pragma.archetype.domain.model.GeneratedFile;
 import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
 import com.pragma.archetype.domain.port.in.GenerateAdapterUseCase;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;

@@ -10,9 +10,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.pragma.archetype.domain.model.AdapterMetadata;
-import com.pragma.archetype.domain.model.AdapterMetadata.ConfigurationClass;
-import com.pragma.archetype.domain.model.AdapterMetadata.Dependency;
+import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
+import com.pragma.archetype.domain.model.adapter.AdapterMetadata.ConfigurationClass;
+import com.pragma.archetype.domain.model.adapter.AdapterMetadata.Dependency;
 import com.pragma.archetype.domain.port.out.TemplateRepository.TemplateNotFoundException;
 
 /**

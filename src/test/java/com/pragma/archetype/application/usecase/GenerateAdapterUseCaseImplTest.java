@@ -23,8 +23,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 import com.pragma.archetype.application.generator.AdapterGenerator;
 import com.pragma.archetype.domain.model.AdapterConfig;
-import com.pragma.archetype.domain.model.AdapterMetadata;
 import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
 import com.pragma.archetype.domain.port.in.GenerateAdapterUseCase.GenerationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;

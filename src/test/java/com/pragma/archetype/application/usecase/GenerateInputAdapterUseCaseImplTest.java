@@ -19,8 +19,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.pragma.archetype.application.generator.InputAdapterGenerator;
 import com.pragma.archetype.domain.model.GeneratedFile;
-import com.pragma.archetype.domain.model.InputAdapterConfig;
 import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.adapter.InputAdapterConfig;
 import com.pragma.archetype.domain.port.in.GenerateInputAdapterUseCase.GenerationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;

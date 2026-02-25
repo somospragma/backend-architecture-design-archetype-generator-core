@@ -29,17 +29,17 @@
   - [ ] Commit changes: "Create new domain package structure"
 
 ### Task 0.3: Move Classes to New Packages (Adapter Domain)
-- [ ] 0.3.1 Move adapter-related classes
+- [x] 0.3.1 Move adapter-related classes
   - [ ] Move AdapterConfig.java to domain/model/adapter/
   - [ ] Move AdapterMetadata.java to domain/model/adapter/
   - [ ] Move InputAdapterConfig.java to domain/model/adapter/
-- [ ] 0.3.2 Update imports in all files that use adapter classes
+- [x] 0.3.2 Update imports in all files that use adapter classes
   - [ ] Search for imports: `import com.pragma.archetype.domain.model.AdapterConfig`
   - [ ] Replace with: `import com.pragma.archetype.domain.model.adapter.AdapterConfig`
   - [ ] Update all application layer files
   - [ ] Update all infrastructure layer files
   - [ ] Update all test files
-- [ ] 0.3.3 Validation
+- [x] 0.3.3 Validation
   - [ ] Run `./gradlew build` - must succeed
   - [ ] Run `./gradlew test` - all tests must pass
   - [ ] Run `./gradlew jacocoTestReport` - verify coverage >85%

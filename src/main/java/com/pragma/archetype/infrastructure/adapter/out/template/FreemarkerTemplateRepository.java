@@ -224,7 +224,7 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
   }
 
   @Override
-  public com.pragma.archetype.domain.model.AdapterMetadata loadAdapterMetadata(String adapterName) {
+  public com.pragma.archetype.domain.model.adapter.AdapterMetadata loadAdapterMetadata(String adapterName) {
     if (adapterMetadataLoader == null) {
       adapterMetadataLoader = new AdapterMetadataLoader(this);
     }
@@ -232,7 +232,7 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
   }
 
   @Override
-  public com.pragma.archetype.domain.model.AdapterMetadata loadAdapterMetadata(
+  public com.pragma.archetype.domain.model.adapter.AdapterMetadata loadAdapterMetadata(
       String adapterName,
       String framework,
       String paradigm,

@@ -16,8 +16,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.pragma.archetype.domain.model.InputAdapterConfig;
 import com.pragma.archetype.domain.model.ValidationResult;
+import com.pragma.archetype.domain.model.adapter.InputAdapterConfig;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 

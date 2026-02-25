@@ -78,7 +78,7 @@ public interface TemplateRepository {
    *             instead
    */
   @Deprecated
-  com.pragma.archetype.domain.model.AdapterMetadata loadAdapterMetadata(String adapterName);
+  com.pragma.archetype.domain.model.adapter.AdapterMetadata loadAdapterMetadata(String adapterName);
 
   /**
    * Loads adapter metadata for a given adapter using framework-aware structure.
@@ -92,7 +92,7 @@ public interface TemplateRepository {
    * @return adapter metadata for the adapter
    * @throws TemplateNotFoundException if metadata.yml is not found
    */
-  com.pragma.archetype.domain.model.AdapterMetadata loadAdapterMetadata(
+  com.pragma.archetype.domain.model.adapter.AdapterMetadata loadAdapterMetadata(
       String adapterName,
       String framework,
       String paradigm,

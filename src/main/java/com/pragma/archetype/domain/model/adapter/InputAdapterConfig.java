@@ -1,4 +1,4 @@
-package com.pragma.archetype.domain.model;
+package com.pragma.archetype.domain.model.adapter;
 
 import java.util.List;
 

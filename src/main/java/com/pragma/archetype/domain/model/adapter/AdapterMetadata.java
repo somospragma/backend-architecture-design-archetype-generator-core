@@ -1,8 +1,10 @@
-package com.pragma.archetype.domain.model;
+package com.pragma.archetype.domain.model.adapter;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+
+import com.pragma.archetype.domain.model.ValidationResult;
 
 /**
  * Metadata describing an adapter's properties and dependencies.

@@ -14,7 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.pragma.archetype.domain.model.AdapterMetadata;
+import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
 
 /**
  * Integration tests for AdapterMetadataLoader with

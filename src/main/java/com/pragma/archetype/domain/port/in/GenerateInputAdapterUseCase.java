@@ -4,7 +4,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import com.pragma.archetype.domain.model.GeneratedFile;
-import com.pragma.archetype.domain.model.InputAdapterConfig;
+import com.pragma.archetype.domain.model.adapter.InputAdapterConfig;
 
 /**
  * Use case for generating input adapters (REST, GraphQL, etc.).
