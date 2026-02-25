@@ -13,7 +13,9 @@ import org.gradle.api.tasks.options.Option;
 import com.pragma.archetype.application.generator.AdapterGenerator;
 import com.pragma.archetype.application.usecase.GenerateAdapterUseCaseImpl;
 import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.AdapterMethod;
 import com.pragma.archetype.domain.model.adapter.AdapterType;
+import com.pragma.archetype.domain.model.adapter.MethodParameter;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateAdapterUseCase;
@@ -125,7 +127,7 @@ public class GenerateOutputAdapterTask extends DefaultTask {
       AdapterType adapterType = parseAdapterType(type);
 
       // 5. Parse methods (if provided)
-      List<AdapterConfig.AdapterMethod> adapterMethods = new ArrayList<>();
+      List<AdapterMethod> adapterMethods = new ArrayList<>();
       if (!methods.isBlank()) {
         adapterMethods = parseMethods(methods);
       }
@@ -238,8 +240,8 @@ public class GenerateOutputAdapterTask extends DefaultTask {
    * Parses method string into AdapterMethod list.
    * Format: "methodName:ReturnType:param1:Type1|method2:ReturnType2"
    */
-  private List<AdapterConfig.AdapterMethod> parseMethods(String methodsStr) {
-    List<AdapterConfig.AdapterMethod> result = new ArrayList<>();
+  private List<AdapterMethod> parseMethods(String methodsStr) {
+    List<AdapterMethod> result = new ArrayList<>();
 
     String[] methodDefinitions = methodsStr.split("\\|");
     for (String methodDef : methodDefinitions) {
@@ -251,7 +253,7 @@ public class GenerateOutputAdapterTask extends DefaultTask {
 
       String methodName = parts[0].trim();
       String returnType = parts[1].trim();
-      List<AdapterConfig.MethodParameter> parameters = new ArrayList<>();
+      List<MethodParameter> parameters = new ArrayList<>();
 
       // Parse parameters if present
       if (parts.length > 2) {
@@ -259,12 +261,12 @@ public class GenerateOutputAdapterTask extends DefaultTask {
           if (i + 1 < parts.length) {
             String paramName = parts[i].trim();
             String paramType = parts[i + 1].trim();
-            parameters.add(new AdapterConfig.MethodParameter(paramName, paramType));
+            parameters.add(new MethodParameter(paramName, paramType));
           }
         }
       }
 
-      result.add(new AdapterConfig.AdapterMethod(methodName, returnType, parameters));
+      result.add(new AdapterMethod(methodName, returnType, parameters));
     }
 
     return result;

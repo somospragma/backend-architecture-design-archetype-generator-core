@@ -16,7 +16,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.AdapterMethod;
 import com.pragma.archetype.domain.model.adapter.AdapterType;
+import com.pragma.archetype.domain.model.adapter.MethodParameter;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
@@ -234,7 +236,7 @@ class AdapterValidatorBranchTest {
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
 
-    AdapterConfig.AdapterMethod method = new AdapterConfig.AdapterMethod(null, "User", List.of());
+    AdapterMethod method = new AdapterMethod(null, "User", List.of());
     AdapterConfig config = AdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
@@ -257,7 +259,7 @@ class AdapterValidatorBranchTest {
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
 
-    AdapterConfig.AdapterMethod method = new AdapterConfig.AdapterMethod("123invalid", "User", List.of());
+    AdapterMethod method = new AdapterMethod("123invalid", "User", List.of());
     AdapterConfig config = AdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
@@ -280,7 +282,7 @@ class AdapterValidatorBranchTest {
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
 
-    AdapterConfig.AdapterMethod method = new AdapterConfig.AdapterMethod("findById", null, List.of());
+    AdapterMethod method = new AdapterMethod("findById", null, List.of());
     AdapterConfig config = AdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
@@ -303,8 +305,8 @@ class AdapterValidatorBranchTest {
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
 
-    AdapterConfig.MethodParameter param = new AdapterConfig.MethodParameter(null, "Long");
-    AdapterConfig.AdapterMethod method = new AdapterConfig.AdapterMethod("findById", "User", List.of(param));
+    MethodParameter param = new MethodParameter(null, "Long");
+    AdapterMethod method = new AdapterMethod("findById", "User", List.of(param));
     AdapterConfig config = AdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
@@ -327,8 +329,8 @@ class AdapterValidatorBranchTest {
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
 
-    AdapterConfig.MethodParameter param = new AdapterConfig.MethodParameter("123invalid", "Long");
-    AdapterConfig.AdapterMethod method = new AdapterConfig.AdapterMethod("findById", "User", List.of(param));
+    MethodParameter param = new MethodParameter("123invalid", "Long");
+    AdapterMethod method = new AdapterMethod("findById", "User", List.of(param));
     AdapterConfig config = AdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
@@ -351,8 +353,8 @@ class AdapterValidatorBranchTest {
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
 
-    AdapterConfig.MethodParameter param = new AdapterConfig.MethodParameter("id", null);
-    AdapterConfig.AdapterMethod method = new AdapterConfig.AdapterMethod("findById", "User", List.of(param));
+    MethodParameter param = new MethodParameter("id", null);
+    AdapterMethod method = new AdapterMethod("findById", "User", List.of(param));
     AdapterConfig config = AdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
@@ -398,8 +400,8 @@ class AdapterValidatorBranchTest {
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
     when(fileSystemPort.exists(any())).thenReturn(false);
 
-    AdapterConfig.MethodParameter param = new AdapterConfig.MethodParameter("id", "Long");
-    AdapterConfig.AdapterMethod method = new AdapterConfig.AdapterMethod("findById", "User", List.of(param));
+    MethodParameter param = new MethodParameter("id", "Long");
+    AdapterMethod method = new AdapterMethod("findById", "User", List.of(param));
     AdapterConfig config = AdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")

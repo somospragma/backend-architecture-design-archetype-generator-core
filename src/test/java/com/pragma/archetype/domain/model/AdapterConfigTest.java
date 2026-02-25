@@ -9,17 +9,19 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.AdapterMethod;
 import com.pragma.archetype.domain.model.adapter.AdapterType;
+import com.pragma.archetype.domain.model.adapter.MethodParameter;
 
 class AdapterConfigTest {
 
   @Test
   void shouldBuildAdapterConfigWithAllFields() {
     // Given
-    AdapterConfig.AdapterMethod method = new AdapterConfig.AdapterMethod(
+    AdapterMethod method = new AdapterMethod(
         "findById",
         "Mono<User>",
-        List.of(new AdapterConfig.MethodParameter("id", "String")));
+        List.of(new MethodParameter("id", "String")));
 
     // When
     AdapterConfig config = AdapterConfig.builder()
@@ -58,12 +60,12 @@ class AdapterConfigTest {
   @Test
   void shouldCreateAdapterMethodWithParameters() {
     // Given
-    List<AdapterConfig.MethodParameter> params = List.of(
-        new AdapterConfig.MethodParameter("id", "String"),
-        new AdapterConfig.MethodParameter("status", "Status"));
+    List<MethodParameter> params = List.of(
+        new MethodParameter("id", "String"),
+        new MethodParameter("status", "Status"));
 
     // When
-    AdapterConfig.AdapterMethod method = new AdapterConfig.AdapterMethod(
+    AdapterMethod method = new AdapterMethod(
         "findByIdAndStatus",
         "Mono<User>",
         params);
@@ -79,7 +81,7 @@ class AdapterConfigTest {
   @Test
   void shouldCreateMethodParameter() {
     // When
-    AdapterConfig.MethodParameter param = new AdapterConfig.MethodParameter("email", "String");
+    MethodParameter param = new MethodParameter("email", "String");
 
     // Then
     assertEquals("email", param.name());

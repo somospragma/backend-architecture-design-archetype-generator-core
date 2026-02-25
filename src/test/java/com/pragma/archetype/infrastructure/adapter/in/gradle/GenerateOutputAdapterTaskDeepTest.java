@@ -17,7 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.AdapterMethod;
 import com.pragma.archetype.domain.model.adapter.AdapterType;
 
 class GenerateOutputAdapterTaskDeepTest {
@@ -44,7 +44,7 @@ class GenerateOutputAdapterTaskDeepTest {
     String methodsStr = "findById:User:id:Long";
 
     // When
-    List<AdapterConfig.AdapterMethod> methods = invokeParseMethods(methodsStr);
+    List<AdapterMethod> methods = invokeParseMethods(methodsStr);
 
     // Then
     assertNotNull(methods);
@@ -57,7 +57,7 @@ class GenerateOutputAdapterTaskDeepTest {
     String methodsStr = "findById:User:id:Long|save:User:user:User|deleteById:void:id:Long";
 
     // When
-    List<AdapterConfig.AdapterMethod> methods = invokeParseMethods(methodsStr);
+    List<AdapterMethod> methods = invokeParseMethods(methodsStr);
 
     // Then
     assertEquals(3, methods.size());
@@ -69,7 +69,7 @@ class GenerateOutputAdapterTaskDeepTest {
     String methodsStr = "findAll:List<User>";
 
     // When
-    List<AdapterConfig.AdapterMethod> methods = invokeParseMethods(methodsStr);
+    List<AdapterMethod> methods = invokeParseMethods(methodsStr);
 
     // Then
     assertEquals(1, methods.size());
@@ -81,7 +81,7 @@ class GenerateOutputAdapterTaskDeepTest {
     String methodsStr = "findByNameAndAge:List<User>:name:String:age:Integer";
 
     // When
-    List<AdapterConfig.AdapterMethod> methods = invokeParseMethods(methodsStr);
+    List<AdapterMethod> methods = invokeParseMethods(methodsStr);
 
     // Then
     assertEquals(1, methods.size());
@@ -274,10 +274,10 @@ class GenerateOutputAdapterTaskDeepTest {
   // Helper methods using reflection
 
   @SuppressWarnings("unchecked")
-  private List<AdapterConfig.AdapterMethod> invokeParseMethods(String methodsStr) throws Exception {
+  private List<AdapterMethod> invokeParseMethods(String methodsStr) throws Exception {
     Method method = GenerateOutputAdapterTask.class.getDeclaredMethod("parseMethods", String.class);
     method.setAccessible(true);
-    return (List<AdapterConfig.AdapterMethod>) method.invoke(task, methodsStr);
+    return (List<AdapterMethod>) method.invoke(task, methodsStr);
   }
 
   private Object invokeParseAdapterType(String typeStr) throws Exception {

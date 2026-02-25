@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.AdapterMethod;
 import com.pragma.archetype.domain.model.adapter.AdapterType;
+import com.pragma.archetype.domain.model.adapter.MethodParameter;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
@@ -391,7 +393,7 @@ public class AdapterGenerator {
     // Convert methods to Maps for Freemarker
     List<Map<String, Object>> methodMaps = new ArrayList<>();
     if (config.methods() != null) {
-      for (AdapterConfig.AdapterMethod method : config.methods()) {
+      for (AdapterMethod method : config.methods()) {
         Map<String, Object> methodMap = new HashMap<>();
         methodMap.put("name", method.name());
         methodMap.put("returnType", method.returnType());
@@ -399,7 +401,7 @@ public class AdapterGenerator {
         // Convert parameters to Maps
         List<Map<String, Object>> paramMaps = new ArrayList<>();
         if (method.parameters() != null) {
-          for (AdapterConfig.MethodParameter param : method.parameters()) {
+          for (MethodParameter param : method.parameters()) {
             Map<String, Object> paramMap = new HashMap<>();
             paramMap.put("name", param.name());
             paramMap.put("type", param.type());

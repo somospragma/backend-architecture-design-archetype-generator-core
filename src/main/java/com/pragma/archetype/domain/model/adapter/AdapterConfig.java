@@ -14,23 +14,6 @@ public record AdapterConfig(
     String entityName,
     List<AdapterMethod> methods) {
 
-  /**
-   * Represents a method in the adapter.
-   */
-  public record AdapterMethod(
-      String name,
-      String returnType,
-      List<MethodParameter> parameters) {
-  }
-
-  /**
-   * Represents a parameter in an adapter method.
-   */
-  public record MethodParameter(
-      String name,
-      String type) {
-  }
-
   public static Builder builder() {
     return new Builder();
   }
