@@ -60,6 +60,7 @@ class ProjectGeneratorMultiModuleTest {
         .architecture(ArchitectureType.HEXAGONAL_MULTI)
         .paradigm(Paradigm.REACTIVE)
         .framework(Framework.SPRING)
+        .pluginVersion("1.0.0")
         .build();
 
     // When
@@ -81,6 +82,7 @@ class ProjectGeneratorMultiModuleTest {
         .architecture(ArchitectureType.ONION_MULTI)
         .paradigm(Paradigm.REACTIVE)
         .framework(Framework.SPRING)
+        .pluginVersion("1.0.0")
         .build();
 
     // When
@@ -101,6 +103,7 @@ class ProjectGeneratorMultiModuleTest {
         .architecture(ArchitectureType.HEXAGONAL_MULTI_GRANULAR)
         .paradigm(Paradigm.REACTIVE)
         .framework(Framework.SPRING)
+        .pluginVersion("1.0.0")
         .build();
 
     // When
@@ -121,6 +124,7 @@ class ProjectGeneratorMultiModuleTest {
         .architecture(ArchitectureType.HEXAGONAL_SINGLE)
         .paradigm(Paradigm.IMPERATIVE)
         .framework(Framework.SPRING)
+        .pluginVersion("1.0.0")
         .build();
 
     // When
@@ -129,6 +133,7 @@ class ProjectGeneratorMultiModuleTest {
     // Then
     assertNotNull(files);
     assertFalse(files.isEmpty());
+    verify(fileSystemPort).writeFiles(anyList());
   }
 
   @Test
@@ -140,6 +145,7 @@ class ProjectGeneratorMultiModuleTest {
         .architecture(ArchitectureType.HEXAGONAL_SINGLE)
         .paradigm(Paradigm.REACTIVE)
         .framework(Framework.QUARKUS)
+        .pluginVersion("1.0.0")
         .build();
 
     // When
@@ -159,6 +165,7 @@ class ProjectGeneratorMultiModuleTest {
         .architecture(ArchitectureType.HEXAGONAL_SINGLE)
         .paradigm(Paradigm.REACTIVE)
         .framework(Framework.SPRING)
+        .pluginVersion("1.0.0")
         .build();
 
     // When
@@ -178,6 +185,7 @@ class ProjectGeneratorMultiModuleTest {
         .architecture(ArchitectureType.HEXAGONAL_SINGLE)
         .paradigm(Paradigm.REACTIVE)
         .framework(Framework.SPRING)
+        .pluginVersion("1.0.0")
         .build();
 
     // When
@@ -197,6 +205,7 @@ class ProjectGeneratorMultiModuleTest {
         .architecture(ArchitectureType.HEXAGONAL_SINGLE)
         .paradigm(Paradigm.REACTIVE)
         .framework(Framework.SPRING)
+        .pluginVersion("1.0.0")
         .build();
 
     // When
@@ -217,6 +226,7 @@ class ProjectGeneratorMultiModuleTest {
         .paradigm(Paradigm.REACTIVE)
         .framework(Framework.SPRING)
         .adaptersAsModules(true)
+        .pluginVersion("1.0.0")
         .build();
 
     // When
