@@ -313,7 +313,7 @@ class GenerateOutputAdapterTaskDeepTest {
           paradigm: reactive
           framework: spring
           pluginVersion: 1.0.0
-          createdAt: 2024-01-01T00:00:00
+          createdAt: '2024-01-01T00:00:00'
         architecture:
           type: hexagonal-single
           paradigm: reactive

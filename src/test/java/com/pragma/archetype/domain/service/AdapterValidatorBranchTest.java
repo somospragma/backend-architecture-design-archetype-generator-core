@@ -21,6 +21,9 @@ import com.pragma.archetype.domain.model.adapter.AdapterMethod;
 import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.adapter.MethodParameter;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
+import com.pragma.archetype.domain.model.project.ArchitectureType;
+import com.pragma.archetype.domain.model.project.Framework;
+import com.pragma.archetype.domain.model.project.Paradigm;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
@@ -177,6 +180,10 @@ class AdapterValidatorBranchTest {
     ProjectConfig projectConfig = ProjectConfig.builder()
         .name("test-project")
         .basePackage("com.test")
+        .architecture(ArchitectureType.HEXAGONAL_SINGLE)
+        .paradigm(Paradigm.REACTIVE)
+        .framework(Framework.SPRING)
+        .pluginVersion("1.0.0")
         .build();
     when(configurationPort.readConfiguration(projectPath)).thenReturn(Optional.of(projectConfig));
     when(packageValidator.validateBasePackageConsistency(any(), any()))

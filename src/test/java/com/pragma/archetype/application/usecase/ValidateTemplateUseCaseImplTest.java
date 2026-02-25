@@ -1,6 +1,7 @@
 package com.pragma.archetype.application.usecase;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeast;
@@ -49,19 +50,25 @@ class ValidateTemplateUseCaseImplTest {
 
   @Test
   void shouldFailWhenAnyArchitectureHasErrors() {
-    // Given
+    // Given - setup mocks for all ArchitectureType values
     when(templateValidator.validateArchitectureTemplates(ArchitectureType.HEXAGONAL_SINGLE))
         .thenReturn(ValidationResult.success());
     when(templateValidator.validateArchitectureTemplates(ArchitectureType.HEXAGONAL_MULTI))
         .thenReturn(ValidationResult.failure(List.of("Template error")));
-    when(templateValidator.validateArchitectureTemplates(any()))
+    when(templateValidator.validateArchitectureTemplates(ArchitectureType.HEXAGONAL_MULTI_GRANULAR))
+        .thenReturn(ValidationResult.success());
+    when(templateValidator.validateArchitectureTemplates(ArchitectureType.ONION_SINGLE))
+        .thenReturn(ValidationResult.success());
+    when(templateValidator.validateArchitectureTemplates(ArchitectureType.ONION_MULTI))
         .thenReturn(ValidationResult.success());
 
     // When
     ValidationResult result = useCase.validateAll(Path.of("/test"));
 
     // Then
+    assertNotNull(result, "ValidationResult should not be null");
     assertFalse(result.valid());
+    assertNotNull(result.errors(), "Errors list should not be null");
     assertTrue(result.errors().stream().anyMatch(e -> e.contains("Template error")));
   }
 

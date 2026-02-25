@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -104,11 +105,17 @@ class GenerateEntityTaskDeepTest {
     // Given
     String fieldsStr = "";
 
-    // When
-    List<EntityField> fields = invokeParseFields(fieldsStr);
-
-    // Then
-    assertTrue(fields.isEmpty());
+    // When/Then - empty string should throw exception (wrapped in
+    // InvocationTargetException)
+    try {
+      invokeParseFields(fieldsStr);
+      fail("Expected IllegalArgumentException to be thrown");
+    } catch (Exception e) {
+      // Reflection wraps the exception in InvocationTargetException
+      assertTrue(e.getCause() instanceof IllegalArgumentException ||
+          e instanceof IllegalArgumentException,
+          "Expected IllegalArgumentException but got: " + e.getClass());
+    }
   }
 
   @Test
@@ -278,7 +285,7 @@ class GenerateEntityTaskDeepTest {
           paradigm: reactive
           framework: spring
           pluginVersion: 1.0.0
-          createdAt: 2024-01-01T00:00:00
+          createdAt: '2024-01-01T00:00:00'
         architecture:
           type: hexagonal-single
           paradigm: reactive

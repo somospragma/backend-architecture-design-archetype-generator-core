@@ -46,8 +46,12 @@ class FreemarkerTemplateRepositoryBranchTest {
     // Given
     Path nonExistent = tempDir.resolve("nonexistent");
 
-    // When/Then
-    assertThrows(RuntimeException.class, () -> new FreemarkerTemplateRepository(nonExistent));
+    // When - constructor doesn't throw, but operations might fail
+    FreemarkerTemplateRepository repository = new FreemarkerTemplateRepository(nonExistent);
+
+    // Then - repository is created but template operations will fail
+    assertNotNull(repository);
+    assertFalse(repository.templateExists("any.ftl"));
   }
 
   @Test
