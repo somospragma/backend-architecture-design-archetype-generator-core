@@ -17,7 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.pragma.archetype.domain.model.adapter.InputAdapterConfig;
+import com.pragma.archetype.domain.model.adapter.Endpoint;
 
 class GenerateInputAdapterTaskDeepTest {
 
@@ -43,7 +43,7 @@ class GenerateInputAdapterTaskDeepTest {
     String endpointsStr = "/users:POST:create:User:name:String,email:String";
 
     // When
-    List<InputAdapterConfig.Endpoint> endpoints = invokeParseEndpoints(endpointsStr);
+    List<Endpoint> endpoints = invokeParseEndpoints(endpointsStr);
 
     // Then
     assertNotNull(endpoints);
@@ -56,7 +56,7 @@ class GenerateInputAdapterTaskDeepTest {
     String endpointsStr = "/users:POST:create:User:name:String|/users/{id}:GET:findById:User:id:Long|/users/{id}:DELETE:delete:void:id:Long";
 
     // When
-    List<InputAdapterConfig.Endpoint> endpoints = invokeParseEndpoints(endpointsStr);
+    List<Endpoint> endpoints = invokeParseEndpoints(endpointsStr);
 
     // Then
     assertEquals(3, endpoints.size());
@@ -68,7 +68,7 @@ class GenerateInputAdapterTaskDeepTest {
     String endpointsStr = "/users/{id}:GET:findById:User:id:Long";
 
     // When
-    List<InputAdapterConfig.Endpoint> endpoints = invokeParseEndpoints(endpointsStr);
+    List<Endpoint> endpoints = invokeParseEndpoints(endpointsStr);
 
     // Then
     assertEquals(1, endpoints.size());
@@ -80,7 +80,7 @@ class GenerateInputAdapterTaskDeepTest {
     String endpointsStr = "/users:GET:search:List<User>:query:String,page:Integer";
 
     // When
-    List<InputAdapterConfig.Endpoint> endpoints = invokeParseEndpoints(endpointsStr);
+    List<Endpoint> endpoints = invokeParseEndpoints(endpointsStr);
 
     // Then
     assertEquals(1, endpoints.size());
@@ -92,7 +92,7 @@ class GenerateInputAdapterTaskDeepTest {
     String endpointsStr = "";
 
     // When
-    List<InputAdapterConfig.Endpoint> endpoints = invokeParseEndpoints(endpointsStr);
+    List<Endpoint> endpoints = invokeParseEndpoints(endpointsStr);
 
     // Then
     assertTrue(endpoints.isEmpty());
@@ -203,10 +203,10 @@ class GenerateInputAdapterTaskDeepTest {
   // Helper methods using reflection
 
   @SuppressWarnings("unchecked")
-  private List<InputAdapterConfig.Endpoint> invokeParseEndpoints(String endpointsStr) throws Exception {
+  private List<Endpoint> invokeParseEndpoints(String endpointsStr) throws Exception {
     Method method = GenerateInputAdapterTask.class.getDeclaredMethod("parseEndpoints", String.class);
     method.setAccessible(true);
-    return (List<InputAdapterConfig.Endpoint>) method.invoke(task, endpointsStr);
+    return (List<Endpoint>) method.invoke(task, endpointsStr);
   }
 
   private Object invokeParseAdapterType(String typeStr) throws Exception {

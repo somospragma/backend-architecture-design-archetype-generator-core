@@ -13,56 +13,6 @@ public record InputAdapterConfig(
     String useCaseName,
     List<Endpoint> endpoints) {
 
-  /**
-   * Type of input adapter to generate.
-   */
-  public enum InputAdapterType {
-    REST,
-    GRAPHQL,
-    GRPC,
-    WEBSOCKET
-  }
-
-  /**
-   * HTTP method for REST endpoints.
-   */
-  public enum HttpMethod {
-    GET,
-    POST,
-    PUT,
-    DELETE,
-    PATCH
-  }
-
-  /**
-   * Represents an endpoint in the adapter.
-   */
-  public record Endpoint(
-      String path,
-      HttpMethod method,
-      String useCaseMethod,
-      String returnType,
-      List<EndpointParameter> parameters) {
-  }
-
-  /**
-   * Represents a parameter in an endpoint.
-   */
-  public record EndpointParameter(
-      String name,
-      String type,
-      ParameterType paramType) {
-  }
-
-  /**
-   * Type of parameter (path variable, request body, query param).
-   */
-  public enum ParameterType {
-    PATH,
-    BODY,
-    QUERY
-  }
-
   public static Builder builder() {
     return new Builder();
   }

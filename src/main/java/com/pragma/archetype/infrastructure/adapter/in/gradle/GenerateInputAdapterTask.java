@@ -11,12 +11,12 @@ import org.gradle.api.tasks.options.Option;
 
 import com.pragma.archetype.application.generator.InputAdapterGenerator;
 import com.pragma.archetype.application.usecase.GenerateInputAdapterUseCaseImpl;
+import com.pragma.archetype.domain.model.adapter.Endpoint;
+import com.pragma.archetype.domain.model.adapter.EndpointParameter;
+import com.pragma.archetype.domain.model.adapter.HttpMethod;
 import com.pragma.archetype.domain.model.adapter.InputAdapterConfig;
-import com.pragma.archetype.domain.model.adapter.InputAdapterConfig.Endpoint;
-import com.pragma.archetype.domain.model.adapter.InputAdapterConfig.EndpointParameter;
-import com.pragma.archetype.domain.model.adapter.InputAdapterConfig.HttpMethod;
-import com.pragma.archetype.domain.model.adapter.InputAdapterConfig.InputAdapterType;
-import com.pragma.archetype.domain.model.adapter.InputAdapterConfig.ParameterType;
+import com.pragma.archetype.domain.model.adapter.InputAdapterType;
+import com.pragma.archetype.domain.model.adapter.ParameterType;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateInputAdapterUseCase;
 import com.pragma.archetype.domain.port.in.GenerateInputAdapterUseCase.GenerationResult;

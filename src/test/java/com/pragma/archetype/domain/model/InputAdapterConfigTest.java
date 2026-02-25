@@ -7,25 +7,30 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import com.pragma.archetype.domain.model.adapter.Endpoint;
+import com.pragma.archetype.domain.model.adapter.EndpointParameter;
+import com.pragma.archetype.domain.model.adapter.HttpMethod;
 import com.pragma.archetype.domain.model.adapter.InputAdapterConfig;
+import com.pragma.archetype.domain.model.adapter.InputAdapterType;
+import com.pragma.archetype.domain.model.adapter.ParameterType;
 
 class InputAdapterConfigTest {
 
   @Test
   void shouldBuildInputAdapterConfigWithAllFields() {
     // Given
-    InputAdapterConfig.Endpoint endpoint = new InputAdapterConfig.Endpoint(
+    Endpoint endpoint = new Endpoint(
         "/users/{id}",
-        InputAdapterConfig.HttpMethod.GET,
+        HttpMethod.GET,
         "findById",
         "Mono<UserResponse>",
-        List.of(new InputAdapterConfig.EndpointParameter("id", "String", InputAdapterConfig.ParameterType.PATH)));
+        List.of(new EndpointParameter("id", "String", ParameterType.PATH)));
 
     // When
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .packageName("com.test.infrastructure.adapter.in.rest")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .useCaseName("UserUseCase")
         .endpoints(List.of(endpoint))
         .build();
@@ -33,99 +38,99 @@ class InputAdapterConfigTest {
     // Then
     assertEquals("UserController", config.name());
     assertEquals("com.test.infrastructure.adapter.in.rest", config.packageName());
-    assertEquals(InputAdapterConfig.InputAdapterType.REST, config.type());
+    assertEquals(InputAdapterType.REST, config.type());
     assertEquals("UserUseCase", config.useCaseName());
     assertEquals(1, config.endpoints().size());
   }
 
   @Test
   void shouldSupportAllInputAdapterTypes() {
-    assertNotNull(InputAdapterConfig.InputAdapterType.REST);
-    assertNotNull(InputAdapterConfig.InputAdapterType.GRAPHQL);
-    assertNotNull(InputAdapterConfig.InputAdapterType.GRPC);
-    assertNotNull(InputAdapterConfig.InputAdapterType.WEBSOCKET);
+    assertNotNull(InputAdapterType.REST);
+    assertNotNull(InputAdapterType.GRAPHQL);
+    assertNotNull(InputAdapterType.GRPC);
+    assertNotNull(InputAdapterType.WEBSOCKET);
   }
 
   @Test
   void shouldSupportAllHttpMethods() {
-    assertNotNull(InputAdapterConfig.HttpMethod.GET);
-    assertNotNull(InputAdapterConfig.HttpMethod.POST);
-    assertNotNull(InputAdapterConfig.HttpMethod.PUT);
-    assertNotNull(InputAdapterConfig.HttpMethod.DELETE);
-    assertNotNull(InputAdapterConfig.HttpMethod.PATCH);
+    assertNotNull(HttpMethod.GET);
+    assertNotNull(HttpMethod.POST);
+    assertNotNull(HttpMethod.PUT);
+    assertNotNull(HttpMethod.DELETE);
+    assertNotNull(HttpMethod.PATCH);
   }
 
   @Test
   void shouldSupportAllParameterTypes() {
-    assertNotNull(InputAdapterConfig.ParameterType.PATH);
-    assertNotNull(InputAdapterConfig.ParameterType.BODY);
-    assertNotNull(InputAdapterConfig.ParameterType.QUERY);
+    assertNotNull(ParameterType.PATH);
+    assertNotNull(ParameterType.BODY);
+    assertNotNull(ParameterType.QUERY);
   }
 
   @Test
   void shouldCreateEndpointWithPathParameter() {
     // When
-    InputAdapterConfig.Endpoint endpoint = new InputAdapterConfig.Endpoint(
+    Endpoint endpoint = new Endpoint(
         "/users/{id}",
-        InputAdapterConfig.HttpMethod.GET,
+        HttpMethod.GET,
         "findById",
         "Mono<User>",
-        List.of(new InputAdapterConfig.EndpointParameter("id", "String", InputAdapterConfig.ParameterType.PATH)));
+        List.of(new EndpointParameter("id", "String", ParameterType.PATH)));
 
     // Then
     assertEquals("/users/{id}", endpoint.path());
-    assertEquals(InputAdapterConfig.HttpMethod.GET, endpoint.method());
+    assertEquals(HttpMethod.GET, endpoint.method());
     assertEquals("findById", endpoint.useCaseMethod());
     assertEquals(1, endpoint.parameters().size());
-    assertEquals(InputAdapterConfig.ParameterType.PATH, endpoint.parameters().get(0).paramType());
+    assertEquals(ParameterType.PATH, endpoint.parameters().get(0).paramType());
   }
 
   @Test
   void shouldCreateEndpointWithBodyParameter() {
     // When
-    InputAdapterConfig.Endpoint endpoint = new InputAdapterConfig.Endpoint(
+    Endpoint endpoint = new Endpoint(
         "/users",
-        InputAdapterConfig.HttpMethod.POST,
+        HttpMethod.POST,
         "create",
         "Mono<User>",
-        List.of(new InputAdapterConfig.EndpointParameter("request", "CreateUserRequest",
-            InputAdapterConfig.ParameterType.BODY)));
+        List.of(new EndpointParameter("request", "CreateUserRequest",
+            ParameterType.BODY)));
 
     // Then
-    assertEquals(InputAdapterConfig.HttpMethod.POST, endpoint.method());
-    assertEquals(InputAdapterConfig.ParameterType.BODY, endpoint.parameters().get(0).paramType());
+    assertEquals(HttpMethod.POST, endpoint.method());
+    assertEquals(ParameterType.BODY, endpoint.parameters().get(0).paramType());
   }
 
   @Test
   void shouldCreateEndpointWithQueryParameter() {
     // When
-    InputAdapterConfig.Endpoint endpoint = new InputAdapterConfig.Endpoint(
+    Endpoint endpoint = new Endpoint(
         "/users",
-        InputAdapterConfig.HttpMethod.GET,
+        HttpMethod.GET,
         "findByStatus",
         "Flux<User>",
-        List.of(new InputAdapterConfig.EndpointParameter("status", "String", InputAdapterConfig.ParameterType.QUERY)));
+        List.of(new EndpointParameter("status", "String", ParameterType.QUERY)));
 
     // Then
-    assertEquals(InputAdapterConfig.ParameterType.QUERY, endpoint.parameters().get(0).paramType());
+    assertEquals(ParameterType.QUERY, endpoint.parameters().get(0).paramType());
   }
 
   @Test
   void shouldSupportMultipleEndpoints() {
     // Given
-    List<InputAdapterConfig.Endpoint> endpoints = List.of(
-        new InputAdapterConfig.Endpoint("/users", InputAdapterConfig.HttpMethod.GET, "findAll", "Flux<User>",
+    List<Endpoint> endpoints = List.of(
+        new Endpoint("/users", HttpMethod.GET, "findAll", "Flux<User>",
             List.of()),
-        new InputAdapterConfig.Endpoint("/users/{id}", InputAdapterConfig.HttpMethod.GET, "findById", "Mono<User>",
+        new Endpoint("/users/{id}", HttpMethod.GET, "findById", "Mono<User>",
             List.of()),
-        new InputAdapterConfig.Endpoint("/users", InputAdapterConfig.HttpMethod.POST, "create", "Mono<User>",
+        new Endpoint("/users", HttpMethod.POST, "create", "Mono<User>",
             List.of()));
 
     // When
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .packageName("com.test")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .useCaseName("UserUseCase")
         .endpoints(endpoints)
         .build();
@@ -140,13 +145,13 @@ class InputAdapterConfigTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserResolver")
         .packageName("com.test.infrastructure.adapter.in.graphql")
-        .type(InputAdapterConfig.InputAdapterType.GRAPHQL)
+        .type(InputAdapterType.GRAPHQL)
         .useCaseName("UserUseCase")
         .endpoints(List.of())
         .build();
 
     // Then
-    assertEquals(InputAdapterConfig.InputAdapterType.GRAPHQL, config.type());
+    assertEquals(InputAdapterType.GRAPHQL, config.type());
   }
 
   @Test
@@ -155,13 +160,13 @@ class InputAdapterConfigTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserService")
         .packageName("com.test.infrastructure.adapter.in.grpc")
-        .type(InputAdapterConfig.InputAdapterType.GRPC)
+        .type(InputAdapterType.GRPC)
         .useCaseName("UserUseCase")
         .endpoints(List.of())
         .build();
 
     // Then
-    assertEquals(InputAdapterConfig.InputAdapterType.GRPC, config.type());
+    assertEquals(InputAdapterType.GRPC, config.type());
   }
 
   @Test
@@ -170,12 +175,12 @@ class InputAdapterConfigTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserWebSocketHandler")
         .packageName("com.test.infrastructure.adapter.in.websocket")
-        .type(InputAdapterConfig.InputAdapterType.WEBSOCKET)
+        .type(InputAdapterType.WEBSOCKET)
         .useCaseName("UserUseCase")
         .endpoints(List.of())
         .build();
 
     // Then
-    assertEquals(InputAdapterConfig.InputAdapterType.WEBSOCKET, config.type());
+    assertEquals(InputAdapterType.WEBSOCKET, config.type());
   }
 }

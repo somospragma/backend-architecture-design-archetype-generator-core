@@ -18,7 +18,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.pragma.archetype.application.generator.InputAdapterGenerator;
+import com.pragma.archetype.domain.model.adapter.Endpoint;
+import com.pragma.archetype.domain.model.adapter.HttpMethod;
 import com.pragma.archetype.domain.model.adapter.InputAdapterConfig;
+import com.pragma.archetype.domain.model.adapter.InputAdapterType;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateInputAdapterUseCase.GenerationResult;
@@ -54,12 +57,12 @@ class GenerateInputAdapterUseCaseImplTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.rest")
         .endpoints(List.of(
-            new InputAdapterConfig.Endpoint(
+            new Endpoint(
                 "/users",
-                InputAdapterConfig.HttpMethod.POST,
+                HttpMethod.POST,
                 "execute",
                 "User",
                 List.of())))
@@ -87,7 +90,7 @@ class GenerateInputAdapterUseCaseImplTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.rest")
         .endpoints(List.of())
         .build();
@@ -110,12 +113,12 @@ class GenerateInputAdapterUseCaseImplTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterConfig.InputAdapterType.REST)
+        .type(InputAdapterType.REST)
         .packageName("com.test.infrastructure.rest")
         .endpoints(List.of(
-            new InputAdapterConfig.Endpoint(
+            new Endpoint(
                 "/users",
-                InputAdapterConfig.HttpMethod.POST,
+                HttpMethod.POST,
                 "execute",
                 "User",
                 List.of())))
@@ -139,12 +142,12 @@ class GenerateInputAdapterUseCaseImplTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("ProductResolver")
         .useCaseName("GetProductUseCase")
-        .type(InputAdapterConfig.InputAdapterType.GRAPHQL)
+        .type(InputAdapterType.GRAPHQL)
         .packageName("com.test.infrastructure.graphql")
         .endpoints(List.of(
-            new InputAdapterConfig.Endpoint(
+            new Endpoint(
                 "/products",
-                InputAdapterConfig.HttpMethod.GET,
+                HttpMethod.GET,
                 "execute",
                 "Product",
                 List.of())))

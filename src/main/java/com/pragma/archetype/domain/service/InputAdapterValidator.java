@@ -4,6 +4,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.pragma.archetype.domain.model.adapter.Endpoint;
+import com.pragma.archetype.domain.model.adapter.EndpointParameter;
 import com.pragma.archetype.domain.model.adapter.InputAdapterConfig;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
@@ -98,8 +100,8 @@ public class InputAdapterValidator {
     return errors.isEmpty() ? ValidationResult.success() : ValidationResult.failure(errors);
   }
 
-  private void validateEndpoints(List<InputAdapterConfig.Endpoint> endpoints, List<String> errors) {
-    for (InputAdapterConfig.Endpoint endpoint : endpoints) {
+  private void validateEndpoints(List<Endpoint> endpoints, List<String> errors) {
+    for (Endpoint endpoint : endpoints) {
       if (endpoint.path() == null || endpoint.path().isBlank()) {
         errors.add("Endpoint path is required");
       } else if (!endpoint.path().startsWith("/")) {
@@ -119,7 +121,7 @@ public class InputAdapterValidator {
       }
 
       if (endpoint.parameters() != null) {
-        for (InputAdapterConfig.EndpointParameter param : endpoint.parameters()) {
+        for (EndpointParameter param : endpoint.parameters()) {
           if (param.name() == null || param.name().isBlank()) {
             errors.add("Parameter name is required in endpoint: " + endpoint.path());
           }
