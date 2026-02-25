@@ -8,10 +8,13 @@ import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.model.project.Framework;
 import com.pragma.archetype.domain.model.project.Paradigm;
 
+import lombok.Builder;
+
 /**
  * Configuration for a clean architecture project.
  * Uses Java 21 record for immutability and conciseness.
  */
+@Builder
 public record ProjectConfig(
     String name,
     String basePackage,
@@ -63,82 +66,5 @@ public record ProjectConfig(
     }
 
     return true;
-  }
-
-  /**
-   * Builder for convenient construction.
-   */
-  public static Builder builder() {
-    return new Builder();
-  }
-
-  public static class Builder {
-    private String name;
-    private String basePackage;
-    private ArchitectureType architecture;
-    private Paradigm paradigm;
-    private Framework framework;
-    private String pluginVersion = "0.1.0-SNAPSHOT";
-    private LocalDateTime createdAt = LocalDateTime.now();
-    private boolean adaptersAsModules = false;
-    private Map<String, String> dependencyOverrides = Map.of();
-
-    public Builder name(String name) {
-      this.name = name;
-      return this;
-    }
-
-    public Builder basePackage(String basePackage) {
-      this.basePackage = basePackage;
-      return this;
-    }
-
-    public Builder architecture(ArchitectureType architecture) {
-      this.architecture = architecture;
-      return this;
-    }
-
-    public Builder paradigm(Paradigm paradigm) {
-      this.paradigm = paradigm;
-      return this;
-    }
-
-    public Builder framework(Framework framework) {
-      this.framework = framework;
-      return this;
-    }
-
-    public Builder pluginVersion(String pluginVersion) {
-      this.pluginVersion = pluginVersion;
-      return this;
-    }
-
-    public Builder createdAt(LocalDateTime createdAt) {
-      this.createdAt = createdAt;
-      return this;
-    }
-
-    public Builder adaptersAsModules(boolean adaptersAsModules) {
-      this.adaptersAsModules = adaptersAsModules;
-      return this;
-    }
-
-    public Builder dependencyOverrides(Map<String, String> dependencyOverrides) {
-      this.dependencyOverrides = dependencyOverrides != null ? dependencyOverrides : Map.of();
-      return this;
-    }
-
-    public ProjectConfig build() {
-      return new ProjectConfig(
-          name,
-          basePackage,
-          architecture,
-          paradigm,
-          framework,
-          pluginVersion,
-          createdAt,
-          adaptersAsModules,
-          dependencyOverrides);
-    }
   }
 }
