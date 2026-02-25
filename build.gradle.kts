@@ -176,8 +176,17 @@ publishing {
 }
 
 signing {
-    val publications = publishing.publications.matching { it.name == "cleanArchGeneratorPluginMarkerMaven" || it.name.contains("PluginMarkerMaven") }
-    sign(publications)
+    // Only sign if GPG credentials are available (required for Maven Central, not for Gradle Plugin Portal)
+    val signingKey = project.findProperty("signingKey")?.toString() ?: System.getenv("ORG_GRADLE_PROJECT_signingKey")
+    val signingPassword = project.findProperty("signingPassword")?.toString() ?: System.getenv("ORG_GRADLE_PROJECT_signingPassword")
+    
+    if (signingKey != null && signingPassword != null) {
+        useInMemoryPgpKeys(signingKey, signingPassword)
+        val publications = publishing.publications.matching { 
+            it.name == "pluginMaven" || it.name == "cleanArchGeneratorPluginMarkerMaven" 
+        }
+        sign(publications)
+    }
 }
 
 
