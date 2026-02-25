@@ -45,7 +45,6 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           ./gradlew sonar \
-            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
-            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
             -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.gradle.skipCompile=true
+            ${{ secrets.SONAR_PROJECT_KEY && format('-Dsonar.projectKey={0}', secrets.SONAR_PROJECT_KEY) || '' }} \
+            ${{ secrets.SONAR_ORGANIZATION && format('-Dsonar.organization={0}', secrets.SONAR_ORGANIZATION) || '' }}
