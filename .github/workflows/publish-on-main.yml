@@ -51,9 +51,7 @@ jobs:
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_PRIVATE_KEY }}
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          ./gradlew publishPluginMavenPublicationToOSSRHRepository \
-            -Psigning.gnupg.executable=gpg \
-            -Psigning.gnupg.passphrase="${{ secrets.GPG_PASSPHRASE }}" \
+          ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository \
             --no-daemon \
             --stacktrace
       

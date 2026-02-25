@@ -4,6 +4,7 @@ plugins {
     signing
     id("com.gradle.plugin-publish") version "1.2.1"
     id("org.sonarqube") version "4.4.1.3373"
+    id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
     jacoco
     kotlin("jvm") version "1.9.21"
 }
@@ -159,22 +160,6 @@ publishing {
             }
         }
     }
-    
-    repositories {
-        maven {
-            name = "OSSRH"
-            // Using OSSRH Staging API (compatible with new Central Portal tokens)
-            // See: https://mvysny.github.io/ossrh-deprecated/
-            val releasesRepoUrl = uri("https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/")
-            val snapshotsRepoUrl = uri("https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots/")
-            url = if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl
-            
-            credentials {
-                username = project.findProperty("ossrhUsername")?.toString() ?: System.getenv("OSSRH_USERNAME")
-                password = project.findProperty("ossrhPassword")?.toString() ?: System.getenv("OSSRH_PASSWORD")
-            }
-        }
-    }
 }
 
 signing {
@@ -202,5 +187,17 @@ sonar {
         // Only set essential properties that need dynamic values
         property("sonar.projectVersion", version.toString())
         property("sonar.gradle.skipCompile", "true")
+    }
+}
+
+// Nexus Publishing Configuration for Maven Central Portal
+nexusPublishing {
+    repositories {
+        sonatype {
+            nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+            snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+            username.set(project.findProperty("ossrhUsername")?.toString() ?: System.getenv("OSSRH_USERNAME"))
+            password.set(project.findProperty("ossrhPassword")?.toString() ?: System.getenv("OSSRH_PASSWORD"))
+        }
     }
 }
