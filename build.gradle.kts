@@ -3,6 +3,7 @@ plugins {
     `maven-publish`
     signing
     id("com.gradle.plugin-publish") version "1.2.1"
+    id("org.sonarqube") version "4.4.1.3373"
     jacoco
     kotlin("jvm") version "1.9.21"
 }
@@ -83,8 +84,24 @@ tasks.jacocoTestReport {
     dependsOn(tasks.test)
     reports {
         xml.required.set(true)
+        xml.outputLocation.set(file("${buildDir}/reports/jacoco/test/jacocoTestReport.xml"))
         html.required.set(true)
+        html.outputLocation.set(file("${buildDir}/reports/jacoco/test/html"))
+        csv.required.set(false)
     }
+    
+    // Exclude Lombok-generated code from coverage
+    classDirectories.setFrom(
+        files(classDirectories.files.map {
+            fileTree(it) {
+                exclude(
+                    "**/infrastructure/config/**",
+                    "**/*Plugin.class",
+                    "**/*Task.class"
+                )
+            }
+        })
+    )
 }
 
 tasks.jacocoTestCoverageVerification {
@@ -159,3 +176,22 @@ signing {
     sign(publications)
 }
 
+
+// SonarQube Configuration
+sonar {
+    properties {
+        property("sonar.projectKey", "com.pragma:archetype-generator-core")
+        property("sonar.projectName", "Clean Architecture Generator Core")
+        property("sonar.projectVersion", version.toString())
+        property("sonar.sources", "src/main/java")
+        property("sonar.tests", "src/test/java")
+        property("sonar.java.source", "21")
+        property("sonar.java.target", "21")
+        property("sonar.sourceEncoding", "UTF-8")
+        property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
+        property("sonar.java.binaries", "build/classes/java/main")
+        property("sonar.java.test.binaries", "build/classes/java/test")
+        property("sonar.exclusions", "**/*Test.java,**/*Tests.java,**/test/**,**/build/**")
+        property("sonar.coverage.exclusions", "**/config/**,**/infrastructure/config/**,**/*Plugin.java,**/*Task.java,**/domain/model/**,**/domain/port/**")
+    }
+}
