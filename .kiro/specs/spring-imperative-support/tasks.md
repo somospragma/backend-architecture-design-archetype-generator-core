@@ -117,187 +117,270 @@
 
 ### Task 0.7: Extract Nested Enums from AdapterConfig
 - [x] 0.7.1 Extract AdapterType enum
-  - [ ] Create AdapterType.java in domain/model/adapter/
-  - [ ] Copy enum content from AdapterConfig
-  - [ ] Make it a top-level enum
-  - [ ] Update AdapterConfig to reference the new enum
-  - [ ] Update all imports that use AdapterConfig.AdapterType
+  - [x] Create AdapterType.java in domain/model/adapter/
+  - [x] Copy enum content from AdapterConfig
+  - [x] Make it a top-level enum
+  - [x] Update AdapterConfig to reference the new enum
+  - [x] Update all imports that use AdapterConfig.AdapterType
 - [x] 0.7.2 Validation
-  - [ ] Run `./gradlew build` - must succeed
-  - [ ] Run `./gradlew test` - all tests must pass
-  - [ ] Run `./gradlew jacocoTestReport` - verify coverage >85%
-  - [ ] Commit changes: "Extract AdapterType enum from AdapterConfig"
+  - [x] Run `./gradlew build` - must succeed
+  - [x] Run `./gradlew test` - all tests must pass
+  - [x] Run `./gradlew jacocoTestReport` - verify coverage >85%
+  - [x] Commit changes: "Extract AdapterType enum from AdapterConfig"
 
 ### Task 0.8: Extract Nested Records from AdapterConfig
 - [x] 0.8.1 Extract AdapterMethod record
-  - [ ] Create AdapterMethod.java in domain/model/adapter/
-  - [ ] Copy record content from AdapterConfig
-  - [ ] Update AdapterConfig to reference the new record
-  - [ ] Update all imports that use AdapterConfig.AdapterMethod
-- [ ] 0.8.2 Extract MethodParameter record
-  - [ ] Create MethodParameter.java in domain/model/adapter/
-  - [ ] Copy record content from AdapterConfig
-  - [ ] Update AdapterConfig to reference the new record
-  - [ ] Update all imports that use AdapterConfig.MethodParameter
+  - [x] Create AdapterMethod.java in domain/model/adapter/
+  - [x] Copy record content from AdapterConfig
+  - [x] Update AdapterConfig to reference the new record
+  - [x] Update all imports that use AdapterConfig.AdapterMethod
+- [x] 0.8.2 Extract MethodParameter record
+  - [x] Create MethodParameter.java in domain/model/adapter/
+  - [x] Copy record content from AdapterConfig
+  - [x] Update AdapterConfig to reference the new record
+  - [x] Update all imports that use AdapterConfig.MethodParameter
 - [x] 0.8.3 Validation
-  - [ ] Run `./gradlew build` - must succeed
-  - [ ] Run `./gradlew test` - all tests must pass
-  - [ ] Run `./gradlew jacocoTestReport` - verify coverage >85%
-  - [ ] Commit changes: "Extract AdapterMethod and MethodParameter records"
+  - [x] Run `./gradlew build` - must succeed
+  - [x] Run `./gradlew test` - all tests must pass
+  - [x] Run `./gradlew jacocoTestReport` - verify coverage >85%
+  - [x] Commit changes: "Extract AdapterMethod and MethodParameter records"
 
 ### Task 0.9: Extract Nested Classes from InputAdapterConfig
 - [x] 0.9.1 Extract InputAdapterType enum
-  - [ ] Create InputAdapterType.java in domain/model/adapter/
-  - [ ] Copy enum content from InputAdapterConfig
-  - [ ] Update InputAdapterConfig to reference the new enum
-  - [ ] Update all imports
+  - [x] Create InputAdapterType.java in domain/model/adapter/
+  - [x] Copy enum content from InputAdapterConfig
+  - [x] Update InputAdapterConfig to reference the new enum
+  - [x] Update all imports
 - [x] 0.9.2 Extract HttpMethod enum
-  - [ ] Create HttpMethod.java in domain/model/adapter/
-  - [ ] Copy enum content from InputAdapterConfig
-  - [ ] Update InputAdapterConfig to reference the new enum
-  - [ ] Update all imports
+  - [x] Create HttpMethod.java in domain/model/adapter/
+  - [x] Copy enum content from InputAdapterConfig
+  - [x] Update InputAdapterConfig to reference the new enum
+  - [x] Update all imports
 - [x] 0.9.3 Extract ParameterType enum
-  - [ ] Create ParameterType.java in domain/model/adapter/
-  - [ ] Copy enum content from InputAdapterConfig
-  - [ ] Update InputAdapterConfig to reference the new enum
-  - [ ] Update all imports
+  - [x] Create ParameterType.java in domain/model/adapter/
+  - [x] Copy enum content from InputAdapterConfig
+  - [x] Update InputAdapterConfig to reference the new enum
+  - [x] Update all imports
 - [x] 0.9.4 Extract Endpoint record
-  - [ ] Create Endpoint.java in domain/model/adapter/
-  - [ ] Copy record content from InputAdapterConfig
-  - [ ] Update InputAdapterConfig to reference the new record
-  - [ ] Update all imports
+  - [x] Create Endpoint.java in domain/model/adapter/
+  - [x] Copy record content from InputAdapterConfig
+  - [x] Update InputAdapterConfig to reference the new record
+  - [x] Update all imports
 - [x] 0.9.5 Extract EndpointParameter record
-  - [ ] Create EndpointParameter.java in domain/model/adapter/
-  - [ ] Copy record content from InputAdapterConfig
-  - [ ] Update InputAdapterConfig to reference the new record
-  - [ ] Update all imports
-- [ ] 0.9.6 Validation
-  - [ ] Run `./gradlew build` - must succeed
-  - [ ] Run `./gradlew test` - all tests must pass
-  - [ ] Run `./gradlew jacocoTestReport` - verify coverage >85%
-  - [ ] Commit changes: "Extract nested classes from InputAdapterConfig"
+  - [x] Create EndpointParameter.java in domain/model/adapter/
+  - [x] Copy record content from InputAdapterConfig
+  - [x] Update InputAdapterConfig to reference the new record
+  - [x] Update all imports
+- [x] 0.9.6 Validation
+  - [x] Run `./gradlew build` - must succeed
+  - [x] Run `./gradlew test` - all tests must pass
+  - [x] Run `./gradlew jacocoTestReport` - verify coverage >85%
+  - [x] Commit changes: "Extract nested classes from InputAdapterConfig"
 
 ### Task 0.10: Extract Nested Classes from EntityConfig
 - [x] 0.10.1 Extract EntityField record
-  - [ ] Create EntityField.java in domain/model/entity/
-  - [ ] Copy record content from EntityConfig
-  - [ ] Update EntityConfig to reference the new record
-  - [ ] Update all imports that use EntityConfig.EntityField
+  - [x] Create EntityField.java in domain/model/entity/
+  - [x] Copy record content from EntityConfig
+  - [x] Update EntityConfig to reference the new record
+  - [x] Update all imports that use EntityConfig.EntityField
 - [x] 0.10.2 Validation
-  - [ ] Run `./gradlew build` - must succeed
-  - [ ] Run `./gradlew test` - all tests must pass
-  - [ ] Run `./gradlew jacocoTestReport` - verify coverage >85%
-  - [ ] Commit changes: "Extract EntityField record from EntityConfig"
+  - [x] Run `./gradlew build` - must succeed
+  - [x] Run `./gradlew test` - all tests must pass
+  - [x] Run `./gradlew jacocoTestReport` - verify coverage >85%
+  - [x] Commit changes: "Extract EntityField record from EntityConfig"
 
 ### Task 0.11: Extract FileType Enum from GeneratedFile
 - [x] 0.11.1 Extract FileType enum
-  - [ ] Create FileType.java in domain/model/file/
-  - [ ] Copy enum content from GeneratedFile
-  - [ ] Update GeneratedFile to reference the new enum
-  - [ ] Update all imports that use GeneratedFile.FileType
+  - [x] Create FileType.java in domain/model/file/
+  - [x] Copy enum content from GeneratedFile
+  - [x] Update GeneratedFile to reference the new enum
+  - [x] Update all imports that use GeneratedFile.FileType
 - [x] 0.11.2 Validation
-  - [ ] Run `./gradlew build` - must succeed
-  - [ ] Run `./gradlew test` - all tests must pass
-  - [ ] Run `./gradlew jacocoTestReport` - verify coverage >85%
-  - [ ] Commit changes: "Extract FileType enum from GeneratedFile"
+  - [x] Run `./gradlew build` - must succeed
+  - [x] Run `./gradlew test` - all tests must pass
+  - [x] Run `./gradlew jacocoTestReport` - verify coverage >85%
+  - [x] Commit changes: "Extract FileType enum from GeneratedFile"
 
 ### Task 0.12: Replace Manual Builder in AdapterConfig with Lombok @Builder
-- [ ] 0.12.1 Add @Builder annotation to AdapterConfig
-  - [ ] Add `import lombok.Builder;` at top of file
-  - [ ] Add `@Builder` annotation to AdapterConfig class
-- [ ] 0.12.2 Delete manual Builder class
-  - [ ] Remove the entire `public static class Builder { ... }` from AdapterConfig
-  - [ ] Remove `public static Builder builder()` method
-- [ ] 0.12.3 Update all usages to use Lombok builder
-  - [ ] Verify all `.builder()` calls still work
-  - [ ] Update tests if needed
-- [ ] 0.12.4 Validation
-  - [ ] Run `./gradlew build` - must succeed
-  - [ ] Run `./gradlew test` - all tests must pass
-  - [ ] Run `./gradlew jacocoTestReport` - verify coverage >85%
-  - [ ] Commit changes: "Replace manual Builder with @Builder in AdapterConfig"
+- [x] 0.12.1 Add @Builder annotation to AdapterConfig
+  - [x] Add `import lombok.Builder;` at top of file
+  - [x] Add `@Builder` annotation to AdapterConfig class
+- [x] 0.12.2 Delete manual Builder class
+  - [x] Remove the entire `public static class Builder { ... }` from AdapterConfig
+  - [x] Remove `public static Builder builder()` method
+- [x] 0.12.3 Update all usages to use Lombok builder
+  - [x] Verify all `.builder()` calls still work
+  - [x] Update tests if needed
+- [x] 0.12.4 Validation
+  - [x] Run `./gradlew build` - must succeed
+  - [x] Run `./gradlew test` - all tests must pass
+  - [x] Run `./gradlew jacocoTestReport` - verify coverage >85%
+  - [x] Commit changes: "Replace manual Builder with @Builder in AdapterConfig"
 
 ### Task 0.13: Replace Manual Builder in InputAdapterConfig with Lombok @Builder
-- [ ] 0.13.1 Add @Builder annotation to InputAdapterConfig
-  - [ ] Add `import lombok.Builder;`
-  - [ ] Add `@Builder` annotation
-- [ ] 0.13.2 Delete manual Builder class
-  - [ ] Remove Builder class from InputAdapterConfig
-  - [ ] Remove builder() method
-- [ ] 0.13.3 Update all usages
-  - [ ] Verify all builder calls work
-  - [ ] Update tests if needed
-- [ ] 0.13.4 Validation
-  - [ ] Run `./gradlew build` - must succeed
-  - [ ] Run `./gradlew test` - all tests must pass
-  - [ ] Run `./gradlew jacocoTestReport` - verify coverage >85%
-  - [ ] Commit changes: "Replace manual Builder with @Builder in InputAdapterConfig"
+- [x] 0.13.1 Add @Builder annotation to InputAdapterConfig
+  - [x] Add `import lombok.Builder;`
+  - [x] Add `@Builder` annotation
+- [x] 0.13.2 Delete manual Builder class
+  - [x] Remove Builder class from InputAdapterConfig
+  - [x] Remove builder() method
+- [x] 0.13.3 Update all usages
+  - [x] Verify all builder calls work
+  - [x] Update tests if needed
+- [x] 0.13.4 Validation
+  - [x] Run `./gradlew build` - must succeed
+  - [x] Run `./gradlew test` - all tests must pass
+  - [x] Run `./gradlew jacocoTestReport` - verify coverage >85%
+  - [x] Commit changes: "Replace manual Builder with @Builder in InputAdapterConfig"
 
 ### Task 0.14: Replace Manual Builder in EntityConfig with Lombok @Builder
-- [ ] 0.14.1 Add @Builder annotation to EntityConfig
-  - [ ] Add `import lombok.Builder;`
-  - [ ] Add `@Builder` annotation
-- [ ] 0.14.2 Delete manual Builder class
-  - [ ] Remove Builder class from EntityConfig
-  - [ ] Remove builder() method
-- [ ] 0.14.3 Update all usages
-  - [ ] Verify all builder calls work
-  - [ ] Update tests if needed
-- [ ] 0.14.4 Validation
-  - [ ] Run `./gradlew build` - must succeed
-  - [ ] Run `./gradlew test` - all tests must pass
-  - [ ] Run `./gradlew jacocoTestReport` - verify coverage >85%
-  - [ ] Commit changes: "Replace manual Builder with @Builder in EntityConfig"
+- [x] 0.14.1 Add @Builder annotation to EntityConfig
+  - [x] Add `import lombok.Builder;`
+  - [x] Add `@Builder` annotation
+- [x] 0.14.2 Delete manual Builder class
+  - [x] Remove Builder class from EntityConfig
+  - [x] Remove builder() method
+- [x] 0.14.3 Update all usages
+  - [x] Verify all builder calls work
+  - [x] Update tests if needed
+- [x] 0.14.4 Validation
+  - [x] Run `./gradlew build` - must succeed
+  - [x] Run `./gradlew test` - all tests must pass
+  - [x] Run `./gradlew jacocoTestReport` - verify coverage >85%
+  - [x] Commit changes: "Replace manual Builder with @Builder in EntityConfig"
 
 ### Task 0.15: Replace Manual Builder in ProjectConfig with Lombok @Builder
-- [ ] 0.15.1 Add @Builder annotation to ProjectConfig
-  - [ ] Add `import lombok.Builder;`
-  - [ ] Add `@Builder` annotation
-- [ ] 0.15.2 Delete manual Builder class
-  - [ ] Remove Builder class from ProjectConfig
-  - [ ] Remove builder() method
-- [ ] 0.15.3 Update all usages
-  - [ ] Verify all builder calls work
-  - [ ] Update tests if needed
-- [ ] 0.15.4 Validation
-  - [ ] Run `./gradlew build` - must succeed
-  - [ ] Run `./gradlew test` - all tests must pass
-  - [ ] Run `./gradlew jacocoTestReport` - verify coverage >85%
-  - [ ] Commit changes: "Replace manual Builder with @Builder in ProjectConfig"
+- [x] 0.15.1 Add @Builder annotation to ProjectConfig
+  - [x] Add `import lombok.Builder;`
+  - [x] Add `@Builder` annotation
+- [x] 0.15.2 Delete manual Builder class
+  - [x] Remove Builder class from ProjectConfig
+  - [x] Remove builder() method
+- [x] 0.15.3 Update all usages
+  - [x] Verify all builder calls work
+  - [x] Update tests if needed
+- [x] 0.15.4 Validation
+  - [x] Run `./gradlew build` - must succeed
+  - [x] Run `./gradlew test` - all tests must pass
+  - [x] Run `./gradlew jacocoTestReport` - verify coverage >85%
+  - [x] Commit changes: "Replace manual Builder with @Builder in ProjectConfig"
 
 ### Task 0.16: Replace Manual Builder in UseCaseConfig with Lombok @Builder
-- [ ] 0.16.1 Add @Builder annotation to UseCaseConfig
-  - [ ] Add `import lombok.Builder;`
-  - [ ] Add `@Builder` annotation
-- [ ] 0.16.2 Delete manual Builder class
-  - [ ] Remove Builder class from UseCaseConfig
-  - [ ] Remove builder() method
-- [ ] 0.16.3 Update all usages
-  - [ ] Verify all builder calls work
-  - [ ] Update tests if needed
-- [ ] 0.16.4 Validation
-  - [ ] Run `./gradlew build` - must succeed
-  - [ ] Run `./gradlew test` - all tests must pass
-  - [ ] Run `./gradlew jacocoTestReport` - verify coverage >85%
-  - [ ] Commit changes: "Replace manual Builder with @Builder in UseCaseConfig"
+- [x] 0.16.1 Add @Builder annotation to UseCaseConfig
+  - [x] Add `import lombok.Builder;`
+  - [x] Add `@Builder` annotation
+- [x] 0.16.2 Delete manual Builder class
+  - [x] Remove Builder class from UseCaseConfig
+  - [x] Remove builder() method
+- [x] 0.16.3 Update all usages
+  - [x] Verify all builder calls work
+  - [x] Update tests if needed
+- [x] 0.16.4 Validation
+  - [x] Run `./gradlew build` - must succeed
+  - [x] Run `./gradlew test` - all tests must pass
+  - [x] Run `./gradlew jacocoTestReport` - verify coverage >85%
+  - [x] Commit changes: "Replace manual Builder with @Builder in UseCaseConfig"
 
 ### Task 0.17: Replace Simple Getters with Lombok @Getter (Part 1)
-- [ ] 0.17.1 Analyze AdapterConfig for simple getters
-  - [ ] Identify getters that only return a field (no logic)
-  - [ ] Add `@Getter` annotation to AdapterConfig
-  - [ ] Delete simple getter methods
-  - [ ] Keep complex getters (with logic) as methods
-- [ ] 0.17.2 Analyze AdapterMetadata for simple getters
-  - [ ] Add `@Getter` annotation
-  - [ ] Delete simple getter methods
-  - [ ] Keep complex getters
-- [ ] 0.17.3 Analyze InputAdapterConfig for simple getters
-  - [ ] Add `@Getter` annotation
-  - [ ] Delete simple getter methods
-  - [ ] Keep complex getters
-- [ ] 0.17.4 Validation
-  - [ ] Run `./gradlew build` - must succeed
-  - [ ] Run `./gradlew test` - all tests must pass
+- [x] 0.17.1 Analyze AdapterConfig for simple getters
+  - [x] Identify getters that only return a field (no logic)
+  - [x] Add `@Getter` annotation to AdapterConfig
+  - [x] Delete simple getter methods
+  - [x] Keep complex getters (with logic) as methods
+  - [x] NOTE: AdapterConfig is a record - getters are automatic, no action needed
+- [x] 0.17.2 Analyze AdapterMetadata for simple getters
+  - [x] Add `@Getter` annotation
+  - [x] Delete simple getter methods
+  - [x] Keep complex getters
+  - [x] NOTE: AdapterMetadata is a record - getters are automatic, no action needed
+- [x] 0.17.3 Analyze InputAdapterConfig for simple getters
+  - [x] Add `@Getter` annotation
+  - [x] Delete simple getter methods
+  - [x] Keep complex getters
+  - [x] NOTE: InputAdapterConfig is a record - getters are automatic, no action needed
+- [x] 0.17.4 Validation
+  - [x] Run `./gradlew build` - must succeed
+  - [x] Run `./gradlew test` - all tests must pass
+  - [x] Run `./gradlew jacocoTestReport` - verify coverage >85%
+  - [x] Commit changes: "Replace simple getters with @Getter (adapter classes)"
+  - [x] NOTE: No changes needed - all classes are records with automatic getters
+
+### Task 0.18: Replace Simple Getters with Lombok @Getter (Part 2)
+- [x] 0.18.1 Analyze ProjectConfig for simple getters
+  - [x] Add `@Getter` annotation
+  - [x] Delete simple getter methods
+  - [x] Keep complex getters
+  - [x] NOTE: ProjectConfig is a record - getters are automatic, no action needed
+- [x] 0.18.2 Analyze TemplateConfig for simple getters
+  - [x] Add `@Getter` annotation
+  - [x] Delete simple getter methods
+  - [x] Keep complex getters
+  - [x] NOTE: TemplateConfig is a record - getters are automatic, no action needed
+- [x] 0.18.3 Analyze EntityConfig for simple getters
+  - [x] Add `@Getter` annotation
+  - [x] Delete simple getter methods
+  - [x] Keep complex getters
+  - [x] NOTE: EntityConfig is a record - getters are automatic, no action needed
+- [x] 0.18.4 Validation
+  - [x] Run `./gradlew build` - must succeed
+  - [x] Run `./gradlew test` - all tests must pass
+  - [x] Run `./gradlew jacocoTestReport` - verify coverage >85%
+  - [x] Commit changes: "Replace simple getters with @Getter (config/entity classes)"
+  - [x] NOTE: No changes needed - all classes are records with automatic getters
+
+### Task 0.19: Replace Simple Getters with Lombok @Getter (Part 3)
+- [x] 0.19.1 Analyze remaining domain model classes
+  - [x] UseCaseConfig
+  - [x] GeneratedFile
+  - [x] ValidationResult
+  - [x] StructureMetadata
+  - [x] LayerDependencies
+  - [x] NamingConventions
+  - [x] MergeResult
+  - [x] NOTE: All are records - getters are automatic, no action needed
+- [x] 0.19.2 Add @Getter and delete simple getters for each class
+  - [x] NOTE: No changes needed - all classes are records
+- [x] 0.19.3 Validation
+  - [x] Run `./gradlew build` - must succeed
+  - [x] Run `./gradlew test` - all tests must pass
+  - [x] Run `./gradlew jacocoTestReport` - verify coverage >85%
+  - [x] Commit changes: "Replace simple getters with @Getter (remaining classes)"
+  - [x] NOTE: No changes needed - all classes are records with automatic getters
+
+### Task 0.20: Replace Simple Setters with Lombok @Setter
+- [x] 0.20.1 Analyze all domain model classes for simple setters
+  - [x] Identify setters that only assign a field (no validation/logic)
+  - [x] List classes that have simple setters
+  - [x] NOTE: All domain model classes are immutable records - no setters exist
+- [x] 0.20.2 Add @Setter annotation to classes with simple setters
+  - [x] Add `@Setter` annotation at class level or field level
+  - [x] Delete simple setter methods
+  - [x] Keep complex setters (with validation) as methods
+  - [x] NOTE: No changes needed - records are immutable by design
+- [x] 0.20.3 Validation
+  - [x] Run `./gradlew build` - must succeed
+  - [x] Run `./gradlew test` - all tests must pass
+  - [x] Run `./gradlew jacocoTestReport` - verify coverage >85%
+  - [x] Commit changes: "Replace simple setters with @Setter"
+  - [x] NOTE: No changes needed - all domain models are immutable records
+
+### Task 0.21: Apply @Data to Mutable POJOs
+- [x] 0.21.1 Identify mutable POJOs (classes with setters)
+  - [x] AdapterMetadata (if mutable)
+  - [x] TemplateConfig (if mutable)
+  - [x] Other mutable classes
+  - [x] NOTE: All domain model classes are immutable records - no mutable POJOs found
+- [x] 0.21.2 Replace @Getter + @Setter with @Data
+  - [x] Add `import lombok.Data;`
+  - [x] Replace @Getter and @Setter with @Data
+  - [x] @Data generates: getters, setters, toString, equals, hashCode
+  - [x] NOTE: No changes needed - no mutable POJOs in domain model
+- [x] 0.21.3 Validation
+  - [x] Run `./gradlew build` - must succeed
+  - [x] Run `./gradlew test` - all tests must pass
+  - [x] Run `./gradlew jacocoTestReport` - verify coverage >85%
+  - [x] Commit changes: "Apply @Data to mutable POJOs"
+  - [x] NOTE: No changes needed - domain follows immutable design with records
   - [ ] Run `./gradlew jacocoTestReport` - verify coverage >85%
   - [ ] Commit changes: "Replace simple getters with @Getter (adapter classes)"
 
