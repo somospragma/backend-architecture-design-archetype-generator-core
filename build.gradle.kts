@@ -178,34 +178,11 @@ signing {
 
 
 // SonarQube Configuration
+// Note: Most configuration is in sonar-project.properties to avoid type casting issues
 sonar {
     properties {
-        property("sonar.projectKey", System.getenv("SONAR_PROJECT_KEY") ?: "com.pragma:archetype-generator-core")
-        property("sonar.organization", System.getenv("SONAR_ORGANIZATION") ?: "somospragma")
-        property("sonar.projectName", "Clean Architecture Generator Core")
+        // Only set essential properties that need dynamic values
         property("sonar.projectVersion", version.toString())
-        property("sonar.sources", "src/main/java")
-        property("sonar.tests", "src/test/java")
-        property("sonar.java.source", "21")
-        property("sonar.java.target", "21")
-        property("sonar.sourceEncoding", "UTF-8")
-        property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
-        property("sonar.java.binaries", "build/classes/java/main")
-        property("sonar.java.test.binaries", "build/classes/java/test")
-        property("sonar.exclusions", 
-            "**/*Test.java," +
-            "**/*Tests.java," +
-            "**/test/**," +
-            "**/build/**"
-        )
-        property("sonar.coverage.exclusions", 
-            "**/config/**," +
-            "**/infrastructure/config/**," +
-            "**/*Plugin.java," +
-            "**/*Task.java," +
-            "**/domain/model/**," +
-            "**/domain/port/**"
-        )
         property("sonar.gradle.skipCompile", "true")
     }
 }
