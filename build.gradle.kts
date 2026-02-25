@@ -176,6 +176,9 @@ publishing {
 }
 
 signing {
+    // Make signing optional - only required for Maven Central, not for Gradle Plugin Portal
+    isRequired = false
+    
     // Only sign if GPG credentials are available (required for Maven Central, not for Gradle Plugin Portal)
     val signingKey = project.findProperty("signingKey")?.toString() ?: System.getenv("ORG_GRADLE_PROJECT_signingKey")
     val signingPassword = project.findProperty("signingPassword")?.toString() ?: System.getenv("ORG_GRADLE_PROJECT_signingPassword")
