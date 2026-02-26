@@ -117,16 +117,22 @@ public class GenerateInputAdapterTask extends DefaultTask {
         throw new RuntimeException("Configuration validation failed. Please fix the errors above.");
       }
 
-      // 2. Validate inputs
+      // 2. Infer package name if not provided
+      if (packageName == null || packageName.isBlank()) {
+        packageName = inferPackageName(projectPath, fileSystemPort, configurationPort);
+        getLogger().lifecycle("  Inferred package: {}", packageName);
+      }
+
+      // 3. Validate inputs
       validateInputs();
 
-      // 3. Parse adapter type
+      // 4. Parse adapter type
       InputAdapterType adapterType = parseAdapterType(type);
 
-      // 4. Parse endpoints
+      // 5. Parse endpoints
       List<Endpoint> endpointList = parseEndpoints(endpoints);
 
-      // 5. Create configuration
+      // 6. Create configuration
       InputAdapterConfig config = InputAdapterConfig.builder()
           .name(adapterName)
           .useCaseName(useCaseName)
@@ -135,10 +141,10 @@ public class GenerateInputAdapterTask extends DefaultTask {
           .endpoints(endpointList)
           .build();
 
-      // 6. Setup dependencies (reuse instances from validation)
+      // 7. Setup dependencies (reuse instances from validation)
       TemplateRepository templateRepository = createTemplateRepository();
 
-      // 7. Setup use case
+      // 8. Setup use case
       com.pragma.archetype.domain.service.PackageValidator packageValidator = new com.pragma.archetype.domain.service.PackageValidator();
       InputAdapterValidator validator = new InputAdapterValidator(fileSystemPort, configurationPort, packageValidator);
       InputAdapterGenerator generator = new InputAdapterGenerator(templateRepository, fileSystemPort);
@@ -148,10 +154,10 @@ public class GenerateInputAdapterTask extends DefaultTask {
           configurationPort,
           fileSystemPort);
 
-      // 8. Execute use case
+      // 9. Execute use case
       GenerationResult result = useCase.execute(projectPath, config);
 
-      // 9. Handle result
+      // 10. Handle result
       if (result.success()) {
         getLogger().lifecycle("✓ Input adapter generated successfully!");
         getLogger().lifecycle("  Generated {} file(s)", result.generatedFiles().size());
@@ -165,6 +171,35 @@ public class GenerateInputAdapterTask extends DefaultTask {
     } catch (Exception e) {
       getLogger().error("✗ Error generating input adapter: {}", e.getMessage());
       throw new RuntimeException("Input adapter generation failed", e);
+    }
+  }
+
+  /**
+   * Infers package name from .cleanarch.yml basePackage and structure.yml
+   * adapterPaths.
+   * This eliminates the need for users to specify --packageName explicitly.
+   */
+  private String inferPackageName(Path projectPath, FileSystemPort fileSystemPort,
+      ConfigurationPort configurationPort) {
+    try {
+      // Read project configuration to get basePackage
+      var projectConfig = configurationPort.readConfiguration(projectPath)
+          .orElseThrow(() -> new IllegalStateException(".cleanarch.yml not found"));
+      var basePackage = projectConfig.basePackage();
+
+      getLogger().debug("Base package from .cleanarch.yml: {}", basePackage);
+
+      // For now, return basePackage + default adapter path structure
+      // The actual path resolution will be handled by PathResolverImpl using
+      // adapterPaths
+      // This is a simplified inference - the full path will be resolved during
+      // generation
+      return basePackage;
+
+    } catch (Exception e) {
+      throw new IllegalStateException(
+          "Failed to infer package name. Please provide --packageName explicitly or ensure .cleanarch.yml exists with basePackage configured.",
+          e);
     }
   }
 
@@ -187,9 +222,10 @@ public class GenerateInputAdapterTask extends DefaultTask {
           "Endpoints are required. Use --endpoints=/users:POST:create:User:userData:BODY:CreateUserRequest");
     }
 
+    // packageName is now optional - it will be inferred if not provided
     if (packageName.isBlank()) {
       throw new IllegalArgumentException(
-          "Package name is required. Use --packageName=com.company.infrastructure.entry-points.rest");
+          "Package name could not be inferred. Please provide --packageName explicitly.");
     }
   }
 
