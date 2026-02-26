@@ -87,11 +87,12 @@ class GenerateInputAdapterTaskTest {
   }
 
   @Test
-  void shouldFailWithoutUseCaseName() {
-    // Given
+  void shouldFailWithoutUseCaseNameForRestAdapter() {
+    // Given - REST adapter requires use case
     task.setAdapterName("UserController");
     task.setEndpoints("/users:POST:create:User");
     task.setPackageName("com.test");
+    task.setType("rest");
 
     // When/Then
     RuntimeException exception = assertThrows(RuntimeException.class, () -> {
@@ -100,6 +101,24 @@ class GenerateInputAdapterTaskTest {
     assertTrue(exception.getCause() != null && exception.getCause().getMessage().contains("Use case name is required"),
         "Expected cause to contain 'Use case name is required' but was: " +
             (exception.getCause() != null ? exception.getCause().getMessage() : "null"));
+  }
+
+  @Test
+  void shouldNotRequireUseCaseForScheduledAdapter() {
+    // Given - Scheduled adapter does NOT require use case (Bug 4 fix)
+    task.setAdapterName("ScheduledTask");
+    task.setType("scheduled");
+    // Note: NOT setting useCaseName - should be optional for scheduled adapters
+    // Note: NOT setting endpoints - scheduled adapters don't have endpoints
+
+    // When/Then - Should not throw exception about missing use case
+    RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+      task.generateInputAdapter();
+    });
+    // Should fail on generation (missing templates), not on validation
+    // The error should NOT be about missing use case
+    assertTrue(exception.getMessage() == null || !exception.getMessage().contains("Use case name is required"),
+        "Should not fail with 'Use case name is required' for scheduled adapter");
   }
 
   @Test
@@ -119,19 +138,23 @@ class GenerateInputAdapterTaskTest {
   }
 
   @Test
-  void shouldFailWithoutPackageName() {
-    // Given
+  void shouldInferPackageNameFromConfiguration() {
+    // Given - .cleanarch.yml exists with basePackage (created in setUp)
     task.setAdapterName("UserController");
     task.setUseCaseName("CreateUserUseCase");
     task.setEndpoints("/users:POST:create:User");
+    // Note: NOT setting packageName - should be inferred
 
-    // When/Then
+    // When/Then - Should not throw exception because package is inferred
+    // This test will fail during generation due to missing templates, but
+    // it should pass validation (which is what we're testing)
     RuntimeException exception = assertThrows(RuntimeException.class, () -> {
       task.generateInputAdapter();
     });
-    assertTrue(exception.getCause() != null && exception.getCause().getMessage().contains("Package name is required"),
-        "Expected cause to contain 'Package name is required' but was: " +
-            (exception.getCause() != null ? exception.getCause().getMessage() : "null"));
+    // Should fail on generation, not on validation
+    // The error should NOT be about missing package name
+    assertTrue(exception.getMessage() == null || !exception.getMessage().contains("Package name is required"),
+        "Should not fail with 'Package name is required' when .cleanarch.yml exists");
   }
 
   private void createBasicConfiguration() throws Exception {

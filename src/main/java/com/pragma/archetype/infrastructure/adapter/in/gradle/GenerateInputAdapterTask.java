@@ -204,6 +204,18 @@ public class GenerateInputAdapterTask extends DefaultTask {
   }
 
   /**
+   * Determines if the adapter type requires a use case.
+   * Some adapter types (scheduled, messaging) don't need direct use case
+   * invocation.
+   */
+  private boolean requiresUseCase(String adapterType) {
+    return adapterType.equalsIgnoreCase("rest")
+        || adapterType.equalsIgnoreCase("graphql")
+        || adapterType.equalsIgnoreCase("grpc")
+        || adapterType.equalsIgnoreCase("websocket");
+  }
+
+  /**
    * Validates task inputs.
    */
   private void validateInputs() {
@@ -212,9 +224,10 @@ public class GenerateInputAdapterTask extends DefaultTask {
           "Adapter name is required. Use --name=User");
     }
 
-    if (useCaseName.isBlank()) {
+    // Only require use case for certain adapter types
+    if (requiresUseCase(type) && useCaseName.isBlank()) {
       throw new IllegalArgumentException(
-          "Use case name is required. Use --useCase=CreateUserUseCase");
+          "Use case name is required for " + type + " adapters. Use --useCase=CreateUserUseCase");
     }
 
     if (endpoints.isBlank()) {
