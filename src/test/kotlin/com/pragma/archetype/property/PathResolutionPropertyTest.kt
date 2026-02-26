@@ -33,10 +33,13 @@ class PathResolutionPropertyTest : PropertyTestBase() {
                     "driving" to "infrastructure/adapter/in/{name}"
                 ),
                 null, // templatePaths
+                null, // packageMappings
                 null, // namingConventions
                 null, // layerDependencies
                 emptyList(), // packages
-                null // moduleMetadata
+                null, // moduleMetadata
+                null, // entityModule
+                null // useCaseModule
             )
             `when`(loadStructureMetadata(arch)).thenReturn(metadata)
         }

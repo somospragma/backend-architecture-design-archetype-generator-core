@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.nio.file.Path;
@@ -17,10 +18,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
+import com.pragma.archetype.application.port.out.AdapterDiscoveryPort;
 import com.pragma.archetype.domain.model.adapter.AdapterMethod;
-import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.adapter.MethodParameter;
+import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
@@ -33,286 +34,296 @@ import com.pragma.archetype.domain.port.out.TemplateRepository;
 @ExtendWith(MockitoExtension.class)
 class AdapterGeneratorExtendedTest {
 
-    @Mock
-    private TemplateRepository templateRepository;
+        @Mock
+        private TemplateRepository templateRepository;
 
-    @Mock
-    private FileSystemPort fileSystemPort;
+        @Mock
+        private FileSystemPort fileSystemPort;
 
-    @Mock
-    private PathResolver pathResolver;
+        @Mock
+        private PathResolver pathResolver;
 
-    private OutputAdapterGenerator generator;
+        @Mock
+        private AdapterDiscoveryPort adapterDiscoveryPort;
 
-    @BeforeEach
-    void setUp() {
-        generator = new OutputAdapterGenerator(templateRepository, fileSystemPort, pathResolver);
-        when(templateRepository.processTemplate(anyString(), anyMap()))
-                .thenReturn("template content");
-        when(pathResolver.resolveAdapterPath(any(), anyString(), anyString(), anyMap()))
-                .thenReturn(Path.of("/test/infrastructure/adapter"));
-    }
+        private OutputAdapterGenerator generator;
 
-    @Test
-    void shouldGenerateAdapterForMultiModuleArchitecture() {
-        // Given
-        ProjectConfig projectConfig = ProjectConfig.builder()
-                .name("test-project")
-                .basePackage("com.test")
-                .architecture(ArchitectureType.HEXAGONAL_MULTI)
-                .paradigm(Paradigm.REACTIVE)
-                .framework(Framework.SPRING)
-                .pluginVersion("1.0.0")
-                .build();
+        @BeforeEach
+        void setUp() {
+                generator = new OutputAdapterGenerator(templateRepository, fileSystemPort, pathResolver,
+                                adapterDiscoveryPort);
+                when(templateRepository.processTemplate(anyString(), anyMap()))
+                                .thenReturn("template content");
+                when(pathResolver.resolveAdapterPath(any(), anyString(), anyString(), anyMap()))
+                                .thenReturn(Path.of("/test/infrastructure/adapter"));
 
-        OutputAdapterConfig config = OutputAdapterConfig.builder()
-                .name("UserRepository")
-                .entityName("User")
-                .type(AdapterType.REDIS)
-                .packageName("com.test.infrastructure.redis")
-                .methods(List.of())
-                .build();
+                // Configure adapterDiscoveryPort mock to return true for all adapter types
+                // (lenient for unused stubs)
+                lenient().when(adapterDiscoveryPort.adapterExists(anyString(), any())).thenReturn(true);
+                lenient().when(adapterDiscoveryPort.listAdapterNames(any())).thenReturn(
+                                List.of("redis", "mongodb", "postgresql", "rest-client", "kafka", "dynamodb"));
+        }
 
-        // When
-        List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
+        @Test
+        void shouldGenerateAdapterForMultiModuleArchitecture() {
+                // Given
+                ProjectConfig projectConfig = ProjectConfig.builder()
+                                .name("test-project")
+                                .basePackage("com.test")
+                                .architecture(ArchitectureType.HEXAGONAL_MULTI)
+                                .paradigm(Paradigm.REACTIVE)
+                                .framework(Framework.SPRING)
+                                .pluginVersion("1.0.0")
+                                .build();
 
-        // Then
-        assertNotNull(files);
-        assertFalse(files.isEmpty());
-    }
+                OutputAdapterConfig config = OutputAdapterConfig.builder()
+                                .name("UserRepository")
+                                .entityName("User")
+                                .type("redis")
+                                .packageName("com.test.infrastructure.redis")
+                                .methods(List.of())
+                                .build();
 
-    @Test
-    void shouldGenerateAdapterForGranularArchitecture() {
-        // Given
-        ProjectConfig projectConfig = ProjectConfig.builder()
-                .name("test-project")
-                .basePackage("com.test")
-                .architecture(ArchitectureType.HEXAGONAL_MULTI_GRANULAR)
-                .paradigm(Paradigm.REACTIVE)
-                .framework(Framework.SPRING)
-                .pluginVersion("1.0.0")
-                .build();
+                // When
+                List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
 
-        OutputAdapterConfig config = OutputAdapterConfig.builder()
-                .name("UserRepository")
-                .entityName("User")
-                .type(AdapterType.POSTGRESQL)
-                .packageName("com.test.infrastructure.postgresql")
-                .methods(List.of())
-                .build();
+                // Then
+                assertNotNull(files);
+                assertFalse(files.isEmpty());
+        }
 
-        // When
-        List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
+        @Test
+        void shouldGenerateAdapterForGranularArchitecture() {
+                // Given
+                ProjectConfig projectConfig = ProjectConfig.builder()
+                                .name("test-project")
+                                .basePackage("com.test")
+                                .architecture(ArchitectureType.HEXAGONAL_MULTI_GRANULAR)
+                                .paradigm(Paradigm.REACTIVE)
+                                .framework(Framework.SPRING)
+                                .pluginVersion("1.0.0")
+                                .build();
 
-        // Then
-        assertNotNull(files);
-        assertFalse(files.isEmpty());
-    }
+                OutputAdapterConfig config = OutputAdapterConfig.builder()
+                                .name("UserRepository")
+                                .entityName("User")
+                                .type("postgresql")
+                                .packageName("com.test.infrastructure.postgresql")
+                                .methods(List.of())
+                                .build();
 
-    @Test
-    void shouldGenerateAdapterForOnionArchitecture() {
-        // Given
-        ProjectConfig projectConfig = ProjectConfig.builder()
-                .name("test-project")
-                .basePackage("com.test")
-                .architecture(ArchitectureType.ONION_SINGLE)
-                .paradigm(Paradigm.REACTIVE)
-                .framework(Framework.SPRING)
-                .pluginVersion("1.0.0")
-                .build();
+                // When
+                List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
 
-        OutputAdapterConfig config = OutputAdapterConfig.builder()
-                .name("UserRepository")
-                .entityName("User")
-                .type(AdapterType.MONGODB)
-                .packageName("com.test.infrastructure.mongodb")
-                .methods(List.of())
-                .build();
+                // Then
+                assertNotNull(files);
+                assertFalse(files.isEmpty());
+        }
 
-        // When
-        List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
+        @Test
+        void shouldGenerateAdapterForOnionArchitecture() {
+                // Given
+                ProjectConfig projectConfig = ProjectConfig.builder()
+                                .name("test-project")
+                                .basePackage("com.test")
+                                .architecture(ArchitectureType.ONION_SINGLE)
+                                .paradigm(Paradigm.REACTIVE)
+                                .framework(Framework.SPRING)
+                                .pluginVersion("1.0.0")
+                                .build();
 
-        // Then
-        assertNotNull(files);
-        assertFalse(files.isEmpty());
-    }
+                OutputAdapterConfig config = OutputAdapterConfig.builder()
+                                .name("UserRepository")
+                                .entityName("User")
+                                .type("mongodb")
+                                .packageName("com.test.infrastructure.mongodb")
+                                .methods(List.of())
+                                .build();
 
-    @Test
-    void shouldGenerateAdapterWithImperativeParadigm() {
-        // Given
-        ProjectConfig projectConfig = ProjectConfig.builder()
-                .name("test-project")
-                .basePackage("com.test")
-                .architecture(ArchitectureType.HEXAGONAL_SINGLE)
-                .paradigm(Paradigm.IMPERATIVE)
-                .framework(Framework.SPRING)
-                .pluginVersion("1.0.0")
-                .build();
+                // When
+                List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
 
-        OutputAdapterConfig config = OutputAdapterConfig.builder()
-                .name("UserRepository")
-                .entityName("User")
-                .type(AdapterType.POSTGRESQL)
-                .packageName("com.test.infrastructure.postgresql")
-                .methods(List.of())
-                .build();
+                // Then
+                assertNotNull(files);
+                assertFalse(files.isEmpty());
+        }
 
-        // When
-        List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
+        @Test
+        void shouldGenerateAdapterWithImperativeParadigm() {
+                // Given
+                ProjectConfig projectConfig = ProjectConfig.builder()
+                                .name("test-project")
+                                .basePackage("com.test")
+                                .architecture(ArchitectureType.HEXAGONAL_SINGLE)
+                                .paradigm(Paradigm.IMPERATIVE)
+                                .framework(Framework.SPRING)
+                                .pluginVersion("1.0.0")
+                                .build();
 
-        // Then
-        assertNotNull(files);
-        assertFalse(files.isEmpty());
-    }
+                OutputAdapterConfig config = OutputAdapterConfig.builder()
+                                .name("UserRepository")
+                                .entityName("User")
+                                .type("postgresql")
+                                .packageName("com.test.infrastructure.postgresql")
+                                .methods(List.of())
+                                .build();
 
-    @Test
-    void shouldGenerateAdapterWithQuarkusFramework() {
-        // Given
-        ProjectConfig projectConfig = ProjectConfig.builder()
-                .name("test-project")
-                .basePackage("com.test")
-                .architecture(ArchitectureType.HEXAGONAL_SINGLE)
-                .paradigm(Paradigm.REACTIVE)
-                .framework(Framework.QUARKUS)
-                .pluginVersion("1.0.0")
-                .build();
+                // When
+                List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
 
-        OutputAdapterConfig config = OutputAdapterConfig.builder()
-                .name("UserRepository")
-                .entityName("User")
-                .type(AdapterType.POSTGRESQL)
-                .packageName("com.test.infrastructure.postgresql")
-                .methods(List.of())
-                .build();
+                // Then
+                assertNotNull(files);
+                assertFalse(files.isEmpty());
+        }
 
-        // When
-        List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
+        @Test
+        void shouldGenerateAdapterWithQuarkusFramework() {
+                // Given
+                ProjectConfig projectConfig = ProjectConfig.builder()
+                                .name("test-project")
+                                .basePackage("com.test")
+                                .architecture(ArchitectureType.HEXAGONAL_SINGLE)
+                                .paradigm(Paradigm.REACTIVE)
+                                .framework(Framework.QUARKUS)
+                                .pluginVersion("1.0.0")
+                                .build();
 
-        // Then
-        assertNotNull(files);
-        assertFalse(files.isEmpty());
-    }
+                OutputAdapterConfig config = OutputAdapterConfig.builder()
+                                .name("UserRepository")
+                                .entityName("User")
+                                .type("postgresql")
+                                .packageName("com.test.infrastructure.postgresql")
+                                .methods(List.of())
+                                .build();
 
-    @Test
-    void shouldGenerateKafkaAdapter() {
-        // Given
-        ProjectConfig projectConfig = ProjectConfig.builder()
-                .name("test-project")
-                .basePackage("com.test")
-                .architecture(ArchitectureType.HEXAGONAL_SINGLE)
-                .paradigm(Paradigm.REACTIVE)
-                .framework(Framework.SPRING)
-                .pluginVersion("1.0.0")
-                .build();
+                // When
+                List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
 
-        OutputAdapterConfig config = OutputAdapterConfig.builder()
-                .name("EventPublisher")
-                .entityName("Event")
-                .type(AdapterType.KAFKA)
-                .packageName("com.test.infrastructure.kafka")
-                .methods(List.of())
-                .build();
+                // Then
+                assertNotNull(files);
+                assertFalse(files.isEmpty());
+        }
 
-        // When
-        List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
+        @Test
+        void shouldGenerateKafkaAdapter() {
+                // Given
+                ProjectConfig projectConfig = ProjectConfig.builder()
+                                .name("test-project")
+                                .basePackage("com.test")
+                                .architecture(ArchitectureType.HEXAGONAL_SINGLE)
+                                .paradigm(Paradigm.REACTIVE)
+                                .framework(Framework.SPRING)
+                                .pluginVersion("1.0.0")
+                                .build();
 
-        // Then
-        assertNotNull(files);
-        assertFalse(files.isEmpty());
-    }
+                OutputAdapterConfig config = OutputAdapterConfig.builder()
+                                .name("EventPublisher")
+                                .entityName("Event")
+                                .type("kafka")
+                                .packageName("com.test.infrastructure.kafka")
+                                .methods(List.of())
+                                .build();
 
-    @Test
-    void shouldGenerateAdapterWithCustomMethods() {
-        // Given
-        ProjectConfig projectConfig = ProjectConfig.builder()
-                .name("test-project")
-                .basePackage("com.test")
-                .architecture(ArchitectureType.HEXAGONAL_SINGLE)
-                .paradigm(Paradigm.REACTIVE)
-                .framework(Framework.SPRING)
-                .pluginVersion("1.0.0")
-                .build();
+                // When
+                List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
 
-        AdapterMethod method1 = new AdapterMethod(
-                "findByEmail",
-                "Mono<User>",
-                List.of(new MethodParameter("email", "String")));
+                // Then
+                assertNotNull(files);
+                assertFalse(files.isEmpty());
+        }
 
-        AdapterMethod method2 = new AdapterMethod(
-                "findByStatus",
-                "Flux<User>",
-                List.of(new MethodParameter("status", "Status")));
+        @Test
+        void shouldGenerateAdapterWithCustomMethods() {
+                // Given
+                ProjectConfig projectConfig = ProjectConfig.builder()
+                                .name("test-project")
+                                .basePackage("com.test")
+                                .architecture(ArchitectureType.HEXAGONAL_SINGLE)
+                                .paradigm(Paradigm.REACTIVE)
+                                .framework(Framework.SPRING)
+                                .pluginVersion("1.0.0")
+                                .build();
 
-        OutputAdapterConfig config = OutputAdapterConfig.builder()
-                .name("UserRepository")
-                .entityName("User")
-                .type(AdapterType.POSTGRESQL)
-                .packageName("com.test.infrastructure.postgresql")
-                .methods(List.of(method1, method2))
-                .build();
+                AdapterMethod method1 = new AdapterMethod(
+                                "findByEmail",
+                                "Mono<User>",
+                                List.of(new MethodParameter("email", "String")));
 
-        // When
-        List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
+                AdapterMethod method2 = new AdapterMethod(
+                                "findByStatus",
+                                "Flux<User>",
+                                List.of(new MethodParameter("status", "Status")));
 
-        // Then
-        assertNotNull(files);
-        assertFalse(files.isEmpty());
-    }
+                OutputAdapterConfig config = OutputAdapterConfig.builder()
+                                .name("UserRepository")
+                                .entityName("User")
+                                .type("postgresql")
+                                .packageName("com.test.infrastructure.postgresql")
+                                .methods(List.of(method1, method2))
+                                .build();
 
-    @Test
-    void shouldGenerateRestClientAdapter() {
-        // Given
-        ProjectConfig projectConfig = ProjectConfig.builder()
-                .name("test-project")
-                .basePackage("com.test")
-                .architecture(ArchitectureType.HEXAGONAL_SINGLE)
-                .paradigm(Paradigm.REACTIVE)
-                .framework(Framework.SPRING)
-                .pluginVersion("1.0.0")
-                .build();
+                // When
+                List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
 
-        OutputAdapterConfig config = OutputAdapterConfig.builder()
-                .name("PaymentClient")
-                .entityName("Payment")
-                .type(AdapterType.REST_CLIENT)
-                .packageName("com.test.infrastructure.restclient")
-                .methods(List.of())
-                .build();
+                // Then
+                assertNotNull(files);
+                assertFalse(files.isEmpty());
+        }
 
-        // When
-        List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
+        @Test
+        void shouldGenerateRestClientAdapter() {
+                // Given
+                ProjectConfig projectConfig = ProjectConfig.builder()
+                                .name("test-project")
+                                .basePackage("com.test")
+                                .architecture(ArchitectureType.HEXAGONAL_SINGLE)
+                                .paradigm(Paradigm.REACTIVE)
+                                .framework(Framework.SPRING)
+                                .pluginVersion("1.0.0")
+                                .build();
 
-        // Then
-        assertNotNull(files);
-        assertFalse(files.isEmpty());
-    }
+                OutputAdapterConfig config = OutputAdapterConfig.builder()
+                                .name("PaymentClient")
+                                .entityName("Payment")
+                                .type("rest-client")
+                                .packageName("com.test.infrastructure.restclient")
+                                .methods(List.of())
+                                .build();
 
-    @Test
-    void shouldGenerateAdapterWithDependencyOverrides() {
-        // Given
-        ProjectConfig projectConfig = ProjectConfig.builder()
-                .name("test-project")
-                .basePackage("com.test")
-                .architecture(ArchitectureType.HEXAGONAL_SINGLE)
-                .paradigm(Paradigm.REACTIVE)
-                .framework(Framework.SPRING)
-                .pluginVersion("1.0.0")
-                .dependencyOverrides(Map.of("redis", "7.0.0"))
-                .build();
+                // When
+                List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
 
-        OutputAdapterConfig config = OutputAdapterConfig.builder()
-                .name("UserRepository")
-                .entityName("User")
-                .type(AdapterType.REDIS)
-                .packageName("com.test.infrastructure.redis")
-                .methods(List.of())
-                .build();
+                // Then
+                assertNotNull(files);
+                assertFalse(files.isEmpty());
+        }
 
-        // When
-        List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
+        @Test
+        void shouldGenerateAdapterWithDependencyOverrides() {
+                // Given
+                ProjectConfig projectConfig = ProjectConfig.builder()
+                                .name("test-project")
+                                .basePackage("com.test")
+                                .architecture(ArchitectureType.HEXAGONAL_SINGLE)
+                                .paradigm(Paradigm.REACTIVE)
+                                .framework(Framework.SPRING)
+                                .pluginVersion("1.0.0")
+                                .dependencyOverrides(Map.of("redis", "7.0.0"))
+                                .build();
 
-        // Then
-        assertNotNull(files);
-        assertFalse(files.isEmpty());
-    }
+                OutputAdapterConfig config = OutputAdapterConfig.builder()
+                                .name("UserRepository")
+                                .entityName("User")
+                                .type("redis")
+                                .packageName("com.test.infrastructure.redis")
+                                .methods(List.of())
+                                .build();
+
+                // When
+                List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
+
+                // Then
+                assertNotNull(files);
+                assertFalse(files.isEmpty());
+        }
 }

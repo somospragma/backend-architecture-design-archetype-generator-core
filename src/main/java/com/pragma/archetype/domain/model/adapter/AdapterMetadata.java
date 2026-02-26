@@ -128,6 +128,23 @@ public class AdapterMetadata {
   List<TemplateMapping> templates = Collections.emptyList();
 
   /**
+   * Class name suffix for generated classes (e.g., "Controller", "Repository").
+   */
+  String suffix;
+
+  /**
+   * Application properties template file path.
+   */
+  String applicationPropertiesTemplate;
+
+  /**
+   * List of dependencies required by this adapter (Maven/Gradle coordinates).
+   * Example: ["org.springframework.boot:spring-boot-starter-web"]
+   */
+  @Builder.Default
+  List<String> dependencies = Collections.emptyList();
+
+  /**
    * List of runtime dependencies required by this adapter.
    * 
    * @deprecated Use String dependencies for new code. Kept for backward
@@ -135,7 +152,7 @@ public class AdapterMetadata {
    */
   @Deprecated
   @Builder.Default
-  List<Dependency> dependencies = Collections.emptyList();
+  List<Dependency> runtimeDependencies = Collections.emptyList();
 
   /**
    * List of test dependencies required by this adapter.
@@ -153,7 +170,7 @@ public class AdapterMetadata {
    * @deprecated Kept for backward compatibility.
    */
   @Deprecated
-  String applicationPropertiesTemplate;
+  String legacyApplicationPropertiesTemplate;
 
   /**
    * Configuration classes to generate.
@@ -163,6 +180,19 @@ public class AdapterMetadata {
   @Deprecated
   @Builder.Default
   List<ConfigurationClass> configurationClasses = Collections.emptyList();
+
+  /**
+   * Gets the class name with suffix applied.
+   *
+   * @param baseName The base name for the class
+   * @return The class name with suffix if configured, otherwise baseName
+   */
+  public String getClassName(String baseName) {
+    if (suffix == null || suffix.isBlank()) {
+      return baseName;
+    }
+    return baseName + suffix;
+  }
 
   /**
    * Checks if a parameter is required for this adapter.
@@ -209,7 +239,8 @@ public class AdapterMetadata {
    */
   @Deprecated
   public boolean hasApplicationProperties() {
-    return applicationPropertiesTemplate != null && !applicationPropertiesTemplate.isBlank();
+    return (applicationPropertiesTemplate != null && !applicationPropertiesTemplate.isBlank())
+        || (legacyApplicationPropertiesTemplate != null && !legacyApplicationPropertiesTemplate.isBlank());
   }
 
   /**
@@ -240,7 +271,7 @@ public class AdapterMetadata {
   @Deprecated
   public List<Dependency> getAllDependencies() {
     return java.util.stream.Stream.concat(
-        dependencies.stream(),
+        runtimeDependencies.stream(),
         testDependencies.stream()).toList();
   }
 
@@ -269,7 +300,7 @@ public class AdapterMetadata {
    */
   @Deprecated
   public List<Dependency> dependencies() {
-    return dependencies;
+    return runtimeDependencies;
   }
 
   /**
@@ -305,6 +336,6 @@ public class AdapterMetadata {
    */
   @Deprecated
   public String applicationPropertiesTemplate() {
-    return applicationPropertiesTemplate;
+    return applicationPropertiesTemplate != null ? applicationPropertiesTemplate : legacyApplicationPropertiesTemplate;
   }
 }

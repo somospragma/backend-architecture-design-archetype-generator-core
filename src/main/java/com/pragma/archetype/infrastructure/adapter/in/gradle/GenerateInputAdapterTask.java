@@ -15,7 +15,6 @@ import com.pragma.archetype.domain.model.adapter.Endpoint;
 import com.pragma.archetype.domain.model.adapter.EndpointParameter;
 import com.pragma.archetype.domain.model.adapter.HttpMethod;
 import com.pragma.archetype.domain.model.adapter.InputAdapterConfig;
-import com.pragma.archetype.domain.model.adapter.InputAdapterType;
 import com.pragma.archetype.domain.model.adapter.ParameterType;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateInputAdapterUseCase;
@@ -126,8 +125,8 @@ public class GenerateInputAdapterTask extends DefaultTask {
       // 3. Validate inputs
       validateInputs();
 
-      // 4. Parse adapter type
-      InputAdapterType adapterType = parseAdapterType(type);
+      // 4. Use adapter type as String (no need to parse to enum)
+      String adapterType = type;
 
       // 5. Parse endpoints
       List<Endpoint> endpointList = parseEndpoints(endpoints);
@@ -147,7 +146,23 @@ public class GenerateInputAdapterTask extends DefaultTask {
       // 8. Setup use case
       com.pragma.archetype.domain.service.PackageValidator packageValidator = new com.pragma.archetype.domain.service.PackageValidator();
       InputAdapterValidator validator = new InputAdapterValidator(fileSystemPort, configurationPort, packageValidator);
-      InputAdapterGenerator generator = new InputAdapterGenerator(templateRepository, fileSystemPort);
+      // Create content provider that delegates to template repository
+      com.pragma.archetype.infrastructure.adapter.out.template.TemplateContentProvider contentProvider = new com.pragma.archetype.infrastructure.adapter.out.template.TemplateContentProvider() {
+        @Override
+        public String getTemplateContent(String templatePath) {
+          return templateRepository.getTemplateContent(templatePath);
+        }
+
+        @Override
+        public boolean templateExists(String templatePath) {
+          return templateRepository.templateExists(templatePath);
+        }
+      };
+      com.pragma.archetype.infrastructure.adapter.out.template.AdapterMetadataLoader metadataLoader = new com.pragma.archetype.infrastructure.adapter.out.template.AdapterMetadataLoader(
+          contentProvider);
+      com.pragma.archetype.infrastructure.adapter.out.template.TemplateAdapterDiscovery adapterDiscovery = new com.pragma.archetype.infrastructure.adapter.out.template.TemplateAdapterDiscovery(
+          templateRepository, metadataLoader);
+      InputAdapterGenerator generator = new InputAdapterGenerator(templateRepository, fileSystemPort, adapterDiscovery);
       GenerateInputAdapterUseCase useCase = new GenerateInputAdapterUseCaseImpl(
           validator,
           generator,
@@ -255,14 +270,14 @@ public class GenerateInputAdapterTask extends DefaultTask {
   /**
    * Parses adapter type string into InputAdapterType enum.
    */
-  private InputAdapterType parseAdapterType(String typeStr) {
+  private String parseAdapterType(String typeStr) {
     return switch (typeStr.toLowerCase()) {
-      case "rest" -> InputAdapterType.REST;
-      case "graphql" -> InputAdapterType.GRAPHQL;
-      case "grpc" -> InputAdapterType.GRPC;
-      case "websocket" -> InputAdapterType.WEBSOCKET;
-      case "sqs-consumer" -> InputAdapterType.SQS_CONSUMER;
-      case "scheduled" -> InputAdapterType.SCHEDULED;
+      case "rest" -> "rest";
+      case "graphql" -> "graphql";
+      case "grpc" -> "grpc";
+      case "websocket" -> "websocket";
+      case "sqs-consumer" -> "sqs-consumer";
+      case "scheduled" -> "scheduled";
       default -> throw new IllegalArgumentException(
           "Invalid adapter type: " + typeStr
               + ". Valid types: rest, graphql, grpc, websocket, sqs-consumer, scheduled");
@@ -279,8 +294,13 @@ public class GenerateInputAdapterTask extends DefaultTask {
   private List<Endpoint> parseEndpoints(String endpointsStr) {
     List<Endpoint> result = new ArrayList<>();
 
-    // Return empty list if endpoints string is blank
-    if (endpointsStr == null || endpointsStr.isBlank()) {
+    // Throw exception if endpoints string is empty (not null, but empty/blank)
+    if (endpointsStr != null && endpointsStr.isBlank()) {
+      throw new IllegalArgumentException("Endpoints string cannot be empty");
+    }
+
+    // Return empty list if endpoints string is null
+    if (endpointsStr == null) {
       return result;
     }
 

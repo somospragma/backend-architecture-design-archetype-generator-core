@@ -762,7 +762,7 @@ class GenerateAdapterUseCaseImplTest {
   private OutputAdapterConfig createAdapterConfig(String type) {
     return OutputAdapterConfig.builder()
         .name("TestAdapter")
-        .type(AdapterType.valueOf(type.toUpperCase()))
+        .type(type.toLowerCase())
         .packageName("com.test.adapter")
         .entityName("TestEntity")
         .build();

@@ -14,10 +14,13 @@ public record StructureMetadata(
     String architectureType,
     Map<String, String> adapterPaths,
     TemplatePaths templatePaths,
+    PackageMappings packageMappings,
     NamingConventions namingConventions,
     LayerDependencies layerDependencies,
     java.util.List<String> packages,
-    java.util.List<ModuleMetadata> moduleMetadata) {
+    java.util.List<ModuleMetadata> moduleMetadata,
+    String entityModule,
+    String useCaseModule) {
 
   public StructureMetadata {
     Objects.requireNonNull(architectureType, "Architecture type cannot be null");
@@ -138,9 +141,54 @@ public record StructureMetadata(
   }
 
   /**
+   * Gets the entity module metadata.
+   *
+   * @return The entity module metadata
+   * @throws IllegalStateException if entityModule is not configured
+   */
+  public ModuleMetadata getEntityModule() {
+    if (entityModule == null || entityModule.isBlank()) {
+      throw new IllegalStateException(
+          com.pragma.archetype.domain.model.error.StructureErrorMessages.ENTITY_MODULE_NOT_CONFIGURED);
+    }
+    return getModule(entityModule);
+  }
+
+  /**
+   * Gets the use case module metadata.
+   *
+   * @return The use case module metadata
+   * @throws IllegalStateException if useCaseModule is not configured
+   */
+  public ModuleMetadata getUseCaseModule() {
+    if (useCaseModule == null || useCaseModule.isBlank()) {
+      throw new IllegalStateException(
+          com.pragma.archetype.domain.model.error.StructureErrorMessages.USE_CASE_MODULE_NOT_CONFIGURED);
+    }
+    return getModule(useCaseModule);
+  }
+
+  /**
+   * Resolves a template path with variable substitution.
+   *
+   * @param templateType The type of template (e.g., "inputAdapter", "entity")
+   * @param variables    The variables to substitute
+   * @return The resolved template path
+   * @throws IllegalStateException if templatePaths is not configured or variables
+   *                               are unresolved
+   */
+  public String resolveTemplatePath(String templateType, Map<String, String> variables) {
+    if (templatePaths == null) {
+      throw new IllegalStateException("Template paths not configured in structure.yml");
+    }
+    return templatePaths.resolve(templateType, variables);
+  }
+
+  /**
    * Converts filesystem path to Java package name.
    * Example: "infrastructure/entry-points" → "infrastructure.entrypoints"
-   * Removes hyphens and converts slashes to dots.
+   * Applies packageMappings transformations if configured, otherwise uses
+   * fallback logic.
    *
    * @param path The filesystem path
    * @return The Java package name
@@ -149,6 +197,13 @@ public record StructureMetadata(
     if (path == null) {
       return null;
     }
+
+    // Use packageMappings if configured
+    if (packageMappings != null) {
+      return packageMappings.transform(path);
+    }
+
+    // Fallback logic
     return path
         .replace("-", "") // Remove hyphens (entry-points → entrypoints)
         .replace("/", "."); // Convert to package notation

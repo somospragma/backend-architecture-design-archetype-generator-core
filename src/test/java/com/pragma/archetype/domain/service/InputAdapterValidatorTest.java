@@ -53,7 +53,7 @@ class InputAdapterValidatorTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.rest")
         .endpoints(List.of(
             new Endpoint(
@@ -79,7 +79,7 @@ class InputAdapterValidatorTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.rest")
         .endpoints(List.of(
             new Endpoint(
@@ -108,7 +108,7 @@ class InputAdapterValidatorTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("User-Controller") // invalid
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.rest")
         .endpoints(List.of(
             new Endpoint(
@@ -137,7 +137,7 @@ class InputAdapterValidatorTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.adapter.in.rest") // invalid structure
         .endpoints(List.of(
             new Endpoint(
@@ -166,7 +166,7 @@ class InputAdapterValidatorTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.rest")
         .endpoints(List.of())
         .build();
@@ -189,7 +189,7 @@ class InputAdapterValidatorTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.rest")
         .endpoints(List.of(
             new Endpoint(

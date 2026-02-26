@@ -15,16 +15,9 @@ class StructureMetadataTest {
 
   @Test
   void shouldGetAdapterBaseDirectory() {
-    var metadata = new StructureMetadata(
-        "hexagonal-single",
-        Map.of(
-            "driven", "infrastructure/driven-adapters/{name}",
-            "driving", "infrastructure/entry-points/{name}"),
-        null,
-        null,
-        null,
-        null,
-        null);
+    var metadata = new StructureMetadata("hexagonal-single", Map.of(
+        "driven", "infrastructure/driven-adapters/{name}",
+        "driving", "infrastructure/entry-points/{name}"), null, null, null, null, null, null, null, null);
 
     assertEquals("infrastructure/driven-adapters", metadata.getAdapterBaseDirectory("driven"));
     assertEquals("infrastructure/entry-points", metadata.getAdapterBaseDirectory("driving"));
@@ -35,6 +28,9 @@ class StructureMetadataTest {
     var metadata = new StructureMetadata(
         "hexagonal-single",
         Map.of(),
+        null,
+        null,
+        null,
         null,
         null,
         null,
@@ -51,16 +47,9 @@ class StructureMetadataTest {
 
   @Test
   void shouldGetAdapterDirName() {
-    var metadata = new StructureMetadata(
-        "hexagonal-single",
-        Map.of(
-            "driven", "infrastructure/driven-adapters/{name}",
-            "driving", "infrastructure/entry-points/{name}"),
-        null,
-        null,
-        null,
-        null,
-        null);
+    var metadata = new StructureMetadata("hexagonal-single", Map.of(
+        "driven", "infrastructure/driven-adapters/{name}",
+        "driving", "infrastructure/entry-points/{name}"), null, null, null, null, null, null, null, null);
 
     assertEquals("driven-adapters", metadata.getAdapterDirName("driven"));
     assertEquals("entry-points", metadata.getAdapterDirName("driving"));
@@ -68,16 +57,9 @@ class StructureMetadataTest {
 
   @Test
   void shouldHandleSimpleAdapterPaths() {
-    var metadata = new StructureMetadata(
-        "onion-single",
-        Map.of(
-            "driven", "adapters/out/{name}",
-            "driving", "adapters/in/{name}"),
-        null,
-        null,
-        null,
-        null,
-        null);
+    var metadata = new StructureMetadata("onion-single", Map.of(
+        "driven", "adapters/out/{name}",
+        "driving", "adapters/in/{name}"), null, null, null, null, null, null, null, null);
 
     assertEquals("out", metadata.getAdapterDirName("driven"));
     assertEquals("in", metadata.getAdapterDirName("driving"));
@@ -88,7 +70,12 @@ class StructureMetadataTest {
     var withTemplatePaths = new StructureMetadata(
         "hexagonal-single",
         Map.of(),
-        TemplatePaths.builder().build(),
+        TemplatePaths.builder()
+            .inputAdapter("custom/path")
+            .build(),
+        null,
+        null,
+        null,
         null,
         null,
         null,
@@ -97,6 +84,9 @@ class StructureMetadataTest {
     var withoutTemplatePaths = new StructureMetadata(
         "hexagonal-single",
         Map.of(),
+        null,
+        null,
+        null,
         null,
         null,
         null,
@@ -118,11 +108,17 @@ class StructureMetadataTest {
         null,
         null,
         null,
+        null,
+        null,
+        null,
         null);
 
     var withoutTemplatePaths = new StructureMetadata(
         "hexagonal-single",
         Map.of(),
+        null,
+        null,
+        null,
         null,
         null,
         null,
@@ -152,7 +148,10 @@ class StructureMetadataTest {
         null,
         null,
         null,
-        List.of(domainModule, infraModule));
+        null,
+        List.of(domainModule, infraModule),
+        null,
+        null);
 
     assertEquals("domain", metadata.getModule("domain").getName());
     assertEquals("infrastructure", metadata.getModule("infrastructure").getName());
@@ -168,13 +167,19 @@ class StructureMetadataTest {
         null,
         null,
         null,
+        null,
         List.of(
             ModuleMetadata.builder().name("domain").path("domain").build(),
-            ModuleMetadata.builder().name("infrastructure").path("infrastructure").build()));
+            ModuleMetadata.builder().name("infrastructure").path("infrastructure").build()),
+        null,
+        null);
 
     var singleModule = new StructureMetadata(
         "hexagonal-single",
         Map.of(),
+        null,
+        null,
+        null,
         null,
         null,
         null,
@@ -198,7 +203,10 @@ class StructureMetadataTest {
         null,
         null,
         null,
-        modules);
+        null,
+        modules,
+        null,
+        null);
 
     assertEquals(2, metadata.getModuleMetadata().size());
     assertEquals("domain", metadata.getModuleMetadata().get(0).getName());
@@ -218,7 +226,10 @@ class StructureMetadataTest {
         null,
         null,
         null,
-        modules);
+        null,
+        modules,
+        null,
+        null);
 
     var moduleNames = metadata.getModules();
     assertEquals(2, moduleNames.size());

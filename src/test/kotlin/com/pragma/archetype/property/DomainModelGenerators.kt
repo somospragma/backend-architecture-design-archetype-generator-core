@@ -101,7 +101,9 @@ object DomainModelGenerators {
     
     /**
      * Generates complete AdapterConfig instances.
+     * TODO: Update to use InputAdapterConfig or OutputAdapterConfig
      */
+    /*
     fun adapterConfig(): Arb<AdapterConfig> = 
         Arb.bind(
             className(),
@@ -117,6 +119,7 @@ object DomainModelGenerators {
                 .methods(emptyList())
                 .build()
         }
+    */
     
     /**
      * Generates valid YAML map structures.

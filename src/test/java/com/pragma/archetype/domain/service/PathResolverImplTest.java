@@ -58,6 +58,9 @@ class PathResolverImplTest {
         null,
         null,
         null,
+        null,
+        null,
+        null,
         null);
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
@@ -86,6 +89,9 @@ class PathResolverImplTest {
         Map.of(
             "driven", "infrastructure/adapter/out/{name}",
             "driving", "infrastructure/adapter/in/{name}"),
+        null,
+        null,
+        null,
         null,
         null,
         null,
@@ -167,6 +173,9 @@ class PathResolverImplTest {
         null,
         null,
         null,
+        null,
+        null,
+        null,
         null);
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
@@ -190,6 +199,9 @@ class PathResolverImplTest {
     StructureMetadata metadata = new StructureMetadata(
         "hexagonal-single",
         Map.of("driven", "path/{name}"),
+        null,
+        null,
+        null,
         null,
         null,
         null,
@@ -224,7 +236,10 @@ class PathResolverImplTest {
         Map.of("driven", "infrastructure/adapter/out/{name}"),
         null,
         null,
+        null,
         layerDeps,
+        null,
+        null,
         null,
         null);
 
@@ -252,7 +267,10 @@ class PathResolverImplTest {
         Map.of("driven", "path/{name}"),
         null,
         null,
+        null,
         layerDeps,
+        null,
+        null,
         null,
         null);
 
@@ -282,7 +300,10 @@ class PathResolverImplTest {
         Map.of("driven", "path/{name}"),
         null,
         null,
+        null,
         layerDeps,
+        null,
+        null,
         null,
         null);
 
@@ -354,6 +375,9 @@ class PathResolverImplTest {
         null,
         null,
         null,
+        null,
+        null,
+        null,
         null);
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
@@ -382,7 +406,10 @@ class PathResolverImplTest {
         Map.of("driven", "path/{name}"),
         null,
         null,
+        null,
         layerDeps,
+        null,
+        null,
         null,
         null);
 
@@ -410,7 +437,10 @@ class PathResolverImplTest {
         Map.of("driven", "path/{name}"),
         null,
         null,
+        null,
         layerDeps,
+        null,
+        null,
         null,
         null);
 
@@ -438,7 +468,10 @@ class PathResolverImplTest {
         Map.of("driven", "path/{name}"),
         null,
         null,
+        null,
         layerDeps,
+        null,
+        null,
         null,
         null);
 

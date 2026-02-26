@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,6 +48,23 @@ class ProjectGeneratorMultiModuleTest {
 
     when(templateRepository.processTemplate(anyString(), anyMap()))
         .thenReturn("template content");
+
+    // Setup structure metadata mock for multi-module architectures
+    var structureMetadata = new com.pragma.archetype.domain.model.structure.StructureMetadata(
+        "hexagonal-multi",
+        java.util.Map.of(
+            "driven", "infrastructure/adapter/out/{name}",
+            "driving", "infrastructure/adapter/in/{name}"),
+        null,
+        null,
+        null,
+        null,
+        java.util.List.of("domain/model", "domain/port", "application/usecase", "infrastructure/adapter"),
+        null,
+        null,
+        null);
+
+    lenient().when(templateRepository.loadStructureMetadata(any())).thenReturn(structureMetadata);
   }
 
   @Test

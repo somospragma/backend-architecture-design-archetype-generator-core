@@ -30,7 +30,7 @@ class InputAdapterConfigTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .packageName("com.test.infrastructure.adapter.in.rest")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .useCaseName("UserUseCase")
         .endpoints(List.of(endpoint))
         .build();
@@ -38,17 +38,17 @@ class InputAdapterConfigTest {
     // Then
     assertEquals("UserController", config.name());
     assertEquals("com.test.infrastructure.adapter.in.rest", config.packageName());
-    assertEquals(InputAdapterType.REST, config.type());
+    assertEquals("rest", config.type());
     assertEquals("UserUseCase", config.useCaseName());
     assertEquals(1, config.endpoints().size());
   }
 
   @Test
   void shouldSupportAllInputAdapterTypes() {
-    assertNotNull(InputAdapterType.REST);
-    assertNotNull(InputAdapterType.GRAPHQL);
-    assertNotNull(InputAdapterType.GRPC);
-    assertNotNull(InputAdapterType.WEBSOCKET);
+    assertNotNull("rest");
+    assertNotNull("graphql");
+    assertNotNull("grpc");
+    assertNotNull("websocket");
   }
 
   @Test
@@ -130,7 +130,7 @@ class InputAdapterConfigTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .packageName("com.test")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .useCaseName("UserUseCase")
         .endpoints(endpoints)
         .build();
@@ -145,13 +145,13 @@ class InputAdapterConfigTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserResolver")
         .packageName("com.test.infrastructure.adapter.in.graphql")
-        .type(InputAdapterType.GRAPHQL)
+        .type("graphql")
         .useCaseName("UserUseCase")
         .endpoints(List.of())
         .build();
 
     // Then
-    assertEquals(InputAdapterType.GRAPHQL, config.type());
+    assertEquals("graphql", config.type());
   }
 
   @Test
@@ -160,13 +160,13 @@ class InputAdapterConfigTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserService")
         .packageName("com.test.infrastructure.adapter.in.grpc")
-        .type(InputAdapterType.GRPC)
+        .type("grpc")
         .useCaseName("UserUseCase")
         .endpoints(List.of())
         .build();
 
     // Then
-    assertEquals(InputAdapterType.GRPC, config.type());
+    assertEquals("grpc", config.type());
   }
 
   @Test
@@ -175,12 +175,12 @@ class InputAdapterConfigTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserWebSocketHandler")
         .packageName("com.test.infrastructure.adapter.in.websocket")
-        .type(InputAdapterType.WEBSOCKET)
+        .type("websocket")
         .useCaseName("UserUseCase")
         .endpoints(List.of())
         .build();
 
     // Then
-    assertEquals(InputAdapterType.WEBSOCKET, config.type());
+    assertEquals("websocket", config.type());
   }
 }

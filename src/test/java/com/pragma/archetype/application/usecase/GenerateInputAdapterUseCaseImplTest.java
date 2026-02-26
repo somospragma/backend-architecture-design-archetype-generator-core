@@ -57,7 +57,7 @@ class GenerateInputAdapterUseCaseImplTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.rest")
         .endpoints(List.of(
             new Endpoint(
@@ -90,7 +90,7 @@ class GenerateInputAdapterUseCaseImplTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.rest")
         .endpoints(List.of())
         .build();
@@ -113,7 +113,7 @@ class GenerateInputAdapterUseCaseImplTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.rest")
         .endpoints(List.of(
             new Endpoint(
@@ -142,7 +142,7 @@ class GenerateInputAdapterUseCaseImplTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("ProductResolver")
         .useCaseName("GetProductUseCase")
-        .type(InputAdapterType.GRAPHQL)
+        .type("graphql")
         .packageName("com.test.infrastructure.graphql")
         .endpoints(List.of(
             new Endpoint(

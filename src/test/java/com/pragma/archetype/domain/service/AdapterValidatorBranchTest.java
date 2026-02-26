@@ -62,7 +62,7 @@ class AdapterValidatorBranchTest {
     OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
-        .type(AdapterType.REDIS)
+        .type("redis")
         .packageName("com.test.infrastructure.drivenadapters.redis")
         .build();
 
@@ -81,7 +81,7 @@ class AdapterValidatorBranchTest {
     OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name(null)
         .entityName("User")
-        .type(AdapterType.REDIS)
+        .type("redis")
         .packageName("com.test.infrastructure.drivenadapters.redis")
         .build();
 
@@ -100,7 +100,7 @@ class AdapterValidatorBranchTest {
     OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("123Invalid")
         .entityName("User")
-        .type(AdapterType.REDIS)
+        .type("redis")
         .packageName("com.test.infrastructure.drivenadapters.redis")
         .build();
 
@@ -119,7 +119,7 @@ class AdapterValidatorBranchTest {
     OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
-        .type(AdapterType.REDIS)
+        .type("redis")
         .packageName(null)
         .build();
 
@@ -139,7 +139,7 @@ class AdapterValidatorBranchTest {
     OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
-        .type(AdapterType.REDIS)
+        .type("redis")
         .packageName("com.test.adapter.out.redis")
         .build();
 
@@ -159,7 +159,7 @@ class AdapterValidatorBranchTest {
     OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserController")
         .entityName("User")
-        .type(AdapterType.REDIS)
+        .type("redis")
         .packageName("com.test.adapter.in.rest")
         .build();
 
@@ -192,7 +192,7 @@ class AdapterValidatorBranchTest {
     OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
-        .type(AdapterType.REDIS)
+        .type("redis")
         .packageName("com.wrong.infrastructure.drivenadapters.redis")
         .build();
 
@@ -232,7 +232,7 @@ class AdapterValidatorBranchTest {
     OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName(null)
-        .type(AdapterType.REDIS)
+        .type("redis")
         .packageName("com.test.infrastructure.drivenadapters.redis")
         .build();
 
@@ -254,7 +254,7 @@ class AdapterValidatorBranchTest {
     OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
-        .type(AdapterType.REDIS)
+        .type("redis")
         .packageName("com.test.infrastructure.drivenadapters.redis")
         .methods(List.of(method))
         .build();
@@ -277,7 +277,7 @@ class AdapterValidatorBranchTest {
     OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
-        .type(AdapterType.REDIS)
+        .type("redis")
         .packageName("com.test.infrastructure.drivenadapters.redis")
         .methods(List.of(method))
         .build();
@@ -300,7 +300,7 @@ class AdapterValidatorBranchTest {
     OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
-        .type(AdapterType.REDIS)
+        .type("redis")
         .packageName("com.test.infrastructure.drivenadapters.redis")
         .methods(List.of(method))
         .build();
@@ -324,7 +324,7 @@ class AdapterValidatorBranchTest {
     OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
-        .type(AdapterType.REDIS)
+        .type("redis")
         .packageName("com.test.infrastructure.drivenadapters.redis")
         .methods(List.of(method))
         .build();
@@ -348,7 +348,7 @@ class AdapterValidatorBranchTest {
     OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
-        .type(AdapterType.REDIS)
+        .type("redis")
         .packageName("com.test.infrastructure.drivenadapters.redis")
         .methods(List.of(method))
         .build();
@@ -372,7 +372,7 @@ class AdapterValidatorBranchTest {
     OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
-        .type(AdapterType.REDIS)
+        .type("redis")
         .packageName("com.test.infrastructure.drivenadapters.redis")
         .methods(List.of(method))
         .build();
@@ -395,7 +395,7 @@ class AdapterValidatorBranchTest {
     OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
-        .type(AdapterType.REDIS)
+        .type("redis")
         .packageName("com.test.infrastructure.drivenadapters.redis")
         .build();
 
@@ -419,7 +419,7 @@ class AdapterValidatorBranchTest {
     OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
-        .type(AdapterType.REDIS)
+        .type("redis")
         .packageName("com.test.infrastructure.drivenadapters.redis")
         .methods(List.of(method))
         .build();

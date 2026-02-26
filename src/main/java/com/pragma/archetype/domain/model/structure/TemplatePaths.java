@@ -1,5 +1,7 @@
 package com.pragma.archetype.domain.model.structure;
 
+import java.util.Map;
+
 import lombok.Builder;
 import lombok.Value;
 
@@ -129,5 +131,53 @@ public class TemplatePaths {
    */
   public String resolveConfigPath(String architecture) {
     return config.replace("{architecture}", architecture.toLowerCase());
+  }
+
+  /**
+   * Resolves a template path with generic variable substitution.
+   *
+   * @param templateType The type of template to resolve
+   * @param variables    Map of variables to substitute
+   * @return Resolved template path
+   * @throws IllegalArgumentException if templateType is unknown
+   * @throws IllegalStateException    if variables are unresolved
+   */
+  public String resolve(String templateType, Map<String, String> variables) {
+    var pattern = getPatternForType(templateType);
+    if (pattern == null) {
+      throw new IllegalArgumentException("Unknown template type: " + templateType);
+    }
+
+    var result = pattern;
+    for (var entry : variables.entrySet()) {
+      result = result.replace("{" + entry.getKey() + "}", entry.getValue());
+    }
+
+    // Check for unresolved variables
+    if (result.contains("{")) {
+      throw new IllegalStateException(
+          String.format(
+              com.pragma.archetype.domain.model.error.StructureErrorMessages.UNRESOLVED_VARIABLES,
+              result));
+    }
+
+    return result;
+  }
+
+  /**
+   * Gets the pattern for a given template type.
+   *
+   * @param templateType The template type
+   * @return The pattern or null if unknown
+   */
+  private String getPatternForType(String templateType) {
+    return switch (templateType.toLowerCase()) {
+      case "inputadapter", "input_adapter" -> inputAdapter;
+      case "outputadapter", "output_adapter" -> outputAdapter;
+      case "entity" -> entity;
+      case "usecase", "use_case" -> useCase;
+      case "config" -> config;
+      default -> null;
+    };
   }
 }

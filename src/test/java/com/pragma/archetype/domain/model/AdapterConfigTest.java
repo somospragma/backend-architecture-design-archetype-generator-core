@@ -8,10 +8,9 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.adapter.AdapterMethod;
-import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.adapter.MethodParameter;
+import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 
 class AdapterConfigTest {
 
@@ -27,7 +26,7 @@ class AdapterConfigTest {
     OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .packageName("com.test.infrastructure.redis")
-        .type(AdapterType.REDIS)
+        .type("redis")
         .entityName("User")
         .methods(List.of(method))
         .build();
@@ -35,7 +34,7 @@ class AdapterConfigTest {
     // Then
     assertEquals("UserRepository", config.name());
     assertEquals("com.test.infrastructure.redis", config.packageName());
-    assertEquals(AdapterType.REDIS, config.type());
+    assertEquals("redis", config.type());
     assertEquals("User", config.entityName());
     assertEquals(1, config.methods().size());
     assertEquals("findById", config.methods().get(0).name());
@@ -47,7 +46,7 @@ class AdapterConfigTest {
     OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .packageName("com.test.infrastructure.redis")
-        .type(AdapterType.REDIS)
+        .type("redis")
         .entityName("User")
         .methods(List.of())
         .build();
@@ -90,16 +89,18 @@ class AdapterConfigTest {
 
   @Test
   void shouldSupportAllAdapterTypes() {
-    assertNotNull(AdapterType.REDIS);
-    assertNotNull(AdapterType.MONGODB);
-    assertNotNull(AdapterType.POSTGRESQL);
-    assertNotNull(AdapterType.REST_CLIENT);
-    assertNotNull(AdapterType.KAFKA);
+    assertNotNull("redis");
+    assertNotNull("mongodb");
+    assertNotNull("postgresql");
+    assertNotNull("rest-client");
+    assertNotNull("kafka");
   }
 
   @Test
   void shouldBuildConfigForEachAdapterType() {
-    for (AdapterType type : AdapterType.values()) {
+    String[] types = { "redis", "mongodb", "postgresql", "rest-client", "kafka" };
+
+    for (String type : types) {
       OutputAdapterConfig config = OutputAdapterConfig.builder()
           .name("TestAdapter")
           .packageName("com.test")

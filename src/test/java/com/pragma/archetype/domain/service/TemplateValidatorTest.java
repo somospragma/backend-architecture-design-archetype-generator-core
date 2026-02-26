@@ -465,7 +465,10 @@ class TemplateValidatorTest {
                                 null,
                                 null,
                                 null,
+                                null,
                                 List.of(),
+                                null,
+                                null,
                                 null);
         }
 

@@ -1,13 +1,23 @@
 package com.pragma.archetype.application.generator;
 
-import com.pragma.archetype.domain.model.*;
-import com.pragma.archetype.domain.model.config.ProjectConfig;
-import com.pragma.archetype.domain.model.file.GeneratedFile;
-import com.pragma.archetype.domain.model.project.ArchitectureType;
-import com.pragma.archetype.domain.model.project.Framework;
-import com.pragma.archetype.domain.model.project.Paradigm;
-import com.pragma.archetype.domain.port.out.FileSystemPort;
-import com.pragma.archetype.domain.port.out.TemplateRepository;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,13 +26,13 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import com.pragma.archetype.domain.model.config.ProjectConfig;
+import com.pragma.archetype.domain.model.file.GeneratedFile;
+import com.pragma.archetype.domain.model.project.ArchitectureType;
+import com.pragma.archetype.domain.model.project.Framework;
+import com.pragma.archetype.domain.model.project.Paradigm;
+import com.pragma.archetype.domain.port.out.FileSystemPort;
+import com.pragma.archetype.domain.port.out.TemplateRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ProjectGenerator Tests")
@@ -54,6 +64,23 @@ class ProjectGeneratorTest {
     // Setup default template responses
     when(templateRepository.processTemplate(anyString(), anyMap()))
         .thenReturn("template content");
+
+    // Setup structure metadata mock
+    var structureMetadata = new com.pragma.archetype.domain.model.structure.StructureMetadata(
+        "hexagonal-single",
+        java.util.Map.of(
+            "driven", "infrastructure/adapter/out/{name}",
+            "driving", "infrastructure/adapter/in/{name}"),
+        null,
+        null,
+        null,
+        null,
+        java.util.List.of("domain/model", "domain/port", "application/usecase", "infrastructure/adapter"),
+        null,
+        null,
+        null);
+
+    lenient().when(templateRepository.loadStructureMetadata(any())).thenReturn(structureMetadata);
   }
 
   @Test

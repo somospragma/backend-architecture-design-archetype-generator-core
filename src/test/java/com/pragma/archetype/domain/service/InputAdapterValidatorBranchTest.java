@@ -64,7 +64,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of())
         .build();
@@ -84,7 +84,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name(null)
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of())
         .build();
@@ -104,7 +104,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("123Invalid")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of())
         .build();
@@ -124,7 +124,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName(null)
         .endpoints(List.of())
         .build();
@@ -145,7 +145,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.adapter.out.rest")
         .endpoints(List.of())
         .build();
@@ -166,7 +166,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.adapter.in.rest")
         .endpoints(List.of())
         .build();
@@ -200,7 +200,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.wrong.infrastructure.entrypoints.rest")
         .endpoints(List.of())
         .build();
@@ -242,7 +242,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName(null)
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of())
         .build();
@@ -263,7 +263,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(null)
         .build();
@@ -291,7 +291,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of(endpoint))
         .build();
@@ -319,7 +319,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of(endpoint))
         .build();
@@ -347,7 +347,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of(endpoint))
         .build();
@@ -375,7 +375,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of(endpoint))
         .build();
@@ -403,7 +403,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of(endpoint))
         .build();
@@ -435,7 +435,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of(endpoint))
         .build();
@@ -467,7 +467,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of(endpoint))
         .build();
@@ -499,7 +499,7 @@ class InputAdapterValidatorBranchTest {
     InputAdapterConfig config = InputAdapterConfig.builder()
         .name("UserController")
         .useCaseName("CreateUserUseCase")
-        .type(InputAdapterType.REST)
+        .type("rest")
         .packageName("com.test.infrastructure.entrypoints.rest")
         .endpoints(List.of(endpoint))
         .build();

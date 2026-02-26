@@ -10,9 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.pragma.archetype.application.generator.OutputAdapterGenerator;
-import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
-import com.pragma.archetype.domain.model.adapter.AdapterType;
+import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateAdapterUseCase;
@@ -169,7 +168,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
 
     try {
       // 1. Load adapter metadata using framework-aware path
-      String adapterTypeLower = config.type().name().toLowerCase();
+      String adapterTypeLower = config.type().toLowerCase();
       AdapterMetadata metadata;
       try {
         if (projectConfig != null) {
@@ -189,7 +188,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
         }
       } catch (TemplateRepository.TemplateNotFoundException e) {
         errors.add(String.format("Adapter metadata not found for '%s': %s",
-            config.type().name(), e.getMessage()));
+            config.type(), e.getMessage()));
         return ValidationResult.failure(errors);
       }
 
@@ -300,15 +299,19 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * Gets the adapter template path for a given adapter type.
    * This mirrors the logic in AdapterGenerator.getAdapterTemplate().
    */
-  private String getAdapterTemplatePath(AdapterType type) {
-    return switch (type) {
-      case REDIS -> "frameworks/spring/reactive/adapters/driven-adapters/redis/Adapter.java.ftl";
-      case MONGODB -> "frameworks/spring/reactive/adapters/driven-adapters/mongodb/Adapter.java.ftl";
-      case POSTGRESQL -> "frameworks/spring/reactive/adapters/driven-adapters/postgresql/Adapter.java.ftl";
-      case REST_CLIENT -> "frameworks/spring/reactive/adapters/driven-adapters/rest-client/Adapter.java.ftl";
-      case KAFKA -> "frameworks/spring/reactive/adapters/driven-adapters/kafka/Adapter.java.ftl";
-      case SQS_PRODUCER -> "frameworks/spring/reactive/adapters/driven-adapters/sqs-producer/Adapter.java.ftl";
-      case DYNAMODB -> "frameworks/spring/reactive/adapters/driven-adapters/dynamodb/Adapter.java.ftl";
+  private String getAdapterTemplatePath(String type) {
+    var typeLower = type.toLowerCase();
+    return switch (typeLower) {
+      case "redis" -> "frameworks/spring/reactive/adapters/driven-adapters/redis/Adapter.java.ftl";
+      case "mongodb" -> "frameworks/spring/reactive/adapters/driven-adapters/mongodb/Adapter.java.ftl";
+      case "postgresql" -> "frameworks/spring/reactive/adapters/driven-adapters/postgresql/Adapter.java.ftl";
+      case "rest_client", "rest-client" ->
+        "frameworks/spring/reactive/adapters/driven-adapters/rest-client/Adapter.java.ftl";
+      case "kafka" -> "frameworks/spring/reactive/adapters/driven-adapters/kafka/Adapter.java.ftl";
+      case "sqs_producer", "sqs-producer" ->
+        "frameworks/spring/reactive/adapters/driven-adapters/sqs-producer/Adapter.java.ftl";
+      case "dynamodb" -> "frameworks/spring/reactive/adapters/driven-adapters/dynamodb/Adapter.java.ftl";
+      default -> "frameworks/spring/reactive/adapters/driven-adapters/generic/Adapter.java.ftl";
     };
   }
 
@@ -316,11 +319,12 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * Gets the data entity template path for a given adapter type.
    * This mirrors the logic in AdapterGenerator.getDataEntityTemplate().
    */
-  private String getDataEntityTemplatePath(AdapterType type) {
-    return switch (type) {
-      case REDIS -> "frameworks/spring/reactive/adapters/driven-adapters/redis/Entity.java.ftl";
-      case MONGODB -> "frameworks/spring/reactive/adapters/driven-adapters/mongodb/Entity.java.ftl";
-      case POSTGRESQL -> "frameworks/spring/reactive/adapters/driven-adapters/postgresql/Entity.java.ftl";
+  private String getDataEntityTemplatePath(String type) {
+    var typeLower = type.toLowerCase();
+    return switch (typeLower) {
+      case "redis" -> "frameworks/spring/reactive/adapters/driven-adapters/redis/Entity.java.ftl";
+      case "mongodb" -> "frameworks/spring/reactive/adapters/driven-adapters/mongodb/Entity.java.ftl";
+      case "postgresql" -> "frameworks/spring/reactive/adapters/driven-adapters/postgresql/Entity.java.ftl";
       default -> "frameworks/spring/reactive/adapters/driven-adapters/generic/Entity.java.ftl";
     };
   }
@@ -349,7 +353,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
     try {
       // 1. Application.yml will be modified if adapter has application properties
       AdapterMetadata metadata = loadAdapterMetadataWithFallback(
-          config.type().name().toLowerCase(),
+          config.type().toLowerCase(),
           projectPath,
           config);
       if (metadata.hasApplicationProperties()) {
@@ -389,7 +393,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
     try {
       // 1. Load adapter metadata to check if it has applicationPropertiesTemplate
       AdapterMetadata metadata = loadAdapterMetadataWithFallback(
-          config.type().name().toLowerCase(),
+          config.type().toLowerCase(),
           projectPath,
           config);
 
@@ -405,7 +409,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
       Map<String, Object> templateContext = prepareApplicationPropertiesContext(config);
 
       // 3. Process the application properties template
-      String adapterTypeLower = config.type().name().toLowerCase();
+      String adapterTypeLower = config.type().toLowerCase();
       String propertiesTemplatePath = String.format("adapters/%s/%s", adapterTypeLower,
           metadata.applicationPropertiesTemplate());
       String processedProperties = templateRepository.processTemplate(propertiesTemplatePath, templateContext);
@@ -453,7 +457,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
   private Map<String, Object> prepareApplicationPropertiesContext(OutputAdapterConfig config) {
     Map<String, Object> context = new HashMap<>();
     context.put("adapterName", config.name());
-    context.put("adapterType", config.type().name().toLowerCase());
+    context.put("adapterType", config.type().toLowerCase());
     context.put("packageName", config.packageName());
     context.put("entityName", config.entityName());
 
@@ -485,7 +489,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
     try {
       // 1. Load adapter metadata to check if it has configuration classes
       AdapterMetadata metadata = loadAdapterMetadataWithFallback(
-          config.type().name().toLowerCase(),
+          config.type().toLowerCase(),
           projectPath,
           config);
 
@@ -513,7 +517,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
       for (AdapterMetadata.ConfigurationClass configClass : metadata.configurationClasses()) {
         try {
           // Build template path: adapters/{adapterType}/{templatePath}
-          String adapterTypeLower = config.type().name().toLowerCase();
+          String adapterTypeLower = config.type().toLowerCase();
           String configTemplatePath = String.format("adapters/%s/%s", adapterTypeLower,
               configClass.templatePath());
 
@@ -572,7 +576,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
       com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
     Map<String, Object> context = new HashMap<>();
     context.put("adapterName", config.name());
-    context.put("adapterType", config.type().name().toLowerCase());
+    context.put("adapterType", config.type().toLowerCase());
     context.put("packageName", config.packageName());
     context.put("entityName", config.entityName());
     context.put("projectName", projectConfig.name());
@@ -591,7 +595,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
     try {
       // 1. Load adapter metadata to check if it has test dependencies
       AdapterMetadata metadata = loadAdapterMetadataWithFallback(
-          config.type().name().toLowerCase(),
+          config.type().toLowerCase(),
           projectPath,
           config);
 
@@ -735,7 +739,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
 
     try {
       // Load adapter metadata
-      String adapterTypeLower = config.type().name().toLowerCase();
+      String adapterTypeLower = config.type().toLowerCase();
       AdapterMetadata metadata = loadAdapterMetadataWithFallback(
           adapterTypeLower,
           projectPath,

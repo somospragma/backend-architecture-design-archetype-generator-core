@@ -158,10 +158,15 @@ public class AdapterMetadataLoader {
       List<TemplateMapping> templates = extractTemplateMappings(data);
 
       // Extract dependencies (legacy)
-      List<Dependency> dependencies = extractDependencies(data);
+      List<Dependency> runtimeDependencies = extractDependencies(data);
       List<Dependency> testDependencies = extractTestDependencies(data);
       String applicationPropertiesTemplate = extractApplicationPropertiesTemplate(data);
       List<ConfigurationClass> configurationClasses = extractConfigurationClasses(data);
+
+      // Extract new fields
+      String suffix = extractSuffix(data);
+      String appPropsTemplate = extractAppPropsTemplate(data);
+      List<String> dependencyStrings = extractDependencyStrings(data);
 
       // Validate referenced template files exist
       // Extract base path from metadata path (remove /metadata.yml)
@@ -177,9 +182,12 @@ public class AdapterMetadataLoader {
           .requiredParameters(requiredParameters)
           .optionalParameters(optionalParameters)
           .templates(templates)
-          .dependencies(dependencies)
+          .suffix(suffix)
+          .applicationPropertiesTemplate(appPropsTemplate)
+          .dependencies(dependencyStrings)
+          .runtimeDependencies(runtimeDependencies)
           .testDependencies(testDependencies)
-          .applicationPropertiesTemplate(applicationPropertiesTemplate)
+          .legacyApplicationPropertiesTemplate(applicationPropertiesTemplate)
           .configurationClasses(configurationClasses)
           .build();
 
@@ -566,5 +574,34 @@ public class AdapterMetadataLoader {
       throw new IllegalArgumentException("Field '" + key + "' must be a string");
     }
     return (String) value;
+  }
+
+  /**
+   * Extracts suffix field from metadata.
+   */
+  private String extractSuffix(Map<String, Object> data) {
+    return extractOptionalString(data, "suffix");
+  }
+
+  /**
+   * Extracts applicationPropertiesTemplate field from metadata (new field).
+   */
+  private String extractAppPropsTemplate(Map<String, Object> data) {
+    return extractOptionalString(data, "applicationPropertiesTemplate");
+  }
+
+  /**
+   * Extracts dependencies as list of strings (new format).
+   */
+  @SuppressWarnings("unchecked")
+  private List<String> extractDependencyStrings(Map<String, Object> data) {
+    Object depsObj = data.get("dependencies");
+    if (depsObj == null) {
+      return List.of();
+    }
+    if (!(depsObj instanceof List)) {
+      throw new IllegalArgumentException("Field 'dependencies' must be a list");
+    }
+    return (List<String>) depsObj;
   }
 }

@@ -105,24 +105,26 @@ public class InputAdapterValidator {
   /**
    * Determines if the adapter type requires a use case.
    */
-  private boolean requiresUseCase(com.pragma.archetype.domain.model.adapter.InputAdapterType type) {
-    if (type == null) {
+  private boolean requiresUseCase(String type) {
+    if (type == null || type.isBlank()) {
       return false;
     }
-    return type == com.pragma.archetype.domain.model.adapter.InputAdapterType.REST
-        || type == com.pragma.archetype.domain.model.adapter.InputAdapterType.GRAPHQL
-        || type == com.pragma.archetype.domain.model.adapter.InputAdapterType.GRPC;
+    var typeLower = type.toLowerCase();
+    return typeLower.equals("rest")
+        || typeLower.equals("graphql")
+        || typeLower.equals("grpc");
   }
 
   /**
    * Determines if the adapter type requires endpoints.
    */
-  private boolean requiresEndpoints(com.pragma.archetype.domain.model.adapter.InputAdapterType type) {
-    if (type == null) {
+  private boolean requiresEndpoints(String type) {
+    if (type == null || type.isBlank()) {
       return false;
     }
-    return type == com.pragma.archetype.domain.model.adapter.InputAdapterType.REST
-        || type == com.pragma.archetype.domain.model.adapter.InputAdapterType.GRAPHQL;
+    var typeLower = type.toLowerCase();
+    return typeLower.equals("rest")
+        || typeLower.equals("graphql");
   }
 
   private void validateEndpoints(List<Endpoint> endpoints, List<String> errors) {

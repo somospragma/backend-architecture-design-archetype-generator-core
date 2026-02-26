@@ -47,7 +47,7 @@ class AdapterValidatorTest {
     validConfig = OutputAdapterConfig.builder()
         .name("MongoDB")
         .packageName("com.company.infrastructure.driven.adapters.mongodb")
-        .type(AdapterType.MONGODB)
+        .type("mongodb")
         .entityName("User")
         .methods(List.of())
         .build();
@@ -107,7 +107,7 @@ class AdapterValidatorTest {
     OutputAdapterConfig invalidConfig = OutputAdapterConfig.builder()
         .name("")
         .packageName("com.company.infrastructure.driven.adapters.mongodb")
-        .type(AdapterType.MONGODB)
+        .type("mongodb")
         .entityName("User")
         .methods(List.of())
         .build();
@@ -126,7 +126,7 @@ class AdapterValidatorTest {
     OutputAdapterConfig invalidConfig = OutputAdapterConfig.builder()
         .name("Mongo-DB")
         .packageName("com.company.infrastructure.driven.adapters.mongodb")
-        .type(AdapterType.MONGODB)
+        .type("mongodb")
         .entityName("User")
         .methods(List.of())
         .build();
@@ -145,7 +145,7 @@ class AdapterValidatorTest {
     OutputAdapterConfig invalidConfig = OutputAdapterConfig.builder()
         .name("MongoDB")
         .packageName("")
-        .type(AdapterType.MONGODB)
+        .type("mongodb")
         .entityName("User")
         .methods(List.of())
         .build();
@@ -164,7 +164,7 @@ class AdapterValidatorTest {
     OutputAdapterConfig invalidConfig = OutputAdapterConfig.builder()
         .name("MongoDB")
         .packageName("com.company.123invalid")
-        .type(AdapterType.MONGODB)
+        .type("mongodb")
         .entityName("User")
         .methods(List.of())
         .build();
@@ -183,7 +183,7 @@ class AdapterValidatorTest {
     OutputAdapterConfig invalidConfig = OutputAdapterConfig.builder()
         .name("")
         .packageName("com.company.infrastructure.driven.adapters.mongodb")
-        .type(AdapterType.MONGODB)
+        .type("mongodb")
         .entityName("User")
         .methods(List.of())
         .build();
@@ -201,7 +201,7 @@ class AdapterValidatorTest {
     OutputAdapterConfig invalidConfig = OutputAdapterConfig.builder()
         .name("MongoDB")
         .packageName("")
-        .type(AdapterType.MONGODB)
+        .type("mongodb")
         .entityName("User")
         .methods(List.of())
         .build();

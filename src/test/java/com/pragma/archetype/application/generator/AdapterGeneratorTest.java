@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.nio.file.Path;
@@ -16,8 +17,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.pragma.archetype.application.port.out.AdapterDiscoveryPort;
 import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
-import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
@@ -30,155 +31,165 @@ import com.pragma.archetype.domain.port.out.TemplateRepository;
 @ExtendWith(MockitoExtension.class)
 class AdapterGeneratorTest {
 
-  @Mock
-  private TemplateRepository templateRepository;
+        @Mock
+        private TemplateRepository templateRepository;
 
-  @Mock
-  private FileSystemPort fileSystemPort;
+        @Mock
+        private FileSystemPort fileSystemPort;
 
-  @Mock
-  private PathResolver pathResolver;
+        @Mock
+        private PathResolver pathResolver;
 
-  private OutputAdapterGenerator generator;
+        @Mock
+        private AdapterDiscoveryPort adapterDiscoveryPort;
 
-  @BeforeEach
-  void setUp() {
-    generator = new OutputAdapterGenerator(templateRepository, fileSystemPort, pathResolver);
+        private OutputAdapterGenerator generator;
 
-    // Configure pathResolver mock to return a valid path
-    when(pathResolver.resolveAdapterPath(any(ArchitectureType.class), anyString(), anyString(), anyMap()))
-        .thenReturn(Path.of("infrastructure/adapter"));
-  }
+        @BeforeEach
+        void setUp() {
+                generator = new OutputAdapterGenerator(templateRepository, fileSystemPort, pathResolver,
+                                adapterDiscoveryPort);
 
-  @Test
-  void shouldGenerateRedisAdapter() {
-    // Given
-    ProjectConfig projectConfig = ProjectConfig.builder()
-        .name("test-project")
-        .basePackage("com.test")
-        .architecture(ArchitectureType.HEXAGONAL_SINGLE)
-        .paradigm(Paradigm.REACTIVE)
-        .framework(Framework.SPRING)
-        .pluginVersion("1.0.0")
-        .build();
+                // Configure pathResolver mock to return a valid path
+                when(pathResolver.resolveAdapterPath(any(ArchitectureType.class), anyString(), anyString(), anyMap()))
+                                .thenReturn(Path.of("infrastructure/adapter"));
 
-    OutputAdapterConfig config = OutputAdapterConfig.builder()
-        .name("UserRepository")
-        .entityName("User")
-        .type(AdapterType.REDIS)
-        .packageName("com.test.infrastructure.redis")
-        .methods(List.of())
-        .build();
+                // Configure adapterDiscoveryPort mock to return true for all adapter types
+                // (lenient for unused stubs)
+                lenient().when(adapterDiscoveryPort.adapterExists(anyString(), any())).thenReturn(true);
+                lenient().when(adapterDiscoveryPort.listAdapterNames(any())).thenReturn(
+                                List.of("redis", "mongodb", "postgresql", "rest-client", "kafka", "dynamodb"));
+        }
 
-    when(templateRepository.processTemplate(anyString(), anyMap()))
-        .thenReturn("public class UserRepository {}")
-        .thenReturn("public class UserMapper {}")
-        .thenReturn("public class UserData {}");
+        @Test
+        void shouldGenerateRedisAdapter() {
+                // Given
+                ProjectConfig projectConfig = ProjectConfig.builder()
+                                .name("test-project")
+                                .basePackage("com.test")
+                                .architecture(ArchitectureType.HEXAGONAL_SINGLE)
+                                .paradigm(Paradigm.REACTIVE)
+                                .framework(Framework.SPRING)
+                                .pluginVersion("1.0.0")
+                                .build();
 
-    // When
-    List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
+                OutputAdapterConfig config = OutputAdapterConfig.builder()
+                                .name("UserRepository")
+                                .entityName("User")
+                                .type("redis")
+                                .packageName("com.test.infrastructure.redis")
+                                .methods(List.of())
+                                .build();
 
-    // Then
-    assertNotNull(files);
-    assertTrue(files.size() >= 1);
-  }
+                when(templateRepository.processTemplate(anyString(), anyMap()))
+                                .thenReturn("public class UserRepository {}")
+                                .thenReturn("public class UserMapper {}")
+                                .thenReturn("public class UserData {}");
 
-  @Test
-  void shouldGenerateMongoDBAdapter() {
-    // Given
-    ProjectConfig projectConfig = ProjectConfig.builder()
-        .name("test-project")
-        .basePackage("com.test")
-        .architecture(ArchitectureType.HEXAGONAL_SINGLE)
-        .paradigm(Paradigm.REACTIVE)
-        .framework(Framework.SPRING)
-        .pluginVersion("1.0.0")
-        .build();
+                // When
+                List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
 
-    OutputAdapterConfig config = OutputAdapterConfig.builder()
-        .name("ProductRepository")
-        .entityName("Product")
-        .type(AdapterType.MONGODB)
-        .packageName("com.test.infrastructure.mongodb")
-        .methods(List.of())
-        .build();
+                // Then
+                assertNotNull(files);
+                assertTrue(files.size() >= 1);
+        }
 
-    when(templateRepository.processTemplate(anyString(), anyMap()))
-        .thenReturn("public class ProductRepository {}")
-        .thenReturn("public class ProductMapper {}")
-        .thenReturn("public class ProductData {}");
+        @Test
+        void shouldGenerateMongoDBAdapter() {
+                // Given
+                ProjectConfig projectConfig = ProjectConfig.builder()
+                                .name("test-project")
+                                .basePackage("com.test")
+                                .architecture(ArchitectureType.HEXAGONAL_SINGLE)
+                                .paradigm(Paradigm.REACTIVE)
+                                .framework(Framework.SPRING)
+                                .pluginVersion("1.0.0")
+                                .build();
 
-    // When
-    List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
+                OutputAdapterConfig config = OutputAdapterConfig.builder()
+                                .name("ProductRepository")
+                                .entityName("Product")
+                                .type("mongodb")
+                                .packageName("com.test.infrastructure.mongodb")
+                                .methods(List.of())
+                                .build();
 
-    // Then
-    assertNotNull(files);
-    assertTrue(files.size() >= 1);
-  }
+                when(templateRepository.processTemplate(anyString(), anyMap()))
+                                .thenReturn("public class ProductRepository {}")
+                                .thenReturn("public class ProductMapper {}")
+                                .thenReturn("public class ProductData {}");
 
-  @Test
-  void shouldGeneratePostgreSQLAdapter() {
-    // Given
-    ProjectConfig projectConfig = ProjectConfig.builder()
-        .name("test-project")
-        .basePackage("com.test")
-        .architecture(ArchitectureType.HEXAGONAL_SINGLE)
-        .paradigm(Paradigm.REACTIVE)
-        .framework(Framework.SPRING)
-        .pluginVersion("1.0.0")
-        .build();
+                // When
+                List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
 
-    OutputAdapterConfig config = OutputAdapterConfig.builder()
-        .name("OrderRepository")
-        .entityName("Order")
-        .type(AdapterType.POSTGRESQL)
-        .packageName("com.test.infrastructure.postgresql")
-        .methods(List.of())
-        .build();
+                // Then
+                assertNotNull(files);
+                assertTrue(files.size() >= 1);
+        }
 
-    when(templateRepository.processTemplate(anyString(), anyMap()))
-        .thenReturn("public class OrderRepository {}")
-        .thenReturn("public class OrderMapper {}")
-        .thenReturn("public class OrderData {}");
+        @Test
+        void shouldGeneratePostgreSQLAdapter() {
+                // Given
+                ProjectConfig projectConfig = ProjectConfig.builder()
+                                .name("test-project")
+                                .basePackage("com.test")
+                                .architecture(ArchitectureType.HEXAGONAL_SINGLE)
+                                .paradigm(Paradigm.REACTIVE)
+                                .framework(Framework.SPRING)
+                                .pluginVersion("1.0.0")
+                                .build();
 
-    // When
-    List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
+                OutputAdapterConfig config = OutputAdapterConfig.builder()
+                                .name("OrderRepository")
+                                .entityName("Order")
+                                .type("postgresql")
+                                .packageName("com.test.infrastructure.postgresql")
+                                .methods(List.of())
+                                .build();
 
-    // Then
-    assertNotNull(files);
-    assertTrue(files.size() >= 1);
-  }
+                when(templateRepository.processTemplate(anyString(), anyMap()))
+                                .thenReturn("public class OrderRepository {}")
+                                .thenReturn("public class OrderMapper {}")
+                                .thenReturn("public class OrderData {}");
 
-  @Test
-  void shouldGenerateRestClientAdapter() {
-    // Given
-    ProjectConfig projectConfig = ProjectConfig.builder()
-        .name("test-project")
-        .basePackage("com.test")
-        .architecture(ArchitectureType.HEXAGONAL_SINGLE)
-        .paradigm(Paradigm.REACTIVE)
-        .framework(Framework.SPRING)
-        .pluginVersion("1.0.0")
-        .build();
+                // When
+                List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
 
-    OutputAdapterConfig config = OutputAdapterConfig.builder()
-        .name("PaymentClient")
-        .entityName("Payment")
-        .type(AdapterType.REST_CLIENT)
-        .packageName("com.test.infrastructure.restclient")
-        .methods(List.of())
-        .build();
+                // Then
+                assertNotNull(files);
+                assertTrue(files.size() >= 1);
+        }
 
-    when(templateRepository.processTemplate(anyString(), anyMap()))
-        .thenReturn("public class PaymentClient {}")
-        .thenReturn("public class PaymentMapper {}")
-        .thenReturn("public class PaymentData {}");
+        @Test
+        void shouldGenerateRestClientAdapter() {
+                // Given
+                ProjectConfig projectConfig = ProjectConfig.builder()
+                                .name("test-project")
+                                .basePackage("com.test")
+                                .architecture(ArchitectureType.HEXAGONAL_SINGLE)
+                                .paradigm(Paradigm.REACTIVE)
+                                .framework(Framework.SPRING)
+                                .pluginVersion("1.0.0")
+                                .build();
 
-    // When
-    List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
+                OutputAdapterConfig config = OutputAdapterConfig.builder()
+                                .name("PaymentClient")
+                                .entityName("Payment")
+                                .type("rest-client")
+                                .packageName("com.test.infrastructure.restclient")
+                                .methods(List.of())
+                                .build();
 
-    // Then
-    assertNotNull(files);
-    assertTrue(files.size() >= 1);
-  }
+                when(templateRepository.processTemplate(anyString(), anyMap()))
+                                .thenReturn("public class PaymentClient {}")
+                                .thenReturn("public class PaymentMapper {}")
+                                .thenReturn("public class PaymentData {}");
+
+                // When
+                List<GeneratedFile> files = generator.generate(Path.of("/test"), config, projectConfig);
+
+                // Then
+                assertNotNull(files);
+                assertTrue(files.size() >= 1);
+        }
 }

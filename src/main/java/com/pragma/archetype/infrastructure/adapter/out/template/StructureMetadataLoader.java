@@ -9,6 +9,7 @@ import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.model.structure.LayerDependencies;
 import com.pragma.archetype.domain.model.structure.ModuleMetadata;
 import com.pragma.archetype.domain.model.structure.NamingConventions;
+import com.pragma.archetype.domain.model.structure.PackageMappings;
 import com.pragma.archetype.domain.model.structure.StructureMetadata;
 import com.pragma.archetype.domain.model.structure.TemplatePaths;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
@@ -64,16 +65,22 @@ public class StructureMetadataLoader {
       java.util.List<String> packages = extractPackages(data);
       TemplatePaths templatePaths = extractTemplatePaths(data);
       java.util.List<ModuleMetadata> moduleMetadata = extractModuleMetadata(data);
+      PackageMappings packageMappings = extractPackageMappings(data);
+      String entityModule = extractEntityModule(data);
+      String useCaseModule = extractUseCaseModule(data);
 
       // Create and validate the metadata
       StructureMetadata metadata = new StructureMetadata(
           architectureType,
           adapterPaths,
           templatePaths,
+          packageMappings,
           namingConventions,
           layerDependencies,
           packages,
-          moduleMetadata);
+          moduleMetadata,
+          entityModule,
+          useCaseModule);
 
       ValidationResult validation = metadata.validate();
       if (!validation.valid()) {
@@ -286,5 +293,38 @@ public class StructureMetadataLoader {
       throw new IllegalArgumentException("Field '" + key + "' must be a map");
     }
     return (Map<String, String>) value;
+  }
+
+  /**
+   * Extracts package mappings from the YAML data.
+   */
+  @SuppressWarnings("unchecked")
+  private PackageMappings extractPackageMappings(Map<String, Object> data) {
+    if (!data.containsKey("packageMappings")) {
+      return null;
+    }
+
+    var packageMappingsData = (Map<String, Object>) data.get("packageMappings");
+    var rules = extractStringMap(packageMappingsData, "rules");
+    var replacements = extractStringMap(packageMappingsData, "replacements");
+
+    return PackageMappings.builder()
+        .rules(rules)
+        .replacements(replacements)
+        .build();
+  }
+
+  /**
+   * Extracts entity module name from the YAML data.
+   */
+  private String extractEntityModule(Map<String, Object> data) {
+    return (String) data.get("entityModule");
+  }
+
+  /**
+   * Extracts use case module name from the YAML data.
+   */
+  private String extractUseCaseModule(Map<String, Object> data) {
+    return (String) data.get("useCaseModule");
   }
 }

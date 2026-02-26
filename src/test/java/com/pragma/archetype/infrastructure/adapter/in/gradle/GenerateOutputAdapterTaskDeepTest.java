@@ -94,7 +94,7 @@ class GenerateOutputAdapterTaskDeepTest {
 
     // Then
     assertNotNull(adapterType);
-    assertEquals(AdapterType.REDIS, adapterType);
+    assertEquals("redis", adapterType);
   }
 
   @Test
@@ -103,7 +103,7 @@ class GenerateOutputAdapterTaskDeepTest {
     Object adapterType = invokeParseAdapterType("mongodb");
 
     // Then
-    assertEquals(AdapterType.MONGODB, adapterType);
+    assertEquals("mongodb", adapterType);
   }
 
   @Test
@@ -112,7 +112,7 @@ class GenerateOutputAdapterTaskDeepTest {
     Object adapterType = invokeParseAdapterType("mongo");
 
     // Then
-    assertEquals(AdapterType.MONGODB, adapterType);
+    assertEquals("mongodb", adapterType);
   }
 
   @Test
@@ -121,7 +121,7 @@ class GenerateOutputAdapterTaskDeepTest {
     Object adapterType = invokeParseAdapterType("postgresql");
 
     // Then
-    assertEquals(AdapterType.POSTGRESQL, adapterType);
+    assertEquals("postgresql", adapterType);
   }
 
   @Test
@@ -130,7 +130,7 @@ class GenerateOutputAdapterTaskDeepTest {
     Object adapterType = invokeParseAdapterType("postgres");
 
     // Then
-    assertEquals(AdapterType.POSTGRESQL, adapterType);
+    assertEquals("postgresql", adapterType);
   }
 
   @Test
@@ -139,7 +139,7 @@ class GenerateOutputAdapterTaskDeepTest {
     Object adapterType = invokeParseAdapterType("rest-client");
 
     // Then
-    assertEquals(AdapterType.REST_CLIENT, adapterType);
+    assertEquals("rest-client", adapterType);
   }
 
   @Test
@@ -148,7 +148,7 @@ class GenerateOutputAdapterTaskDeepTest {
     Object adapterType = invokeParseAdapterType("rest");
 
     // Then
-    assertEquals(AdapterType.REST_CLIENT, adapterType);
+    assertEquals("rest-client", adapterType);
   }
 
   @Test
@@ -157,7 +157,7 @@ class GenerateOutputAdapterTaskDeepTest {
     Object adapterType = invokeParseAdapterType("kafka");
 
     // Then
-    assertEquals(AdapterType.KAFKA, adapterType);
+    assertEquals("kafka", adapterType);
   }
 
   @Test

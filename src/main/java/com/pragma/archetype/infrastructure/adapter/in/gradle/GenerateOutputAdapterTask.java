@@ -12,10 +12,9 @@ import org.gradle.api.tasks.options.Option;
 
 import com.pragma.archetype.application.generator.OutputAdapterGenerator;
 import com.pragma.archetype.application.usecase.GenerateAdapterUseCaseImpl;
-import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.adapter.AdapterMethod;
-import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.adapter.MethodParameter;
+import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateAdapterUseCase;
@@ -123,8 +122,8 @@ public class GenerateOutputAdapterTask extends DefaultTask {
       // 3. Resolve package name (auto-detect if not provided)
       String resolvedPackageName = resolvePackageName(type);
 
-      // 4. Parse adapter type
-      AdapterType adapterType = parseAdapterType(type);
+      // 4. Use adapter type as String (no need to parse to enum)
+      String adapterType = type;
 
       // 5. Parse methods (if provided)
       List<AdapterMethod> adapterMethods = new ArrayList<>();
@@ -149,7 +148,24 @@ public class GenerateOutputAdapterTask extends DefaultTask {
       // 8. Setup use case
       com.pragma.archetype.domain.service.PackageValidator packageValidator = new com.pragma.archetype.domain.service.PackageValidator();
       AdapterValidator validator = new AdapterValidator(fileSystemPort, configurationPort, packageValidator);
-      OutputAdapterGenerator generator = new OutputAdapterGenerator(templateRepository, fileSystemPort, pathResolver);
+      // Create content provider that delegates to template repository
+      com.pragma.archetype.infrastructure.adapter.out.template.TemplateContentProvider contentProvider = new com.pragma.archetype.infrastructure.adapter.out.template.TemplateContentProvider() {
+        @Override
+        public String getTemplateContent(String templatePath) {
+          return templateRepository.getTemplateContent(templatePath);
+        }
+
+        @Override
+        public boolean templateExists(String templatePath) {
+          return templateRepository.templateExists(templatePath);
+        }
+      };
+      com.pragma.archetype.infrastructure.adapter.out.template.AdapterMetadataLoader metadataLoader = new com.pragma.archetype.infrastructure.adapter.out.template.AdapterMetadataLoader(
+          contentProvider);
+      com.pragma.archetype.infrastructure.adapter.out.template.TemplateAdapterDiscovery adapterDiscovery = new com.pragma.archetype.infrastructure.adapter.out.template.TemplateAdapterDiscovery(
+          templateRepository, metadataLoader);
+      OutputAdapterGenerator generator = new OutputAdapterGenerator(templateRepository, fileSystemPort, pathResolver,
+          adapterDiscovery);
       com.pragma.archetype.domain.service.BackupService backupService = new com.pragma.archetype.domain.service.BackupService(
           fileSystemPort);
       GenerateAdapterUseCase useCase = new GenerateAdapterUseCaseImpl(
@@ -224,15 +240,15 @@ public class GenerateOutputAdapterTask extends DefaultTask {
   /**
    * Parses adapter type string.
    */
-  private AdapterType parseAdapterType(String typeStr) {
+  private String parseAdapterType(String typeStr) {
     return switch (typeStr.toLowerCase()) {
-      case "redis" -> AdapterType.REDIS;
-      case "mongodb", "mongo" -> AdapterType.MONGODB;
-      case "postgresql", "postgres" -> AdapterType.POSTGRESQL;
-      case "rest-client", "rest" -> AdapterType.REST_CLIENT;
-      case "kafka" -> AdapterType.KAFKA;
-      case "sqs-producer" -> AdapterType.SQS_PRODUCER;
-      case "dynamodb" -> AdapterType.DYNAMODB;
+      case "redis" -> "redis";
+      case "mongodb", "mongo" -> "mongodb";
+      case "postgresql", "postgres" -> "postgresql";
+      case "rest-client", "rest" -> "rest-client";
+      case "kafka" -> "kafka";
+      case "sqs-producer" -> "sqs-producer";
+      case "dynamodb" -> "dynamodb";
       default -> throw new IllegalArgumentException(
           "Invalid adapter type: " + typeStr
               + ". Valid values: redis, mongodb, postgresql, rest-client, kafka, sqs-producer, dynamodb");
