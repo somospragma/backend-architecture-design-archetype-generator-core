@@ -85,19 +85,44 @@ public class InputAdapterValidator {
       errors.add("Adapter type is required");
     }
 
-    // Validate use case name
-    if (config.useCaseName() == null || config.useCaseName().isBlank()) {
-      errors.add("Use case name is required");
+    // Validate use case name (only required for certain adapter types)
+    boolean requiresUseCase = requiresUseCase(config.type());
+    if (requiresUseCase && (config.useCaseName() == null || config.useCaseName().isBlank())) {
+      errors.add("Use case name is required for " + config.type() + " adapters");
     }
 
-    // Validate endpoints
-    if (config.endpoints() == null || config.endpoints().isEmpty()) {
-      errors.add("At least one endpoint is required");
-    } else {
+    // Validate endpoints (only required for HTTP-based adapters)
+    boolean requiresEndpoints = requiresEndpoints(config.type());
+    if (requiresEndpoints && (config.endpoints() == null || config.endpoints().isEmpty())) {
+      errors.add("At least one endpoint is required for " + config.type() + " adapters");
+    } else if (config.endpoints() != null && !config.endpoints().isEmpty()) {
       validateEndpoints(config.endpoints(), errors);
     }
 
     return errors.isEmpty() ? ValidationResult.success() : ValidationResult.failure(errors);
+  }
+
+  /**
+   * Determines if the adapter type requires a use case.
+   */
+  private boolean requiresUseCase(com.pragma.archetype.domain.model.adapter.InputAdapterType type) {
+    if (type == null) {
+      return false;
+    }
+    return type == com.pragma.archetype.domain.model.adapter.InputAdapterType.REST
+        || type == com.pragma.archetype.domain.model.adapter.InputAdapterType.GRAPHQL
+        || type == com.pragma.archetype.domain.model.adapter.InputAdapterType.GRPC;
+  }
+
+  /**
+   * Determines if the adapter type requires endpoints.
+   */
+  private boolean requiresEndpoints(com.pragma.archetype.domain.model.adapter.InputAdapterType type) {
+    if (type == null) {
+      return false;
+    }
+    return type == com.pragma.archetype.domain.model.adapter.InputAdapterType.REST
+        || type == com.pragma.archetype.domain.model.adapter.InputAdapterType.GRAPHQL;
   }
 
   private void validateEndpoints(List<Endpoint> endpoints, List<String> errors) {

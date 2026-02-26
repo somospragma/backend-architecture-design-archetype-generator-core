@@ -279,6 +279,11 @@ public class GenerateInputAdapterTask extends DefaultTask {
   private List<Endpoint> parseEndpoints(String endpointsStr) {
     List<Endpoint> result = new ArrayList<>();
 
+    // Return empty list if endpoints string is blank
+    if (endpointsStr == null || endpointsStr.isBlank()) {
+      return result;
+    }
+
     String[] endpointDefinitions = endpointsStr.split("\\|");
     for (String endpointDef : endpointDefinitions) {
       String[] parts = endpointDef.trim().split(":");
