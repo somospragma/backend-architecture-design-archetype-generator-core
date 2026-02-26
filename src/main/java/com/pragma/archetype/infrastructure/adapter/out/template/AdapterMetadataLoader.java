@@ -6,9 +6,11 @@ import java.util.Map;
 
 import org.yaml.snakeyaml.Yaml;
 
+import com.pragma.archetype.domain.model.adapter.AdapterDirection;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata.ConfigurationClass;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata.Dependency;
+import com.pragma.archetype.domain.model.adapter.TemplateMapping;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.TemplateRepository.TemplateNotFoundException;
 
@@ -61,6 +63,20 @@ public class AdapterMetadataLoader {
   }
 
   /**
+   * Loads adapter metadata from a specific metadata.yml path.
+   * This is useful for dynamic adapter discovery.
+   *
+   * @param metadataPath The full path to the metadata.yml file
+   * @return AdapterMetadata containing parsed adapter information
+   * @throws TemplateNotFoundException if metadata.yml cannot be found or parsed
+   */
+  public AdapterMetadata loadMetadata(String metadataPath) {
+    // Extract adapter name from path (last directory before metadata.yml)
+    String adapterName = extractAdapterNameFromPath(metadataPath);
+    return loadMetadataFromPath(metadataPath, adapterName);
+  }
+
+  /**
    * Loads adapter metadata for the specified adapter using framework-aware
    * structure.
    * Resolves the correct path based on framework, paradigm, and adapter type.
@@ -105,6 +121,16 @@ public class AdapterMetadataLoader {
   }
 
   /**
+   * Extracts adapter name from metadata path.
+   * Example: "adapters/rest/metadata.yml" → "rest"
+   */
+  private String extractAdapterNameFromPath(String metadataPath) {
+    String pathWithoutFile = metadataPath.substring(0, metadataPath.lastIndexOf("/metadata.yml"));
+    int lastSlash = pathWithoutFile.lastIndexOf("/");
+    return lastSlash >= 0 ? pathWithoutFile.substring(lastSlash + 1) : pathWithoutFile;
+  }
+
+  /**
    * Loads metadata from a specific path.
    */
   private AdapterMetadata loadMetadataFromPath(String metadataPath, String adapterName) {
@@ -119,11 +145,20 @@ public class AdapterMetadataLoader {
 
       // Extract required fields
       String name = extractName(data);
-      String type = extractType(data);
+      String typeStr = extractType(data);
+      AdapterDirection direction = parseAdapterDirection(typeStr);
+      String displayName = extractDisplayName(data);
       String description = extractDescription(data);
-      List<Dependency> dependencies = extractDependencies(data);
 
-      // Extract new optional fields
+      // Extract parameter lists
+      List<String> requiredParameters = extractRequiredParameters(data);
+      List<String> optionalParameters = extractOptionalParameters(data);
+
+      // Extract template mappings
+      List<TemplateMapping> templates = extractTemplateMappings(data);
+
+      // Extract dependencies (legacy)
+      List<Dependency> dependencies = extractDependencies(data);
       List<Dependency> testDependencies = extractTestDependencies(data);
       String applicationPropertiesTemplate = extractApplicationPropertiesTemplate(data);
       List<ConfigurationClass> configurationClasses = extractConfigurationClasses(data);
@@ -133,15 +168,20 @@ public class AdapterMetadataLoader {
       String basePath = metadataPath.substring(0, metadataPath.lastIndexOf("/metadata.yml"));
       validateReferencedTemplates(basePath, applicationPropertiesTemplate, configurationClasses);
 
-      // Create and validate the metadata
-      AdapterMetadata metadata = new AdapterMetadata(
-          name,
-          type,
-          description,
-          dependencies,
-          testDependencies,
-          applicationPropertiesTemplate,
-          configurationClasses);
+      // Create and validate the metadata using builder
+      AdapterMetadata metadata = AdapterMetadata.builder()
+          .name(name)
+          .direction(direction)
+          .displayName(displayName)
+          .description(description)
+          .requiredParameters(requiredParameters)
+          .optionalParameters(optionalParameters)
+          .templates(templates)
+          .dependencies(dependencies)
+          .testDependencies(testDependencies)
+          .applicationPropertiesTemplate(applicationPropertiesTemplate)
+          .configurationClasses(configurationClasses)
+          .build();
 
       ValidationResult validation = metadata.validate();
       if (!validation.valid()) {
@@ -184,6 +224,92 @@ public class AdapterMetadataLoader {
       throw new IllegalArgumentException("Field 'type' must be a string");
     }
     return (String) type;
+  }
+
+  /**
+   * Parses adapter direction from type string.
+   * Converts "input"/"driving" to INPUT, "output"/"driven" to OUTPUT.
+   */
+  private AdapterDirection parseAdapterDirection(String typeStr) {
+    if (typeStr == null || typeStr.isBlank()) {
+      throw new IllegalArgumentException("Adapter type cannot be empty");
+    }
+
+    String normalized = typeStr.toLowerCase().trim();
+    return switch (normalized) {
+      case "input", "driving" -> AdapterDirection.INPUT;
+      case "output", "driven" -> AdapterDirection.OUTPUT;
+      default -> throw new IllegalArgumentException(
+          "Invalid adapter type: " + typeStr + ". Must be 'input', 'output', 'driving', or 'driven'");
+    };
+  }
+
+  /**
+   * Extracts the display name from YAML data (optional).
+   */
+  private String extractDisplayName(Map<String, Object> data) {
+    Object displayName = data.get("displayName");
+    if (displayName == null) {
+      // Use name as fallback
+      return extractName(data);
+    }
+    if (!(displayName instanceof String)) {
+      throw new IllegalArgumentException("Field 'displayName' must be a string");
+    }
+    return (String) displayName;
+  }
+
+  /**
+   * Extracts required parameters list from YAML data (optional).
+   */
+  @SuppressWarnings("unchecked")
+  private List<String> extractRequiredParameters(Map<String, Object> data) {
+    Object params = data.get("requiredParameters");
+    if (params == null) {
+      return java.util.Collections.emptyList();
+    }
+    if (!(params instanceof List)) {
+      throw new IllegalArgumentException("Field 'requiredParameters' must be a list");
+    }
+    return (List<String>) params;
+  }
+
+  /**
+   * Extracts optional parameters list from YAML data (optional).
+   */
+  @SuppressWarnings("unchecked")
+  private List<String> extractOptionalParameters(Map<String, Object> data) {
+    Object params = data.get("optionalParameters");
+    if (params == null) {
+      return java.util.Collections.emptyList();
+    }
+    if (!(params instanceof List)) {
+      throw new IllegalArgumentException("Field 'optionalParameters' must be a list");
+    }
+    return (List<String>) params;
+  }
+
+  /**
+   * Extracts template mappings from YAML data (optional).
+   */
+  @SuppressWarnings("unchecked")
+  private List<TemplateMapping> extractTemplateMappings(Map<String, Object> data) {
+    Object templates = data.get("templates");
+    if (templates == null) {
+      return java.util.Collections.emptyList();
+    }
+    if (!(templates instanceof List)) {
+      throw new IllegalArgumentException("Field 'templates' must be a list");
+    }
+
+    List<Map<String, Object>> templatesList = (List<Map<String, Object>>) templates;
+    return templatesList.stream()
+        .map(templateMap -> TemplateMapping.builder()
+            .source((String) templateMap.get("source"))
+            .target((String) templateMap.get("target"))
+            .outputDir((String) templateMap.getOrDefault("outputDir", "src/main/java"))
+            .build())
+        .toList();
   }
 
   /**

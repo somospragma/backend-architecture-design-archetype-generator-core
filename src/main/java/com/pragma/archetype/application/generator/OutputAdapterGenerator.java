@@ -6,10 +6,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.application.port.out.AdapterDiscoveryPort;
+import com.pragma.archetype.domain.model.adapter.AdapterDirection;
 import com.pragma.archetype.domain.model.adapter.AdapterMethod;
-import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.adapter.MethodParameter;
+import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.file.FileType;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
@@ -20,28 +21,44 @@ import com.pragma.archetype.domain.port.out.TemplateRepository;
 /**
  * Generates output adapter files (Redis, MongoDB, etc.).
  * Application service that orchestrates file generation.
+ * 
+ * Uses dynamic adapter discovery instead of hardcoded enums.
  */
-public class AdapterGenerator {
+public class OutputAdapterGenerator {
 
   private final TemplateRepository templateRepository;
   private final FileSystemPort fileSystemPort;
   private final PathResolver pathResolver;
   private final ProjectGenerator projectGenerator;
+  private final AdapterDiscoveryPort adapterDiscovery;
 
-  public AdapterGenerator(TemplateRepository templateRepository, FileSystemPort fileSystemPort,
-      PathResolver pathResolver) {
+  public OutputAdapterGenerator(
+      TemplateRepository templateRepository,
+      FileSystemPort fileSystemPort,
+      PathResolver pathResolver,
+      AdapterDiscoveryPort adapterDiscovery) {
     this.templateRepository = templateRepository;
     this.fileSystemPort = fileSystemPort;
     this.pathResolver = pathResolver;
     this.projectGenerator = new ProjectGenerator(templateRepository, fileSystemPort);
+    this.adapterDiscovery = adapterDiscovery;
   }
 
   /**
    * Generates adapter files based on configuration.
    * If ProjectConfig has adaptersAsModules=true, creates a new Gradle module.
    */
-  public List<GeneratedFile> generate(Path projectPath, AdapterConfig config, ProjectConfig projectConfig) {
+  public List<GeneratedFile> generate(Path projectPath, OutputAdapterConfig config, ProjectConfig projectConfig) {
     List<GeneratedFile> generatedFiles = new ArrayList<>();
+
+    // Validate adapter type exists
+    String adapterType = config.type();
+    if (!adapterDiscovery.adapterExists(adapterType, AdapterDirection.OUTPUT)) {
+      List<String> availableAdapters = adapterDiscovery.listAdapterNames(AdapterDirection.OUTPUT);
+      throw new IllegalArgumentException(
+          "Unknown output adapter type: " + adapterType +
+              ". Available adapters: " + String.join(", ", availableAdapters));
+    }
 
     // Check if we should create adapter as a module
     if (projectConfig != null && projectConfig.adaptersAsModules()) {
@@ -57,7 +74,7 @@ public class AdapterGenerator {
   /**
    * Generates adapter as a new Gradle module (for granular architectures).
    */
-  private List<GeneratedFile> generateAdapterAsModule(Path projectPath, AdapterConfig config,
+  private List<GeneratedFile> generateAdapterAsModule(Path projectPath, OutputAdapterConfig config,
       ProjectConfig projectConfig) {
     List<GeneratedFile> generatedFiles = new ArrayList<>();
 
@@ -73,9 +90,8 @@ public class AdapterGenerator {
     GeneratedFile adapterFile = generateAdapterInModule(projectPath, config, modulePath, projectConfig);
     generatedFiles.add(adapterFile);
 
-    // 3. Generate entity mapper if needed
-    if (config.type() == AdapterType.REDIS ||
-        config.type() == AdapterType.MONGODB) {
+    // 3. Generate entity mapper if needed (for data store adapters)
+    if (needsEntityMapper(config.type())) {
       GeneratedFile mapperFile = generateMapperInModule(projectPath, config, modulePath, projectConfig);
       generatedFiles.add(mapperFile);
 
@@ -96,7 +112,7 @@ public class AdapterGenerator {
   /**
    * Generates adapter files in existing structure (traditional approach).
    */
-  private List<GeneratedFile> generateAdapterInPlace(Path projectPath, AdapterConfig config,
+  private List<GeneratedFile> generateAdapterInPlace(Path projectPath, OutputAdapterConfig config,
       ProjectConfig projectConfig) {
     List<GeneratedFile> generatedFiles = new ArrayList<>();
 
@@ -107,9 +123,8 @@ public class AdapterGenerator {
     GeneratedFile adapterFile = generateAdapter(projectPath, config, data, projectConfig);
     generatedFiles.add(adapterFile);
 
-    // Generate entity mapper if needed
-    if (config.type() == AdapterType.REDIS ||
-        config.type() == AdapterType.MONGODB) {
+    // Generate entity mapper if needed (for data store adapters)
+    if (needsEntityMapper(config.type())) {
       GeneratedFile mapperFile = generateMapper(projectPath, config, data, projectConfig);
       generatedFiles.add(mapperFile);
 
@@ -123,10 +138,10 @@ public class AdapterGenerator {
   /**
    * Generates build.gradle.kts for the adapter module.
    */
-  private GeneratedFile generateModuleBuildFile(Path projectPath, AdapterConfig config,
+  private GeneratedFile generateModuleBuildFile(Path projectPath, OutputAdapterConfig config,
       ProjectConfig projectConfig, String modulePath) {
     Map<String, Object> data = new HashMap<>();
-    data.put("adapterType", config.type().name().toLowerCase());
+    data.put("adapterType", config.type().toLowerCase());
     data.put("basePackage", projectConfig.basePackage());
 
     // Select template based on adapter type
@@ -140,7 +155,7 @@ public class AdapterGenerator {
   /**
    * Generates adapter implementation in module.
    */
-  private GeneratedFile generateAdapterInModule(Path projectPath, AdapterConfig config, String modulePath,
+  private GeneratedFile generateAdapterInModule(Path projectPath, OutputAdapterConfig config, String modulePath,
       ProjectConfig projectConfig) {
     Map<String, Object> data = prepareTemplateData(config, projectConfig);
     String templatePath = getAdapterTemplate(config.type());
@@ -159,7 +174,7 @@ public class AdapterGenerator {
   /**
    * Generates mapper in module.
    */
-  private GeneratedFile generateMapperInModule(Path projectPath, AdapterConfig config, String modulePath,
+  private GeneratedFile generateMapperInModule(Path projectPath, OutputAdapterConfig config, String modulePath,
       ProjectConfig projectConfig) {
     Map<String, Object> data = prepareTemplateData(config, projectConfig);
     String content = templateRepository.processTemplate(getMapperTemplate(), data);
@@ -178,7 +193,7 @@ public class AdapterGenerator {
   /**
    * Generates data entity in module.
    */
-  private GeneratedFile generateDataEntityInModule(Path projectPath, AdapterConfig config, String modulePath,
+  private GeneratedFile generateDataEntityInModule(Path projectPath, OutputAdapterConfig config, String modulePath,
       ProjectConfig projectConfig) {
     Map<String, Object> data = prepareTemplateData(config, projectConfig);
     String templatePath = getDataEntityTemplate(config.type());
@@ -195,7 +210,7 @@ public class AdapterGenerator {
     return GeneratedFile.javaSource(filePath, content);
   }
 
-  private GeneratedFile generateAdapter(Path projectPath, AdapterConfig config, Map<String, Object> data,
+  private GeneratedFile generateAdapter(Path projectPath, OutputAdapterConfig config, Map<String, Object> data,
       ProjectConfig projectConfig) {
     // Select template based on adapter type
     String templatePath = getAdapterTemplate(config.type());
@@ -242,7 +257,7 @@ public class AdapterGenerator {
     return GeneratedFile.javaSource(filePath, content);
   }
 
-  private GeneratedFile generateMapper(Path projectPath, AdapterConfig config, Map<String, Object> data,
+  private GeneratedFile generateMapper(Path projectPath, OutputAdapterConfig config, Map<String, Object> data,
       ProjectConfig projectConfig) {
     // Process mapper template with new structure
     String content = templateRepository.processTemplate(getMapperTemplate(), data);
@@ -288,7 +303,7 @@ public class AdapterGenerator {
     return GeneratedFile.javaSource(filePath, content);
   }
 
-  private GeneratedFile generateDataEntity(Path projectPath, AdapterConfig config, Map<String, Object> data,
+  private GeneratedFile generateDataEntity(Path projectPath, OutputAdapterConfig config, Map<String, Object> data,
       ProjectConfig projectConfig) {
     // Process data entity template
     String templatePath = getDataEntityTemplate(config.type());
@@ -335,27 +350,48 @@ public class AdapterGenerator {
     return GeneratedFile.javaSource(filePath, content);
   }
 
-  private String getAdapterTemplate(AdapterType type) {
+  /**
+   * Checks if an adapter type needs entity mapper and data entity.
+   * Data store adapters (redis, mongodb, postgresql, dynamodb) need mappers.
+   */
+  private boolean needsEntityMapper(String adapterType) {
+    String type = adapterType.toLowerCase();
+    return type.equals("redis") ||
+        type.equals("mongodb") ||
+        type.equals("postgresql") ||
+        type.equals("jpa") ||
+        type.equals("dynamodb");
+  }
+
+  private String getAdapterTemplate(String adapterType) {
+    // Dynamic template path based on adapter type
     // New structure:
     // frameworks/spring/reactive/adapters/driven-adapters/{type}/Adapter.java.ftl
+    String type = adapterType.toLowerCase().replace("_", "-");
     return switch (type) {
-      case REDIS -> "frameworks/spring/reactive/adapters/driven-adapters/redis/Adapter.java.ftl";
-      case MONGODB -> "frameworks/spring/reactive/adapters/driven-adapters/mongodb/Adapter.java.ftl";
-      case POSTGRESQL -> "frameworks/spring/reactive/adapters/driven-adapters/postgresql/Adapter.java.ftl";
-      case REST_CLIENT -> "frameworks/spring/reactive/adapters/driven-adapters/rest-client/Adapter.java.ftl";
-      case KAFKA -> "frameworks/spring/reactive/adapters/driven-adapters/kafka/Adapter.java.ftl";
-      case SQS_PRODUCER -> "frameworks/spring/reactive/adapters/driven-adapters/sqs-producer/Adapter.java.ftl";
-      case DYNAMODB -> "frameworks/spring/reactive/adapters/driven-adapters/dynamodb/Adapter.java.ftl";
+      case "redis" -> "frameworks/spring/reactive/adapters/driven-adapters/redis/Adapter.java.ftl";
+      case "mongodb" -> "frameworks/spring/reactive/adapters/driven-adapters/mongodb/Adapter.java.ftl";
+      case "postgresql", "jpa" -> "frameworks/spring/reactive/adapters/driven-adapters/postgresql/Adapter.java.ftl";
+      case "rest-client", "http-client" ->
+        "frameworks/spring/reactive/adapters/driven-adapters/rest-client/Adapter.java.ftl";
+      case "kafka" -> "frameworks/spring/reactive/adapters/driven-adapters/kafka/Adapter.java.ftl";
+      case "sqs-producer", "sqs_producer" ->
+        "frameworks/spring/reactive/adapters/driven-adapters/sqs-producer/Adapter.java.ftl";
+      case "dynamodb" -> "frameworks/spring/reactive/adapters/driven-adapters/dynamodb/Adapter.java.ftl";
+      default -> throw new IllegalArgumentException("No template defined for adapter type: " + adapterType);
     };
   }
 
-  private String getDataEntityTemplate(AdapterType type) {
+  private String getDataEntityTemplate(String adapterType) {
+    // Dynamic template path based on adapter type
     // New structure:
     // frameworks/spring/reactive/adapters/driven-adapters/{type}/Entity.java.ftl
+    String type = adapterType.toLowerCase().replace("_", "-");
     return switch (type) {
-      case REDIS -> "frameworks/spring/reactive/adapters/driven-adapters/redis/Entity.java.ftl";
-      case MONGODB -> "frameworks/spring/reactive/adapters/driven-adapters/mongodb/Entity.java.ftl";
-      case POSTGRESQL -> "frameworks/spring/reactive/adapters/driven-adapters/postgresql/Entity.java.ftl";
+      case "redis" -> "frameworks/spring/reactive/adapters/driven-adapters/redis/Entity.java.ftl";
+      case "mongodb" -> "frameworks/spring/reactive/adapters/driven-adapters/mongodb/Entity.java.ftl";
+      case "postgresql", "jpa" -> "frameworks/spring/reactive/adapters/driven-adapters/postgresql/Entity.java.ftl";
+      case "dynamodb" -> "frameworks/spring/reactive/adapters/driven-adapters/dynamodb/Entity.java.ftl";
       default -> "frameworks/spring/reactive/adapters/driven-adapters/generic/Entity.java.ftl";
     };
   }
@@ -375,14 +411,14 @@ public class AdapterGenerator {
    * @param projectConfig project configuration (can be null)
    * @return complete template context map
    */
-  private Map<String, Object> prepareTemplateData(AdapterConfig config, ProjectConfig projectConfig) {
+  private Map<String, Object> prepareTemplateData(OutputAdapterConfig config, ProjectConfig projectConfig) {
     Map<String, Object> data = new HashMap<>();
 
     // Adapter-specific variables
     data.put("adapterName", config.name());
     data.put("packageName", config.packageName());
     data.put("entityName", config.entityName());
-    data.put("adapterType", config.type().name().toLowerCase());
+    data.put("adapterType", config.type().toLowerCase());
 
     // Project-level variables (if available)
     if (projectConfig != null) {

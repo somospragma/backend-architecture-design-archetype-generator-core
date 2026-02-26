@@ -8,7 +8,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.adapter.AdapterMethod;
 import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.adapter.MethodParameter;
@@ -24,7 +24,7 @@ class AdapterConfigTest {
         List.of(new MethodParameter("id", "String")));
 
     // When
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .packageName("com.test.infrastructure.redis")
         .type(AdapterType.REDIS)
@@ -44,7 +44,7 @@ class AdapterConfigTest {
   @Test
   void shouldBuildAdapterConfigWithEmptyMethods() {
     // When
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .packageName("com.test.infrastructure.redis")
         .type(AdapterType.REDIS)
@@ -100,7 +100,7 @@ class AdapterConfigTest {
   @Test
   void shouldBuildConfigForEachAdapterType() {
     for (AdapterType type : AdapterType.values()) {
-      AdapterConfig config = AdapterConfig.builder()
+      OutputAdapterConfig config = OutputAdapterConfig.builder()
           .name("TestAdapter")
           .packageName("com.test")
           .type(type)

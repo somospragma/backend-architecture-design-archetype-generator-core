@@ -7,8 +7,10 @@ import org.yaml.snakeyaml.Yaml;
 
 import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.model.structure.LayerDependencies;
+import com.pragma.archetype.domain.model.structure.ModuleMetadata;
 import com.pragma.archetype.domain.model.structure.NamingConventions;
 import com.pragma.archetype.domain.model.structure.StructureMetadata;
+import com.pragma.archetype.domain.model.structure.TemplatePaths;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.TemplateRepository.TemplateNotFoundException;
 
@@ -60,16 +62,18 @@ public class StructureMetadataLoader {
       NamingConventions namingConventions = extractNamingConventions(data);
       LayerDependencies layerDependencies = extractLayerDependencies(data);
       java.util.List<String> packages = extractPackages(data);
-      java.util.List<String> modules = extractModules(data);
+      TemplatePaths templatePaths = extractTemplatePaths(data);
+      java.util.List<ModuleMetadata> moduleMetadata = extractModuleMetadata(data);
 
       // Create and validate the metadata
       StructureMetadata metadata = new StructureMetadata(
           architectureType,
           adapterPaths,
+          templatePaths,
           namingConventions,
           layerDependencies,
           packages,
-          modules);
+          moduleMetadata);
 
       ValidationResult validation = metadata.validate();
       if (!validation.valid()) {
@@ -193,6 +197,80 @@ public class StructureMetadataLoader {
     }
 
     return (java.util.List<String>) modulesObj;
+  }
+
+  /**
+   * Extracts template paths configuration from YAML data (optional).
+   * Returns default template paths if not specified.
+   */
+  @SuppressWarnings("unchecked")
+  private TemplatePaths extractTemplatePaths(Map<String, Object> data) {
+    if (!data.containsKey("templatePaths")) {
+      // Return default template paths
+      return TemplatePaths.builder().build();
+    }
+
+    Map<String, Object> templatePathsData = (Map<String, Object>) data.get("templatePaths");
+
+    return TemplatePaths.builder()
+        .inputAdapter((String) templatePathsData.get("inputAdapter"))
+        .outputAdapter((String) templatePathsData.get("outputAdapter"))
+        .entity((String) templatePathsData.get("entity"))
+        .useCase((String) templatePathsData.get("useCase"))
+        .config((String) templatePathsData.get("config"))
+        .build();
+  }
+
+  /**
+   * Extracts module metadata from YAML data (optional).
+   * Converts simple string list to ModuleMetadata objects for backward
+   * compatibility.
+   */
+  @SuppressWarnings("unchecked")
+  private java.util.List<ModuleMetadata> extractModuleMetadata(Map<String, Object> data) {
+    if (!data.containsKey("modules")) {
+      return null;
+    }
+
+    Object modulesObj = data.get("modules");
+    if (!(modulesObj instanceof List)) {
+      throw new IllegalArgumentException("Field 'modules' must be a list");
+    }
+
+    List<?> modulesList = (List<?>) modulesObj;
+    if (modulesList.isEmpty()) {
+      return java.util.Collections.emptyList();
+    }
+
+    // Check if modules are strings (old format) or maps (new format)
+    Object firstModule = modulesList.get(0);
+
+    if (firstModule instanceof String) {
+      // Old format: simple string list - convert to ModuleMetadata
+      return modulesList.stream()
+          .map(m -> ModuleMetadata.builder()
+              .name((String) m)
+              .path((String) m)
+              .build())
+          .toList();
+    } else if (firstModule instanceof Map) {
+      // New format: full ModuleMetadata objects
+      return modulesList.stream()
+          .map(m -> {
+            Map<String, Object> moduleMap = (Map<String, Object>) m;
+            return ModuleMetadata.builder()
+                .name((String) moduleMap.get("name"))
+                .path((String) moduleMap.getOrDefault("path", moduleMap.get("name")))
+                .packages((List<String>) moduleMap.getOrDefault("packages", java.util.Collections.emptyList()))
+                .dependencies((List<String>) moduleMap.getOrDefault("dependencies", java.util.Collections.emptyList()))
+                .moduleDependencies(
+                    (List<String>) moduleMap.getOrDefault("moduleDependencies", java.util.Collections.emptyList()))
+                .build();
+          })
+          .toList();
+    } else {
+      throw new IllegalArgumentException("Field 'modules' must contain strings or maps");
+    }
   }
 
   /**

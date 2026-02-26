@@ -16,7 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
@@ -39,11 +39,11 @@ class AdapterGeneratorTest {
   @Mock
   private PathResolver pathResolver;
 
-  private AdapterGenerator generator;
+  private OutputAdapterGenerator generator;
 
   @BeforeEach
   void setUp() {
-    generator = new AdapterGenerator(templateRepository, fileSystemPort, pathResolver);
+    generator = new OutputAdapterGenerator(templateRepository, fileSystemPort, pathResolver);
 
     // Configure pathResolver mock to return a valid path
     when(pathResolver.resolveAdapterPath(any(ArchitectureType.class), anyString(), anyString(), anyMap()))
@@ -62,7 +62,7 @@ class AdapterGeneratorTest {
         .pluginVersion("1.0.0")
         .build();
 
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
         .type(AdapterType.REDIS)
@@ -95,7 +95,7 @@ class AdapterGeneratorTest {
         .pluginVersion("1.0.0")
         .build();
 
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("ProductRepository")
         .entityName("Product")
         .type(AdapterType.MONGODB)
@@ -128,7 +128,7 @@ class AdapterGeneratorTest {
         .pluginVersion("1.0.0")
         .build();
 
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("OrderRepository")
         .entityName("Order")
         .type(AdapterType.POSTGRESQL)
@@ -161,7 +161,7 @@ class AdapterGeneratorTest {
         .pluginVersion("1.0.0")
         .build();
 
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("PaymentClient")
         .entityName("Payment")
         .type(AdapterType.REST_CLIENT)

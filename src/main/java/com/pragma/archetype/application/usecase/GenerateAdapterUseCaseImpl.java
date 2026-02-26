@@ -9,8 +9,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.pragma.archetype.application.generator.AdapterGenerator;
-import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.application.generator.OutputAdapterGenerator;
+import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
 import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
@@ -32,7 +32,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
   private static final Logger logger = LoggerFactory.getLogger(GenerateAdapterUseCaseImpl.class);
 
   private final AdapterValidator validator;
-  private final AdapterGenerator generator;
+  private final OutputAdapterGenerator generator;
   private final ConfigurationPort configurationPort;
   private final FileSystemPort fileSystemPort;
   private final TemplateRepository templateRepository;
@@ -42,7 +42,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
 
   public GenerateAdapterUseCaseImpl(
       AdapterValidator validator,
-      AdapterGenerator generator,
+      OutputAdapterGenerator generator,
       ConfigurationPort configurationPort,
       FileSystemPort fileSystemPort,
       TemplateRepository templateRepository,
@@ -59,7 +59,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
   }
 
   @Override
-  public GenerationResult execute(Path projectPath, AdapterConfig config) {
+  public GenerationResult execute(Path projectPath, OutputAdapterConfig config) {
     // 1. Validate configuration
     ValidationResult validationResult = validator.validate(projectPath, config);
     if (!validationResult.valid()) {
@@ -162,7 +162,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * @param projectConfig project configuration
    * @return ValidationResult with all validation errors collected
    */
-  private ValidationResult validateAllTemplates(AdapterConfig config,
+  private ValidationResult validateAllTemplates(OutputAdapterConfig config,
       com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
     List<String> errors = new ArrayList<>();
     List<String> warnings = new ArrayList<>();
@@ -342,7 +342,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * @param projectConfig project configuration
    * @return list of file paths to backup (relative to project root)
    */
-  private List<Path> identifyFilesToBackup(Path projectPath, AdapterConfig config,
+  private List<Path> identifyFilesToBackup(Path projectPath, OutputAdapterConfig config,
       com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
     List<Path> filesToBackup = new ArrayList<>();
 
@@ -385,7 +385,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * @param projectPath path to the project root
    * @param config      adapter configuration
    */
-  private void mergeApplicationPropertiesIfNeeded(Path projectPath, AdapterConfig config) {
+  private void mergeApplicationPropertiesIfNeeded(Path projectPath, OutputAdapterConfig config) {
     try {
       // 1. Load adapter metadata to check if it has applicationPropertiesTemplate
       AdapterMetadata metadata = loadAdapterMetadataWithFallback(
@@ -450,7 +450,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * @param config adapter configuration
    * @return template context map
    */
-  private Map<String, Object> prepareApplicationPropertiesContext(AdapterConfig config) {
+  private Map<String, Object> prepareApplicationPropertiesContext(OutputAdapterConfig config) {
     Map<String, Object> context = new HashMap<>();
     context.put("adapterName", config.name());
     context.put("adapterType", config.type().name().toLowerCase());
@@ -479,7 +479,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * @param config      adapter configuration
    * @return list of generated configuration class files
    */
-  private List<GeneratedFile> generateConfigurationClassesIfNeeded(Path projectPath, AdapterConfig config) {
+  private List<GeneratedFile> generateConfigurationClassesIfNeeded(Path projectPath, OutputAdapterConfig config) {
     List<GeneratedFile> configFiles = new ArrayList<>();
 
     try {
@@ -568,7 +568,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * @param projectConfig project configuration
    * @return template context map
    */
-  private Map<String, Object> prepareConfigurationClassContext(AdapterConfig config,
+  private Map<String, Object> prepareConfigurationClassContext(OutputAdapterConfig config,
       com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
     Map<String, Object> context = new HashMap<>();
     context.put("adapterName", config.name());
@@ -587,7 +587,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * @param projectPath path to the project root
    * @param config      adapter configuration
    */
-  private void addTestDependenciesIfNeeded(Path projectPath, AdapterConfig config) {
+  private void addTestDependenciesIfNeeded(Path projectPath, OutputAdapterConfig config) {
     try {
       // 1. Load adapter metadata to check if it has test dependencies
       AdapterMetadata metadata = loadAdapterMetadataWithFallback(
@@ -647,7 +647,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * @param config      adapter configuration
    * @return path to the build file
    */
-  private Path determineBuildFilePath(Path projectPath, AdapterConfig config) {
+  private Path determineBuildFilePath(Path projectPath, OutputAdapterConfig config) {
     try {
       var projectConfig = configurationPort.readConfiguration(projectPath).orElse(null);
 
@@ -726,7 +726,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * @param config        the adapter configuration
    * @param projectConfig the project configuration
    */
-  private void checkDependencyConflicts(Path projectPath, AdapterConfig config,
+  private void checkDependencyConflicts(Path projectPath, OutputAdapterConfig config,
       com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
 
     if (projectConfig == null) {
@@ -829,7 +829,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
    * @param config adapter configuration
    * @return adapter type category string
    */
-  private String determineAdapterTypeCategory(AdapterConfig config) {
+  private String determineAdapterTypeCategory(OutputAdapterConfig config) {
     // All current adapter types are driven adapters (output/infrastructure
     // adapters)
     // In the future, entry points (REST, GRAPHQL, GRPC, WEBSOCKET) will be added
@@ -849,7 +849,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
   private AdapterMetadata loadAdapterMetadataWithFallback(
       String adapterTypeLower,
       Path projectPath,
-      AdapterConfig config) {
+      OutputAdapterConfig config) {
     try {
       // Try to read project config
       var projectConfig = configurationPort.readConfiguration(projectPath).orElse(null);

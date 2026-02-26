@@ -3,7 +3,7 @@ package com.pragma.archetype.domain.port.in;
 import java.nio.file.Path;
 import java.util.List;
 
-import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
 
@@ -40,5 +40,5 @@ public interface GenerateAdapterUseCase {
    * @param config      Adapter configuration
    * @return Generation result with generated files or errors
    */
-  GenerationResult execute(Path projectPath, AdapterConfig config);
+  GenerationResult execute(Path projectPath, OutputAdapterConfig config);
 }

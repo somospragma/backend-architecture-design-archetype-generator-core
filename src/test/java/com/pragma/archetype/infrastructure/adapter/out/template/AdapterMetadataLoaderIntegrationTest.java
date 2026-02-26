@@ -75,9 +75,9 @@ class AdapterMetadataLoaderIntegrationTest {
 
     // Then
     assertNotNull(metadata);
-    assertEquals("mongodb-adapter", metadata.name());
-    assertEquals("driven", metadata.type());
-    assertEquals("MongoDB database adapter using Spring Data Reactive", metadata.description());
+    assertEquals("mongodb-adapter", metadata.getName());
+    assertEquals(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT, metadata.getDirection());
+    assertEquals("MongoDB database adapter using Spring Data Reactive", metadata.getDescription());
 
     // Verify dependencies
     assertEquals(1, metadata.dependencies().size());

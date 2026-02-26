@@ -17,10 +17,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.pragma.archetype.application.generator.AdapterGenerator;
-import com.pragma.archetype.domain.model.adapter.AdapterConfig;
-import com.pragma.archetype.domain.model.adapter.AdapterType;
+import com.pragma.archetype.application.generator.OutputAdapterGenerator;
+import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
+import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateAdapterUseCase.GenerationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
@@ -44,7 +44,7 @@ class DependencyMergingTest {
   Path tempDir;
 
   private AdapterValidator validator;
-  private AdapterGenerator generator;
+  private OutputAdapterGenerator generator;
   private ConfigurationPort configurationPort;
   private FileSystemPort fileSystemPort;
   private TemplateRepository templateRepository;
@@ -55,7 +55,7 @@ class DependencyMergingTest {
   @BeforeEach
   void setUp() {
     validator = mock(AdapterValidator.class);
-    generator = mock(AdapterGenerator.class);
+    generator = mock(OutputAdapterGenerator.class);
     configurationPort = mock(ConfigurationPort.class);
     fileSystemPort = mock(FileSystemPort.class);
     templateRepository = mock(TemplateRepository.class);
@@ -92,7 +92,7 @@ class DependencyMergingTest {
         }
         """;
 
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithTestDependencies();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
@@ -138,7 +138,7 @@ class DependencyMergingTest {
         }
         """;
 
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithTestDependencies();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
@@ -176,7 +176,7 @@ class DependencyMergingTest {
         }
         """;
 
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithTestDependencies();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
@@ -206,7 +206,7 @@ class DependencyMergingTest {
         }
         """;
 
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithTestDependencies();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
@@ -243,7 +243,7 @@ class DependencyMergingTest {
         }
         """;
 
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithTestDependencies();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
@@ -281,7 +281,7 @@ class DependencyMergingTest {
         }
         """;
 
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithTestDependencies();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
@@ -318,7 +318,7 @@ class DependencyMergingTest {
         }
         """;
 
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithMultipleTestDependencies();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
@@ -346,8 +346,8 @@ class DependencyMergingTest {
 
   // Helper methods
 
-  private AdapterConfig createAdapterConfig(String type) {
-    return AdapterConfig.builder()
+  private OutputAdapterConfig createAdapterConfig(String type) {
+    return OutputAdapterConfig.builder()
         .name("TestAdapter")
         .type(AdapterType.valueOf(type.toUpperCase()))
         .packageName("com.test.adapter")
@@ -355,6 +355,7 @@ class DependencyMergingTest {
         .build();
   }
 
+  @SuppressWarnings("deprecation")
   private AdapterMetadata createAdapterMetadataWithTestDependencies() {
     AdapterMetadata.Dependency testDep = new AdapterMetadata.Dependency(
         "de.flapdoodle.embed",
@@ -362,16 +363,20 @@ class DependencyMergingTest {
         "4.11.0",
         "test");
 
-    return new AdapterMetadata(
-        "mongodb",
-        "driven",
-        "MongoDB adapter",
-        List.of(),
-        List.of(testDep),
-        null,
-        List.of());
+    return AdapterMetadata.builder()
+        .name("mongodb")
+        .direction(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT)
+        .displayName("MongoDB Adapter")
+        .description("MongoDB adapter")
+        .requiredParameters(List.of())
+        .optionalParameters(List.of())
+        .dependencies(List.of())
+        .testDependencies(List.of(testDep))
+        .templates(List.of())
+        .build();
   }
 
+  @SuppressWarnings("deprecation")
   private AdapterMetadata createAdapterMetadataWithMultipleTestDependencies() {
     AdapterMetadata.Dependency testDep1 = new AdapterMetadata.Dependency(
         "de.flapdoodle.embed",
@@ -385,13 +390,16 @@ class DependencyMergingTest {
         "1.19.0",
         "test");
 
-    return new AdapterMetadata(
-        "mongodb",
-        "driven",
-        "MongoDB adapter",
-        List.of(),
-        List.of(testDep1, testDep2),
-        null,
-        List.of());
+    return AdapterMetadata.builder()
+        .name("mongodb")
+        .direction(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT)
+        .displayName("MongoDB Adapter")
+        .description("MongoDB adapter")
+        .requiredParameters(List.of())
+        .optionalParameters(List.of())
+        .dependencies(List.of())
+        .testDependencies(List.of(testDep1, testDep2))
+        .templates(List.of())
+        .build();
   }
 }

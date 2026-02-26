@@ -13,10 +13,11 @@ import com.pragma.archetype.domain.model.validation.ValidationResult;
 public record StructureMetadata(
     String architectureType,
     Map<String, String> adapterPaths,
+    TemplatePaths templatePaths,
     NamingConventions namingConventions,
     LayerDependencies layerDependencies,
     java.util.List<String> packages,
-    java.util.List<String> modules) {
+    java.util.List<ModuleMetadata> moduleMetadata) {
 
   public StructureMetadata {
     Objects.requireNonNull(architectureType, "Architecture type cannot be null");
@@ -25,8 +26,8 @@ public record StructureMetadata(
     if (packages != null) {
       packages = Collections.unmodifiableList(packages);
     }
-    if (modules != null) {
-      modules = Collections.unmodifiableList(modules);
+    if (moduleMetadata != null) {
+      moduleMetadata = Collections.unmodifiableList(moduleMetadata);
     }
   }
 
@@ -80,13 +81,107 @@ public record StructureMetadata(
    * Checks if this structure supports multiple modules.
    */
   public boolean isMultiModule() {
-    return modules != null && !modules.isEmpty();
+    return moduleMetadata != null && !moduleMetadata.isEmpty();
   }
 
   /**
-   * Gets the list of modules for multi-module architectures.
+   * Gets the list of module metadata for multi-module architectures.
    */
+  public java.util.List<ModuleMetadata> getModuleMetadata() {
+    return moduleMetadata != null ? moduleMetadata : Collections.emptyList();
+  }
+
+  /**
+   * Gets a specific module by name.
+   *
+   * @param moduleName The module name to find
+   * @return The ModuleMetadata or null if not found
+   */
+  public ModuleMetadata getModule(String moduleName) {
+    if (moduleMetadata == null) {
+      return null;
+    }
+    return moduleMetadata.stream()
+        .filter(m -> m.getName().equals(moduleName))
+        .findFirst()
+        .orElse(null);
+  }
+
+  /**
+   * Gets the list of module names for backward compatibility.
+   * 
+   * @deprecated Use getModuleMetadata() instead
+   */
+  @Deprecated(since = "1.2.0", forRemoval = true)
   public java.util.List<String> getModules() {
-    return modules != null ? modules : Collections.emptyList();
+    if (moduleMetadata == null) {
+      return Collections.emptyList();
+    }
+    return moduleMetadata.stream()
+        .map(m -> m.getName())
+        .toList();
+  }
+
+  /**
+   * Gets adapter base directory without {name} placeholder.
+   * Example: "infrastructure/entry-points/{name}" → "infrastructure/entry-points"
+   *
+   * @param adapterType The adapter type (driven or driving)
+   * @return The base directory path
+   */
+  public String getAdapterBaseDirectory(String adapterType) {
+    String pathTemplate = adapterPaths.get(adapterType);
+    if (pathTemplate == null) {
+      return null;
+    }
+    return pathTemplate.replace("/{name}", "").replace("{name}", "");
+  }
+
+  /**
+   * Converts filesystem path to Java package name.
+   * Example: "infrastructure/entry-points" → "infrastructure.entrypoints"
+   * Removes hyphens and converts slashes to dots.
+   *
+   * @param path The filesystem path
+   * @return The Java package name
+   */
+  public String pathToPackageName(String path) {
+    if (path == null) {
+      return null;
+    }
+    return path
+        .replace("-", "") // Remove hyphens (entry-points → entrypoints)
+        .replace("/", "."); // Convert to package notation
+  }
+
+  /**
+   * Gets adapter directory name for template path resolution.
+   * Example: "infrastructure/entry-points" → "entry-points"
+   *
+   * @param adapterType The adapter type (driven or driving)
+   * @return The directory name (last segment of path)
+   */
+  public String getAdapterDirName(String adapterType) {
+    String basePath = getAdapterBaseDirectory(adapterType);
+    if (basePath == null) {
+      return null;
+    }
+    // Get last segment
+    int lastSlash = basePath.lastIndexOf('/');
+    return lastSlash >= 0 ? basePath.substring(lastSlash + 1) : basePath;
+  }
+
+  /**
+   * Checks if template paths are configured.
+   */
+  public boolean hasTemplatePaths() {
+    return templatePaths != null;
+  }
+
+  /**
+   * Gets template paths or default if not configured.
+   */
+  public TemplatePaths getTemplatePathsOrDefault() {
+    return templatePaths != null ? templatePaths : TemplatePaths.builder().build();
   }
 }

@@ -56,7 +56,9 @@ class PathResolverImplTest {
             "driving", "src/main/java/{basePackage}/infrastructure/adapter/in/{name}"),
         null,
         null,
-        null, null);
+        null,
+        null,
+        null);
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 
@@ -86,7 +88,9 @@ class PathResolverImplTest {
             "driving", "infrastructure/adapter/in/{name}"),
         null,
         null,
-        null, null);
+        null,
+        null,
+        null);
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 
@@ -161,7 +165,9 @@ class PathResolverImplTest {
         Map.of("driven", "path/to/{name}"),
         null,
         null,
-        null, null);
+        null,
+        null,
+        null);
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 
@@ -186,7 +192,9 @@ class PathResolverImplTest {
         Map.of("driven", "path/{name}"),
         null,
         null,
-        null, null);
+        null,
+        null,
+        null);
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 
@@ -215,8 +223,10 @@ class PathResolverImplTest {
         "onion-single",
         Map.of("driven", "infrastructure/adapter/out/{name}"),
         null,
+        null,
         layerDeps,
-        null, null);
+        null,
+        null);
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 
@@ -241,8 +251,10 @@ class PathResolverImplTest {
         "hexagonal-single",
         Map.of("driven", "path/{name}"),
         null,
+        null,
         layerDeps,
-        null, null);
+        null,
+        null);
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 
@@ -269,8 +281,10 @@ class PathResolverImplTest {
         "hexagonal-single",
         Map.of("driven", "path/{name}"),
         null,
+        null,
         layerDeps,
-        null, null);
+        null,
+        null);
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 
@@ -338,7 +352,9 @@ class PathResolverImplTest {
         Map.of("driven", "{module}/src/main/java/{basePackage}/adapter/{name}"),
         null,
         null,
-        null, null);
+        null,
+        null,
+        null);
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 
@@ -365,8 +381,10 @@ class PathResolverImplTest {
         "hexagonal-single",
         Map.of("driven", "path/{name}"),
         null,
+        null,
         layerDeps,
-        null, null);
+        null,
+        null);
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 
@@ -391,8 +409,10 @@ class PathResolverImplTest {
         "hexagonal-single",
         Map.of("driven", "path/{name}"),
         null,
+        null,
         layerDeps,
-        null, null);
+        null,
+        null);
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 
@@ -417,8 +437,10 @@ class PathResolverImplTest {
         "onion-single",
         Map.of("driven", "path/{name}"),
         null,
+        null,
         layerDeps,
-        null, null);
+        null,
+        null);
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 

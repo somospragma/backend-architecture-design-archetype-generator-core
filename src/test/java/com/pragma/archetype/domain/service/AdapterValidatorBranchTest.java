@@ -16,7 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.adapter.AdapterMethod;
 import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.adapter.MethodParameter;
@@ -59,7 +59,7 @@ class AdapterValidatorBranchTest {
   void shouldFailWhenProjectDirectoryDoesNotExist() {
     // Given
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(false);
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
         .type(AdapterType.REDIS)
@@ -78,7 +78,7 @@ class AdapterValidatorBranchTest {
   void shouldFailWhenAdapterNameIsNull() {
     // Given
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name(null)
         .entityName("User")
         .type(AdapterType.REDIS)
@@ -97,7 +97,7 @@ class AdapterValidatorBranchTest {
   void shouldFailWhenAdapterNameIsInvalidIdentifier() {
     // Given
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("123Invalid")
         .entityName("User")
         .type(AdapterType.REDIS)
@@ -116,7 +116,7 @@ class AdapterValidatorBranchTest {
   void shouldFailWhenPackageNameIsNull() {
     // Given
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
         .type(AdapterType.REDIS)
@@ -136,7 +136,7 @@ class AdapterValidatorBranchTest {
     // Given
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
         .type(AdapterType.REDIS)
@@ -156,7 +156,7 @@ class AdapterValidatorBranchTest {
     // Given
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserController")
         .entityName("User")
         .type(AdapterType.REDIS)
@@ -189,7 +189,7 @@ class AdapterValidatorBranchTest {
     when(packageValidator.validateBasePackageConsistency(any(), any()))
         .thenReturn(ValidationResult.failure(List.of("Package does not match base package")));
 
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
         .type(AdapterType.REDIS)
@@ -209,7 +209,7 @@ class AdapterValidatorBranchTest {
     // Given
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
         .type(null)
@@ -229,7 +229,7 @@ class AdapterValidatorBranchTest {
     // Given
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName(null)
         .type(AdapterType.REDIS)
@@ -251,7 +251,7 @@ class AdapterValidatorBranchTest {
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
 
     AdapterMethod method = new AdapterMethod(null, "User", List.of());
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
         .type(AdapterType.REDIS)
@@ -274,7 +274,7 @@ class AdapterValidatorBranchTest {
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
 
     AdapterMethod method = new AdapterMethod("123invalid", "User", List.of());
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
         .type(AdapterType.REDIS)
@@ -297,7 +297,7 @@ class AdapterValidatorBranchTest {
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
 
     AdapterMethod method = new AdapterMethod("findById", null, List.of());
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
         .type(AdapterType.REDIS)
@@ -321,7 +321,7 @@ class AdapterValidatorBranchTest {
 
     MethodParameter param = new MethodParameter(null, "Long");
     AdapterMethod method = new AdapterMethod("findById", "User", List.of(param));
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
         .type(AdapterType.REDIS)
@@ -345,7 +345,7 @@ class AdapterValidatorBranchTest {
 
     MethodParameter param = new MethodParameter("123invalid", "Long");
     AdapterMethod method = new AdapterMethod("findById", "User", List.of(param));
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
         .type(AdapterType.REDIS)
@@ -369,7 +369,7 @@ class AdapterValidatorBranchTest {
 
     MethodParameter param = new MethodParameter("id", null);
     AdapterMethod method = new AdapterMethod("findById", "User", List.of(param));
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
         .type(AdapterType.REDIS)
@@ -392,7 +392,7 @@ class AdapterValidatorBranchTest {
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
     when(fileSystemPort.exists(any())).thenReturn(true);
 
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
         .type(AdapterType.REDIS)
@@ -416,7 +416,7 @@ class AdapterValidatorBranchTest {
 
     MethodParameter param = new MethodParameter("id", "Long");
     AdapterMethod method = new AdapterMethod("findById", "User", List.of(param));
-    AdapterConfig config = AdapterConfig.builder()
+    OutputAdapterConfig config = OutputAdapterConfig.builder()
         .name("UserRepository")
         .entityName("User")
         .type(AdapterType.REDIS)

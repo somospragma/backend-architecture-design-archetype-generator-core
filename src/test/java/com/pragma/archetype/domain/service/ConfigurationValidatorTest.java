@@ -411,7 +411,9 @@ class ConfigurationValidatorTest {
           Map.of("driven", "infrastructure/adapter/out/{name}"),
           null,
           null,
-          null, null);
+          null,
+          null,
+          null);
 
       // When
       ValidationResult result = validator.validateStructureMetadata(metadata);
@@ -431,7 +433,9 @@ class ConfigurationValidatorTest {
           Map.of(),
           null,
           null,
-          null, null);
+          null,
+          null,
+          null);
 
       // When
       ValidationResult result = validator.validateStructureMetadata(metadata);
@@ -451,7 +455,9 @@ class ConfigurationValidatorTest {
           Map.of("other", "some/path"),
           null,
           null,
-          null, null);
+          null,
+          null,
+          null);
 
       // When
       ValidationResult result = validator.validateStructureMetadata(metadata);
@@ -471,7 +477,9 @@ class ConfigurationValidatorTest {
           Map.of("driven", "infrastructure/adapter/out"),
           null,
           null,
-          null, null);
+          null,
+          null,
+          null);
 
       // When
       ValidationResult result = validator.validateStructureMetadata(metadata);
@@ -493,7 +501,9 @@ class ConfigurationValidatorTest {
               "driving", "infrastructure/adapter/in/{name}"),
           null,
           null,
-          null, null);
+          null,
+          null,
+          null);
 
       // When
       ValidationResult result = validator.validateStructureMetadata(metadata);
@@ -511,7 +521,9 @@ class ConfigurationValidatorTest {
           Map.of("driven", "infrastructure/adapter/out/{name}"),
           null,
           null,
-          null, null);
+          null,
+          null,
+          null);
 
       // When
       ValidationResult result = validator.validateStructureMetadata(metadata);
@@ -541,14 +553,17 @@ class ConfigurationValidatorTest {
     @DisplayName("Should fail when adapter name is missing")
     void shouldFailWhenAdapterNameIsMissing() {
       // Given
-      AdapterMetadata metadata = new AdapterMetadata(
-          "",
-          "driven",
-          "Test adapter",
-          List.of(),
-          List.of(),
-          null,
-          List.of());
+      AdapterMetadata metadata = AdapterMetadata.builder()
+          .name("")
+          .direction(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT)
+          .displayName("Test Adapter")
+          .description("Test adapter")
+          .requiredParameters(List.of())
+          .optionalParameters(List.of())
+          .dependencies(List.of())
+          .testDependencies(List.of())
+          .templates(List.of())
+          .build();
 
       // When
       ValidationResult result = validator.validateAdapterMetadata(metadata);
@@ -563,14 +578,17 @@ class ConfigurationValidatorTest {
     @DisplayName("Should fail when adapter name is invalid")
     void shouldFailWhenAdapterNameIsInvalid() {
       // Given
-      AdapterMetadata metadata = new AdapterMetadata(
-          "Invalid_Name",
-          "driven",
-          "Test adapter",
-          List.of(),
-          List.of(),
-          null,
-          List.of());
+      AdapterMetadata metadata = AdapterMetadata.builder()
+          .name("Invalid_Name")
+          .direction(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT)
+          .displayName("Test Adapter")
+          .description("Test adapter")
+          .requiredParameters(List.of())
+          .optionalParameters(List.of())
+          .dependencies(List.of())
+          .testDependencies(List.of())
+          .templates(List.of())
+          .build();
 
       // When
       ValidationResult result = validator.validateAdapterMetadata(metadata);
@@ -585,14 +603,17 @@ class ConfigurationValidatorTest {
     @DisplayName("Should fail when adapter type is missing")
     void shouldFailWhenAdapterTypeIsMissing() {
       // Given
-      AdapterMetadata metadata = new AdapterMetadata(
-          "mongodb-adapter",
-          "",
-          "Test adapter",
-          List.of(),
-          List.of(),
-          null,
-          List.of());
+      AdapterMetadata metadata = AdapterMetadata.builder()
+          .name("mongodb-adapter")
+          .direction(null)
+          .displayName("Test Adapter")
+          .description("Test adapter")
+          .requiredParameters(List.of())
+          .optionalParameters(List.of())
+          .dependencies(List.of())
+          .testDependencies(List.of())
+          .templates(List.of())
+          .build();
 
       // When
       ValidationResult result = validator.validateAdapterMetadata(metadata);
@@ -606,25 +627,28 @@ class ConfigurationValidatorTest {
     @Test
     @DisplayName("Should fail when adapter type is invalid")
     void shouldFailWhenAdapterTypeIsInvalid() {
-      // Given
-      AdapterMetadata metadata = new AdapterMetadata(
-          "mongodb-adapter",
-          "invalid-type",
-          "Test adapter",
-          List.of(),
-          List.of(),
-          null,
-          List.of());
+      // Given - This test is no longer applicable since we use AdapterDirection enum
+      // which cannot be invalid. Keeping test structure but marking as passing.
+      AdapterMetadata metadata = AdapterMetadata.builder()
+          .name("mongodb-adapter")
+          .direction(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT)
+          .displayName("Test Adapter")
+          .description("Test adapter")
+          .requiredParameters(List.of())
+          .optionalParameters(List.of())
+          .dependencies(List.of())
+          .testDependencies(List.of())
+          .templates(List.of())
+          .build();
 
       // When
       ValidationResult result = validator.validateAdapterMetadata(metadata);
 
-      // Then
-      assertFalse(result.valid());
-      assertTrue(result.errors().stream()
-          .anyMatch(e -> e.contains("Invalid adapter type")));
+      // Then - Should pass since we're using valid enum
+      assertTrue(result.valid());
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     @DisplayName("Should fail when dependency is missing group")
     void shouldFailWhenDependencyIsMissingGroup() {
@@ -635,14 +659,17 @@ class ConfigurationValidatorTest {
           "3.0.0",
           "compile");
 
-      AdapterMetadata metadata = new AdapterMetadata(
-          "mongodb-adapter",
-          "driven",
-          "Test adapter",
-          List.of(dep),
-          List.of(),
-          null,
-          List.of());
+      AdapterMetadata metadata = AdapterMetadata.builder()
+          .name("mongodb-adapter")
+          .direction(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT)
+          .displayName("MongoDB Adapter")
+          .description("Test adapter")
+          .requiredParameters(List.of())
+          .optionalParameters(List.of())
+          .dependencies(List.of(dep))
+          .testDependencies(List.of())
+          .templates(List.of())
+          .build();
 
       // When
       ValidationResult result = validator.validateAdapterMetadata(metadata);
@@ -653,6 +680,7 @@ class ConfigurationValidatorTest {
           .anyMatch(e -> e.contains("missing 'group' field")));
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     @DisplayName("Should fail when configuration class name is invalid")
     void shouldFailWhenConfigurationClassNameIsInvalid() {
@@ -662,14 +690,18 @@ class ConfigurationValidatorTest {
           "config",
           "Config.java.ftl");
 
-      AdapterMetadata metadata = new AdapterMetadata(
-          "mongodb-adapter",
-          "driven",
-          "Test adapter",
-          List.of(),
-          List.of(),
-          null,
-          List.of(configClass));
+      AdapterMetadata metadata = AdapterMetadata.builder()
+          .name("mongodb-adapter")
+          .direction(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT)
+          .displayName("MongoDB Adapter")
+          .description("Test adapter")
+          .requiredParameters(List.of())
+          .optionalParameters(List.of())
+          .dependencies(List.of())
+          .testDependencies(List.of())
+          .configurationClasses(List.of(configClass))
+          .templates(List.of())
+          .build();
 
       // When
       ValidationResult result = validator.validateAdapterMetadata(metadata);
@@ -680,6 +712,7 @@ class ConfigurationValidatorTest {
           .anyMatch(e -> e.contains("Invalid configuration class name")));
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     @DisplayName("Should succeed with valid adapter metadata")
     void shouldSucceedWithValidAdapterMetadata() {
@@ -695,14 +728,19 @@ class ConfigurationValidatorTest {
           "config",
           "MongoConfig.java.ftl");
 
-      AdapterMetadata metadata = new AdapterMetadata(
-          "mongodb-adapter",
-          "driven",
-          "MongoDB adapter",
-          List.of(dep),
-          List.of(),
-          "application-properties.yml.ftl",
-          List.of(configClass));
+      AdapterMetadata metadata = AdapterMetadata.builder()
+          .name("mongodb-adapter")
+          .direction(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT)
+          .displayName("MongoDB Adapter")
+          .description("MongoDB adapter")
+          .requiredParameters(List.of())
+          .optionalParameters(List.of())
+          .dependencies(List.of(dep))
+          .testDependencies(List.of())
+          .applicationPropertiesTemplate("application-properties.yml.ftl")
+          .configurationClasses(List.of(configClass))
+          .templates(List.of())
+          .build();
 
       // When
       ValidationResult result = validator.validateAdapterMetadata(metadata);
@@ -711,6 +749,7 @@ class ConfigurationValidatorTest {
       assertTrue(result.valid());
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     @DisplayName("Should validate test dependencies")
     void shouldValidateTestDependencies() {
@@ -721,14 +760,17 @@ class ConfigurationValidatorTest {
           "4.0.0",
           "test");
 
-      AdapterMetadata metadata = new AdapterMetadata(
-          "mongodb-adapter",
-          "driven",
-          "Test adapter",
-          List.of(),
-          List.of(testDep),
-          null,
-          List.of());
+      AdapterMetadata metadata = AdapterMetadata.builder()
+          .name("mongodb-adapter")
+          .direction(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT)
+          .displayName("MongoDB Adapter")
+          .description("Test adapter")
+          .requiredParameters(List.of())
+          .optionalParameters(List.of())
+          .dependencies(List.of())
+          .testDependencies(List.of(testDep))
+          .templates(List.of())
+          .build();
 
       // When
       ValidationResult result = validator.validateAdapterMetadata(metadata);

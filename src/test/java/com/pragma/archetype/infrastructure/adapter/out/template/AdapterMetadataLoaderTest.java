@@ -76,9 +76,9 @@ class AdapterMetadataLoaderTest {
 
     // Then
     assertNotNull(metadata);
-    assertEquals("mongodb-adapter", metadata.name());
-    assertEquals("driven", metadata.type());
-    assertEquals("MongoDB database adapter", metadata.description());
+    assertEquals("mongodb-adapter", metadata.getName());
+    assertEquals(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT, metadata.getDirection());
+    assertEquals("MongoDB database adapter", metadata.getDescription());
     assertEquals(1, metadata.dependencies().size());
 
     Dependency dep = metadata.dependencies().get(0);
@@ -221,8 +221,8 @@ class AdapterMetadataLoaderTest {
 
     // Then
     assertNotNull(metadata);
-    assertEquals("mongodb-adapter", metadata.name());
-    assertEquals("driven", metadata.type());
+    assertEquals("mongodb-adapter", metadata.getName());
+    assertEquals(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT, metadata.getDirection());
     assertEquals(1, metadata.dependencies().size());
     assertEquals(1, metadata.testDependencies().size());
     assertTrue(metadata.hasApplicationProperties());

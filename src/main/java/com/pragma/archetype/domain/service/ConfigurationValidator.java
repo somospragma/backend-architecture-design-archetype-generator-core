@@ -248,28 +248,25 @@ public class ConfigurationValidator {
     }
 
     // Validate adapter name
-    if (metadata.name() == null || metadata.name().isBlank()) {
+    if (metadata.getName() == null || metadata.getName().isBlank()) {
       errors.add("Adapter name is required in metadata.yml");
       errors.add("Example: name: mongodb-adapter");
-    } else if (!isValidAdapterName(metadata.name())) {
-      errors.add("Invalid adapter name: " + metadata.name());
+    } else if (!isValidAdapterName(metadata.getName())) {
+      errors.add("Invalid adapter name: " + metadata.getName());
       errors.add("Adapter name must contain only lowercase letters, numbers, and hyphens");
     }
 
-    // Validate adapter type
-    if (metadata.type() == null || metadata.type().isBlank()) {
-      errors.add("Adapter type is required in metadata.yml");
-      errors.add("Valid types: driven, driving");
-      errors.add("Example: type: driven");
-    } else if (!isValidAdapterType(metadata.type())) {
-      errors.add("Invalid adapter type: " + metadata.type());
-      errors.add("Valid types: driven, driving");
+    // Validate adapter direction
+    if (metadata.getDirection() == null) {
+      errors.add("Adapter direction is required in metadata.yml");
+      errors.add("Valid directions: INPUT, OUTPUT");
+      errors.add("Example: direction: INPUT");
     }
 
     // Validate dependencies
-    if (metadata.dependencies() != null) {
-      for (int i = 0; i < metadata.dependencies().size(); i++) {
-        var dep = metadata.dependencies().get(i);
+    if (metadata.getDependencies() != null) {
+      for (int i = 0; i < metadata.getDependencies().size(); i++) {
+        var dep = metadata.getDependencies().get(i);
         if (dep.group() == null || dep.group().isBlank()) {
           errors.add("Dependency " + (i + 1) + " is missing 'group' field");
         }
@@ -280,9 +277,9 @@ public class ConfigurationValidator {
     }
 
     // Validate test dependencies
-    if (metadata.testDependencies() != null) {
-      for (int i = 0; i < metadata.testDependencies().size(); i++) {
-        var dep = metadata.testDependencies().get(i);
+    if (metadata.getTestDependencies() != null) {
+      for (int i = 0; i < metadata.getTestDependencies().size(); i++) {
+        var dep = metadata.getTestDependencies().get(i);
         if (dep.group() == null || dep.group().isBlank()) {
           errors.add("Test dependency " + (i + 1) + " is missing 'group' field");
         }
@@ -293,8 +290,8 @@ public class ConfigurationValidator {
     }
 
     // Validate configuration classes
-    if (metadata.configurationClasses() != null) {
-      for (var configClass : metadata.configurationClasses()) {
+    if (metadata.getConfigurationClasses() != null) {
+      for (var configClass : metadata.getConfigurationClasses()) {
         if (configClass.name() == null || configClass.name().isBlank()) {
           errors.add("Configuration class is missing 'name' field");
         } else if (!isValidJavaClassName(configClass.name())) {

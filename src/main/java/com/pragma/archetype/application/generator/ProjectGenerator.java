@@ -175,6 +175,30 @@ public class ProjectGenerator {
                 context.put("springBootVersion", "3.2.1");
                 context.put("mapstructVersion", "1.5.5.Final");
 
+                // Add adapter package variables from structure.yml
+                try {
+                        StructureMetadata structureMetadata = templateRepository
+                                        .loadStructureMetadata(config.architecture());
+
+                        // Add driven adapters package (e.g., "infrastructure.drivenadapters")
+                        String drivenBasePath = structureMetadata.getAdapterBaseDirectory("driven");
+                        if (drivenBasePath != null) {
+                                String drivenPackage = structureMetadata.pathToPackageName(drivenBasePath);
+                                context.put("drivenAdaptersPackage", config.basePackage() + "." + drivenPackage);
+                        }
+
+                        // Add driving adapters package (e.g., "infrastructure.entrypoints")
+                        String drivingBasePath = structureMetadata.getAdapterBaseDirectory("driving");
+                        if (drivingBasePath != null) {
+                                String drivingPackage = structureMetadata.pathToPackageName(drivingBasePath);
+                                context.put("drivingAdaptersPackage", config.basePackage() + "." + drivingPackage);
+                        }
+                } catch (Exception e) {
+                        // If structure metadata loading fails, continue without adapter packages
+                        System.err.println(
+                                        "Failed to load adapter packages from structure metadata: " + e.getMessage());
+                }
+
                 return context;
         }
 
@@ -339,77 +363,21 @@ public class ProjectGenerator {
                                                         ""));
                                 }
                         } else {
-                                // Fallback to hardcoded structure if packages not defined in metadata
-                                createFallbackStructure(basePath, config.architecture(), files);
+                                // If packages not defined in metadata, throw error
+                                throw new IllegalStateException(
+                                                "No packages defined in structure.yml for architecture: "
+                                                                + config.architecture().getValue());
                         }
 
                 } catch (Exception e) {
-                        // If structure metadata loading fails, fall back to hardcoded structure
-                        System.err.println("Failed to load structure metadata, using fallback structure: "
-                                        + e.getMessage());
-                        Path basePath = projectPath
-                                        .resolve("src/main/java")
-                                        .resolve(config.basePackage().replace('.', '/'));
-                        createFallbackStructure(basePath, config.architecture(), files);
+                        // If structure metadata loading fails, throw error
+                        throw new RuntimeException(
+                                        "Failed to load structure metadata for architecture: "
+                                                        + config.architecture().getValue(),
+                                        e);
                 }
 
                 return files;
-        }
-
-        /**
-         * Creates fallback folder structure when structure metadata is not available.
-         * This maintains backward compatibility with existing behavior.
-         */
-        private void createFallbackStructure(Path basePath, ArchitectureType architecture, List<GeneratedFile> files) {
-                switch (architecture) {
-                        case HEXAGONAL_SINGLE, HEXAGONAL_MULTI, HEXAGONAL_MULTI_GRANULAR -> {
-                                // Domain layer
-                                fileSystemPort.createDirectory(basePath.resolve("domain/model"));
-                                fileSystemPort.createDirectory(basePath.resolve("domain/port/in"));
-                                fileSystemPort.createDirectory(basePath.resolve("domain/port/out"));
-
-                                // Application layer
-                                fileSystemPort.createDirectory(basePath.resolve("application/usecase"));
-
-                                // Infrastructure layer
-                                fileSystemPort.createDirectory(basePath.resolve("infrastructure/entry-points/rest"));
-                                fileSystemPort.createDirectory(basePath.resolve("infrastructure/driven-adapters"));
-                                fileSystemPort.createDirectory(basePath.resolve("infrastructure/config"));
-
-                                // Add .gitkeep files to preserve empty directories
-                                files.add(GeneratedFile.create(basePath.resolve("domain/model/.gitkeep"), ""));
-                                files.add(GeneratedFile.create(basePath.resolve("domain/port/in/.gitkeep"), ""));
-                                files.add(GeneratedFile.create(basePath.resolve("domain/port/out/.gitkeep"), ""));
-                                files.add(GeneratedFile.create(basePath.resolve("application/usecase/.gitkeep"), ""));
-                                files.add(GeneratedFile.create(
-                                                basePath.resolve("infrastructure/entry-points/rest/.gitkeep"), ""));
-                                files.add(GeneratedFile.create(
-                                                basePath.resolve("infrastructure/driven-adapters/.gitkeep"), ""));
-                                files.add(GeneratedFile.create(basePath.resolve("infrastructure/config/.gitkeep"), ""));
-                        }
-                        case ONION_SINGLE, ONION_MULTI -> {
-                                // Core layer
-                                fileSystemPort.createDirectory(basePath.resolve("core/domain"));
-                                fileSystemPort.createDirectory(basePath.resolve("core/application/service"));
-                                fileSystemPort.createDirectory(basePath.resolve("core/application/port"));
-
-                                // Infrastructure layer
-                                fileSystemPort.createDirectory(basePath.resolve("infrastructure/adapter/in"));
-                                fileSystemPort.createDirectory(basePath.resolve("infrastructure/adapter/out"));
-                                fileSystemPort.createDirectory(basePath.resolve("infrastructure/config"));
-
-                                // Add .gitkeep files
-                                files.add(GeneratedFile.create(basePath.resolve("core/domain/.gitkeep"), ""));
-                                files.add(GeneratedFile.create(basePath.resolve("core/application/service/.gitkeep"),
-                                                ""));
-                                files.add(GeneratedFile.create(basePath.resolve("core/application/port/.gitkeep"), ""));
-                                files.add(GeneratedFile.create(basePath.resolve("infrastructure/adapter/in/.gitkeep"),
-                                                ""));
-                                files.add(GeneratedFile.create(basePath.resolve("infrastructure/adapter/out/.gitkeep"),
-                                                ""));
-                                files.add(GeneratedFile.create(basePath.resolve("infrastructure/config/.gitkeep"), ""));
-                        }
-                }
         }
 
         /**
@@ -571,13 +539,13 @@ public class ProjectGenerator {
                                 .resolve(config.basePackage().replace('.', '/'))
                                 .resolve("infrastructure");
 
-                fileSystemPort.createDirectory(infrastructureSrcPath.resolve("entrypoints/rest"));
-                fileSystemPort.createDirectory(infrastructureSrcPath.resolve("drivenadapters"));
+                fileSystemPort.createDirectory(infrastructureSrcPath.resolve("entry-points/rest"));
+                fileSystemPort.createDirectory(infrastructureSrcPath.resolve("driven-adapters"));
                 fileSystemPort.createDirectory(infrastructureSrcPath.resolve("config"));
 
                 // Add .gitkeep files
-                files.add(GeneratedFile.create(infrastructureSrcPath.resolve("entrypoints/rest/.gitkeep"), ""));
-                files.add(GeneratedFile.create(infrastructureSrcPath.resolve("drivenadapters/.gitkeep"), ""));
+                files.add(GeneratedFile.create(infrastructureSrcPath.resolve("entry-points/rest/.gitkeep"), ""));
+                files.add(GeneratedFile.create(infrastructureSrcPath.resolve("driven-adapters/.gitkeep"), ""));
 
                 // Generate application.yml
                 String frameworkPath = "frameworks/" + config.framework().name().toLowerCase() + "/"

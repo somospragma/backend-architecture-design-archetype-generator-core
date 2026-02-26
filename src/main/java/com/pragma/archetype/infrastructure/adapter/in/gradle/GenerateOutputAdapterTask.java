@@ -10,9 +10,9 @@ import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.options.Option;
 
-import com.pragma.archetype.application.generator.AdapterGenerator;
+import com.pragma.archetype.application.generator.OutputAdapterGenerator;
 import com.pragma.archetype.application.usecase.GenerateAdapterUseCaseImpl;
-import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.adapter.AdapterMethod;
 import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.adapter.MethodParameter;
@@ -133,7 +133,7 @@ public class GenerateOutputAdapterTask extends DefaultTask {
       }
 
       // 6. Create configuration
-      AdapterConfig config = AdapterConfig.builder()
+      OutputAdapterConfig config = OutputAdapterConfig.builder()
           .name(adapterName)
           .entityName(entityName)
           .type(adapterType)
@@ -149,7 +149,7 @@ public class GenerateOutputAdapterTask extends DefaultTask {
       // 8. Setup use case
       com.pragma.archetype.domain.service.PackageValidator packageValidator = new com.pragma.archetype.domain.service.PackageValidator();
       AdapterValidator validator = new AdapterValidator(fileSystemPort, configurationPort, packageValidator);
-      AdapterGenerator generator = new AdapterGenerator(templateRepository, fileSystemPort, pathResolver);
+      OutputAdapterGenerator generator = new OutputAdapterGenerator(templateRepository, fileSystemPort, pathResolver);
       com.pragma.archetype.domain.service.BackupService backupService = new com.pragma.archetype.domain.service.BackupService(
           fileSystemPort);
       GenerateAdapterUseCase useCase = new GenerateAdapterUseCaseImpl(

@@ -4,7 +4,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.adapter.AdapterMethod;
 import com.pragma.archetype.domain.model.adapter.MethodParameter;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
@@ -31,7 +31,7 @@ public class AdapterValidator {
   /**
    * Validates adapter configuration.
    */
-  public ValidationResult validate(Path projectPath, AdapterConfig config) {
+  public ValidationResult validate(Path projectPath, OutputAdapterConfig config) {
     List<String> errors = new ArrayList<>();
 
     // Validate project exists
@@ -116,7 +116,7 @@ public class AdapterValidator {
    * @param config      the adapter configuration
    * @return the resolved adapter file path
    */
-  private Path resolveAdapterFilePath(Path projectPath, AdapterConfig config) {
+  private Path resolveAdapterFilePath(Path projectPath, OutputAdapterConfig config) {
     // Convert package name to file path
     String packagePath = config.packageName().replace('.', '/');
 

@@ -17,7 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.pragma.archetype.domain.model.adapter.AdapterConfig;
+import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.adapter.AdapterMethod;
 import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.adapter.MethodParameter;
@@ -42,11 +42,11 @@ class AdapterGeneratorExtendedTest {
     @Mock
     private PathResolver pathResolver;
 
-    private AdapterGenerator generator;
+    private OutputAdapterGenerator generator;
 
     @BeforeEach
     void setUp() {
-        generator = new AdapterGenerator(templateRepository, fileSystemPort, pathResolver);
+        generator = new OutputAdapterGenerator(templateRepository, fileSystemPort, pathResolver);
         when(templateRepository.processTemplate(anyString(), anyMap()))
                 .thenReturn("template content");
         when(pathResolver.resolveAdapterPath(any(), anyString(), anyString(), anyMap()))
@@ -65,7 +65,7 @@ class AdapterGeneratorExtendedTest {
                 .pluginVersion("1.0.0")
                 .build();
 
-        AdapterConfig config = AdapterConfig.builder()
+        OutputAdapterConfig config = OutputAdapterConfig.builder()
                 .name("UserRepository")
                 .entityName("User")
                 .type(AdapterType.REDIS)
@@ -93,7 +93,7 @@ class AdapterGeneratorExtendedTest {
                 .pluginVersion("1.0.0")
                 .build();
 
-        AdapterConfig config = AdapterConfig.builder()
+        OutputAdapterConfig config = OutputAdapterConfig.builder()
                 .name("UserRepository")
                 .entityName("User")
                 .type(AdapterType.POSTGRESQL)
@@ -121,7 +121,7 @@ class AdapterGeneratorExtendedTest {
                 .pluginVersion("1.0.0")
                 .build();
 
-        AdapterConfig config = AdapterConfig.builder()
+        OutputAdapterConfig config = OutputAdapterConfig.builder()
                 .name("UserRepository")
                 .entityName("User")
                 .type(AdapterType.MONGODB)
@@ -149,7 +149,7 @@ class AdapterGeneratorExtendedTest {
                 .pluginVersion("1.0.0")
                 .build();
 
-        AdapterConfig config = AdapterConfig.builder()
+        OutputAdapterConfig config = OutputAdapterConfig.builder()
                 .name("UserRepository")
                 .entityName("User")
                 .type(AdapterType.POSTGRESQL)
@@ -177,7 +177,7 @@ class AdapterGeneratorExtendedTest {
                 .pluginVersion("1.0.0")
                 .build();
 
-        AdapterConfig config = AdapterConfig.builder()
+        OutputAdapterConfig config = OutputAdapterConfig.builder()
                 .name("UserRepository")
                 .entityName("User")
                 .type(AdapterType.POSTGRESQL)
@@ -205,7 +205,7 @@ class AdapterGeneratorExtendedTest {
                 .pluginVersion("1.0.0")
                 .build();
 
-        AdapterConfig config = AdapterConfig.builder()
+        OutputAdapterConfig config = OutputAdapterConfig.builder()
                 .name("EventPublisher")
                 .entityName("Event")
                 .type(AdapterType.KAFKA)
@@ -243,7 +243,7 @@ class AdapterGeneratorExtendedTest {
                 "Flux<User>",
                 List.of(new MethodParameter("status", "Status")));
 
-        AdapterConfig config = AdapterConfig.builder()
+        OutputAdapterConfig config = OutputAdapterConfig.builder()
                 .name("UserRepository")
                 .entityName("User")
                 .type(AdapterType.POSTGRESQL)
@@ -271,7 +271,7 @@ class AdapterGeneratorExtendedTest {
                 .pluginVersion("1.0.0")
                 .build();
 
-        AdapterConfig config = AdapterConfig.builder()
+        OutputAdapterConfig config = OutputAdapterConfig.builder()
                 .name("PaymentClient")
                 .entityName("Payment")
                 .type(AdapterType.REST_CLIENT)
@@ -300,7 +300,7 @@ class AdapterGeneratorExtendedTest {
                 .dependencyOverrides(Map.of("redis", "7.0.0"))
                 .build();
 
-        AdapterConfig config = AdapterConfig.builder()
+        OutputAdapterConfig config = OutputAdapterConfig.builder()
                 .name("UserRepository")
                 .entityName("User")
                 .type(AdapterType.REDIS)

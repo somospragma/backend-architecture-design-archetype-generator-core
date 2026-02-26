@@ -21,10 +21,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.pragma.archetype.application.generator.AdapterGenerator;
-import com.pragma.archetype.domain.model.adapter.AdapterConfig;
-import com.pragma.archetype.domain.model.adapter.AdapterType;
+import com.pragma.archetype.application.generator.OutputAdapterGenerator;
+import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
+import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateAdapterUseCase.GenerationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
@@ -43,7 +43,7 @@ class GenerateAdapterUseCaseImplTest {
   Path tempDir;
 
   private AdapterValidator validator;
-  private AdapterGenerator generator;
+  private OutputAdapterGenerator generator;
   private ConfigurationPort configurationPort;
   private FileSystemPort fileSystemPort;
   private TemplateRepository templateRepository;
@@ -54,7 +54,7 @@ class GenerateAdapterUseCaseImplTest {
   @BeforeEach
   void setUp() {
     validator = mock(AdapterValidator.class);
-    generator = mock(AdapterGenerator.class);
+    generator = mock(OutputAdapterGenerator.class);
     configurationPort = mock(ConfigurationPort.class);
     fileSystemPort = mock(FileSystemPort.class);
     templateRepository = mock(TemplateRepository.class);
@@ -77,7 +77,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldMergeApplicationPropertiesWhenAdapterHasTemplate() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithProperties();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
@@ -109,7 +109,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldSkipMergingWhenAdapterHasNoPropertiesTemplate() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithoutProperties();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
@@ -132,7 +132,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldFailEarlyWhenAdapterMetadataNotFound() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
     when(configurationPort.readConfiguration(any())).thenReturn(Optional.empty());
@@ -154,7 +154,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldReturnFailureWhenValidationFails() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     ValidationResult validationResult = ValidationResult.failure("Invalid configuration");
 
     when(validator.validate(any(), any())).thenReturn(validationResult);
@@ -171,7 +171,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldReturnFailureWhenAdapterAlreadyExists() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     ValidationResult validationResult = ValidationResult.failure(
         "Adapter already exists: MongoDBAdapter.java at /test/project/src/main/java/com/test/adapter/MongoDBAdapter.java. "
             +
@@ -194,7 +194,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldGenerateConfigurationClassesWhenAdapterHasConfigClasses() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithConfigClasses();
     com.pragma.archetype.domain.model.config.ProjectConfig projectConfig = createProjectConfig();
 
@@ -222,7 +222,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldSkipConfigClassGenerationWhenAdapterHasNoConfigClasses() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithoutConfigClasses();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
@@ -245,7 +245,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldHandleConfigClassTemplateNotFoundGracefully() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithConfigClasses();
     com.pragma.archetype.domain.model.config.ProjectConfig projectConfig = createProjectConfig();
 
@@ -266,7 +266,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldGenerateMultipleConfigurationClasses() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithMultipleConfigClasses();
     com.pragma.archetype.domain.model.config.ProjectConfig projectConfig = createProjectConfig();
 
@@ -295,7 +295,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldAddTestDependenciesWhenAdapterHasTestDependencies() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithTestDependencies();
     String buildFileContent = """
         plugins {
@@ -327,7 +327,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldSkipTestDependenciesWhenAdapterHasNoTestDependencies() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithoutTestDependencies();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
@@ -349,7 +349,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldHandleMissingBuildFileGracefully() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithTestDependencies();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
@@ -370,7 +370,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldAddTestDependenciesWithCorrectScope() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithTestDependencies();
     String buildFileContent = """
         plugins {
@@ -404,7 +404,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldNotAddDuplicateTestDependencies() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithTestDependencies();
     String buildFileContent = """
         plugins {
@@ -436,7 +436,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldCreateBackupBeforeModification() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithProperties();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
@@ -462,7 +462,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldRestoreBackupOnFailure() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithProperties();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
@@ -486,7 +486,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldDisplayBackupLocationWhenRestoreFails() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithProperties();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
@@ -512,7 +512,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldValidateAllTemplatesBeforeModification() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithProperties();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
@@ -542,7 +542,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldFailBeforeModificationWhenTemplateValidationFails() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithProperties();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
@@ -570,7 +570,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldFailBeforeModificationWhenApplicationPropertiesTemplateNotFound() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithProperties();
 
     when(validator.validate(any(), any())).thenReturn(ValidationResult.success());
@@ -595,7 +595,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldFailBeforeModificationWhenConfigClassTemplateNotFound() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithConfigClasses();
     com.pragma.archetype.domain.model.config.ProjectConfig projectConfig = createProjectConfig();
 
@@ -624,7 +624,7 @@ class GenerateAdapterUseCaseImplTest {
   @Test
   void shouldDisplayAllValidationErrorsBeforeAttemptingGeneration() {
     // Given
-    AdapterConfig config = createAdapterConfig("mongodb");
+    OutputAdapterConfig config = createAdapterConfig("mongodb");
     AdapterMetadata metadata = createAdapterMetadataWithConfigClasses();
     com.pragma.archetype.domain.model.config.ProjectConfig projectConfig = createProjectConfig();
 
@@ -685,43 +685,55 @@ class GenerateAdapterUseCaseImplTest {
   }
 
   private AdapterMetadata createBasicAdapterMetadata() {
-    return new AdapterMetadata(
-        "basic-adapter",
-        "driven",
-        "Basic adapter for testing",
-        List.of(),
-        List.of(),
-        null,
-        List.of());
+    return AdapterMetadata.builder()
+        .name("basic-adapter")
+        .direction(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT)
+        .displayName("Basic Adapter")
+        .description("Basic adapter for testing")
+        .requiredParameters(List.of())
+        .optionalParameters(List.of())
+        .dependencies(List.of())
+        .testDependencies(List.of())
+        .templates(List.of())
+        .build();
   }
 
+  @SuppressWarnings("deprecation")
   private AdapterMetadata createAdapterMetadataWithConfigClasses() {
     AdapterMetadata.ConfigurationClass configClass = new AdapterMetadata.ConfigurationClass(
         "MongoConfig",
         "infrastructure.config",
         "MongoConfig.java.ftl");
 
-    return new AdapterMetadata(
-        "mongodb",
-        "driven",
-        "MongoDB adapter",
-        List.of(),
-        List.of(),
-        null,
-        List.of(configClass));
+    return AdapterMetadata.builder()
+        .name("mongodb")
+        .direction(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT)
+        .displayName("MongoDB Adapter")
+        .description("MongoDB adapter")
+        .requiredParameters(List.of())
+        .optionalParameters(List.of())
+        .dependencies(List.of())
+        .testDependencies(List.of())
+        .configurationClasses(List.of(configClass))
+        .templates(List.of())
+        .build();
   }
 
   private AdapterMetadata createAdapterMetadataWithoutConfigClasses() {
-    return new AdapterMetadata(
-        "mongodb",
-        "driven",
-        "MongoDB adapter",
-        List.of(),
-        List.of(),
-        null,
-        List.of());
+    return AdapterMetadata.builder()
+        .name("mongodb")
+        .direction(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT)
+        .displayName("MongoDB Adapter")
+        .description("MongoDB adapter")
+        .requiredParameters(List.of())
+        .optionalParameters(List.of())
+        .dependencies(List.of())
+        .testDependencies(List.of())
+        .templates(List.of())
+        .build();
   }
 
+  @SuppressWarnings("deprecation")
   private AdapterMetadata createAdapterMetadataWithMultipleConfigClasses() {
     AdapterMetadata.ConfigurationClass configClass1 = new AdapterMetadata.ConfigurationClass(
         "MongoConfig",
@@ -733,18 +745,22 @@ class GenerateAdapterUseCaseImplTest {
         "infrastructure.config",
         "MongoProperties.java.ftl");
 
-    return new AdapterMetadata(
-        "mongodb",
-        "driven",
-        "MongoDB adapter",
-        List.of(),
-        List.of(),
-        null,
-        List.of(configClass1, configClass2));
+    return AdapterMetadata.builder()
+        .name("mongodb")
+        .direction(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT)
+        .displayName("MongoDB Adapter")
+        .description("MongoDB adapter")
+        .requiredParameters(List.of())
+        .optionalParameters(List.of())
+        .dependencies(List.of())
+        .testDependencies(List.of())
+        .configurationClasses(List.of(configClass1, configClass2))
+        .templates(List.of())
+        .build();
   }
 
-  private AdapterConfig createAdapterConfig(String type) {
-    return AdapterConfig.builder()
+  private OutputAdapterConfig createAdapterConfig(String type) {
+    return OutputAdapterConfig.builder()
         .name("TestAdapter")
         .type(AdapterType.valueOf(type.toUpperCase()))
         .packageName("com.test.adapter")
@@ -753,27 +769,35 @@ class GenerateAdapterUseCaseImplTest {
   }
 
   private AdapterMetadata createAdapterMetadataWithProperties() {
-    return new AdapterMetadata(
-        "mongodb",
-        "driven",
-        "MongoDB adapter",
-        List.of(),
-        List.of(),
-        "application-properties.yml.ftl",
-        List.of());
+    return AdapterMetadata.builder()
+        .name("mongodb")
+        .direction(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT)
+        .displayName("MongoDB Adapter")
+        .description("MongoDB adapter")
+        .requiredParameters(List.of())
+        .optionalParameters(List.of())
+        .dependencies(List.of())
+        .testDependencies(List.of())
+        .applicationPropertiesTemplate("application-properties.yml.ftl")
+        .templates(List.of())
+        .build();
   }
 
   private AdapterMetadata createAdapterMetadataWithoutProperties() {
-    return new AdapterMetadata(
-        "mongodb",
-        "driven",
-        "MongoDB adapter",
-        List.of(),
-        List.of(),
-        null,
-        List.of());
+    return AdapterMetadata.builder()
+        .name("mongodb")
+        .direction(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT)
+        .displayName("MongoDB Adapter")
+        .description("MongoDB adapter")
+        .requiredParameters(List.of())
+        .optionalParameters(List.of())
+        .dependencies(List.of())
+        .testDependencies(List.of())
+        .templates(List.of())
+        .build();
   }
 
+  @SuppressWarnings("deprecation")
   private AdapterMetadata createAdapterMetadataWithTestDependencies() {
     AdapterMetadata.Dependency testDep = new AdapterMetadata.Dependency(
         "de.flapdoodle.embed",
@@ -781,24 +805,30 @@ class GenerateAdapterUseCaseImplTest {
         "4.11.0",
         "test");
 
-    return new AdapterMetadata(
-        "mongodb",
-        "driven",
-        "MongoDB adapter",
-        List.of(),
-        List.of(testDep),
-        null,
-        List.of());
+    return AdapterMetadata.builder()
+        .name("mongodb")
+        .direction(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT)
+        .displayName("MongoDB Adapter")
+        .description("MongoDB adapter")
+        .requiredParameters(List.of())
+        .optionalParameters(List.of())
+        .dependencies(List.of())
+        .testDependencies(List.of(testDep))
+        .templates(List.of())
+        .build();
   }
 
   private AdapterMetadata createAdapterMetadataWithoutTestDependencies() {
-    return new AdapterMetadata(
-        "mongodb",
-        "driven",
-        "MongoDB adapter",
-        List.of(),
-        List.of(),
-        null,
-        List.of());
+    return AdapterMetadata.builder()
+        .name("mongodb")
+        .direction(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT)
+        .displayName("MongoDB Adapter")
+        .description("MongoDB adapter")
+        .requiredParameters(List.of())
+        .optionalParameters(List.of())
+        .dependencies(List.of())
+        .testDependencies(List.of())
+        .templates(List.of())
+        .build();
   }
 }
