@@ -231,8 +231,11 @@ public class GenerateOutputAdapterTask extends DefaultTask {
       case "postgresql", "postgres" -> AdapterType.POSTGRESQL;
       case "rest-client", "rest" -> AdapterType.REST_CLIENT;
       case "kafka" -> AdapterType.KAFKA;
+      case "sqs-producer" -> AdapterType.SQS_PRODUCER;
+      case "dynamodb" -> AdapterType.DYNAMODB;
       default -> throw new IllegalArgumentException(
-          "Invalid adapter type: " + typeStr + ". Valid values: redis, mongodb, postgresql, rest-client, kafka");
+          "Invalid adapter type: " + typeStr
+              + ". Valid values: redis, mongodb, postgresql, rest-client, kafka, sqs-producer, dynamodb");
     };
   }
 

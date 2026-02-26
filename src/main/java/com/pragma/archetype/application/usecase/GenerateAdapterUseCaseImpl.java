@@ -11,8 +11,8 @@ import org.slf4j.LoggerFactory;
 
 import com.pragma.archetype.application.generator.AdapterGenerator;
 import com.pragma.archetype.domain.model.adapter.AdapterConfig;
-import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
+import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateAdapterUseCase;
@@ -307,6 +307,8 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
       case POSTGRESQL -> "frameworks/spring/reactive/adapters/driven-adapters/postgresql/Adapter.java.ftl";
       case REST_CLIENT -> "frameworks/spring/reactive/adapters/driven-adapters/rest-client/Adapter.java.ftl";
       case KAFKA -> "frameworks/spring/reactive/adapters/driven-adapters/kafka/Adapter.java.ftl";
+      case SQS_PRODUCER -> "frameworks/spring/reactive/adapters/driven-adapters/sqs-producer/Adapter.java.ftl";
+      case DYNAMODB -> "frameworks/spring/reactive/adapters/driven-adapters/dynamodb/Adapter.java.ftl";
     };
   }
 

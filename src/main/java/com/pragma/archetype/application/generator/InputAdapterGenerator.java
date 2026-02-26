@@ -71,6 +71,8 @@ public class InputAdapterGenerator {
       case GRAPHQL -> "frameworks/spring/reactive/adapters/entry-points/graphql/Resolver.java.ftl";
       case GRPC -> "frameworks/spring/reactive/adapters/entry-points/grpc/Service.java.ftl";
       case WEBSOCKET -> "frameworks/spring/reactive/adapters/entry-points/websocket/Handler.java.ftl";
+      case SQS_CONSUMER -> "frameworks/spring/reactive/adapters/entry-points/sqs-consumer/Consumer.java.ftl";
+      case SCHEDULED -> "frameworks/spring/reactive/adapters/entry-points/scheduled/ScheduledTask.java.ftl";
     };
   }
 
@@ -80,6 +82,8 @@ public class InputAdapterGenerator {
       case GRAPHQL -> "Resolver";
       case GRPC -> "Service";
       case WEBSOCKET -> "Handler";
+      case SQS_CONSUMER -> "Consumer";
+      case SCHEDULED -> "ScheduledTask";
     };
   }
 

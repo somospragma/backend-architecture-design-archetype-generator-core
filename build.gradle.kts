@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "co.com.pragma"
-version = "1.1.6-SNAPSHOT"
+version = "1.1.7-SNAPSHOT"
 
 java {
     toolchain {

@@ -8,5 +8,7 @@ public enum AdapterType {
   MONGODB,
   POSTGRESQL,
   REST_CLIENT,
-  KAFKA
+  KAFKA,
+  SQS_PRODUCER,
+  DYNAMODB
 }

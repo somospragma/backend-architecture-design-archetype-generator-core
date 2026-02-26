@@ -211,8 +211,7 @@ public class GenerateInputAdapterTask extends DefaultTask {
   private boolean requiresUseCase(String adapterType) {
     return adapterType.equalsIgnoreCase("rest")
         || adapterType.equalsIgnoreCase("graphql")
-        || adapterType.equalsIgnoreCase("grpc")
-        || adapterType.equalsIgnoreCase("websocket");
+        || adapterType.equalsIgnoreCase("grpc");
   }
 
   /**
@@ -262,8 +261,11 @@ public class GenerateInputAdapterTask extends DefaultTask {
       case "graphql" -> InputAdapterType.GRAPHQL;
       case "grpc" -> InputAdapterType.GRPC;
       case "websocket" -> InputAdapterType.WEBSOCKET;
+      case "sqs-consumer" -> InputAdapterType.SQS_CONSUMER;
+      case "scheduled" -> InputAdapterType.SCHEDULED;
       default -> throw new IllegalArgumentException(
-          "Invalid adapter type: " + typeStr + ". Valid types: rest, graphql, grpc, websocket");
+          "Invalid adapter type: " + typeStr
+              + ". Valid types: rest, graphql, grpc, websocket, sqs-consumer, scheduled");
     };
   }
 

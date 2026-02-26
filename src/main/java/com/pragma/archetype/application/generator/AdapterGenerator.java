@@ -344,6 +344,8 @@ public class AdapterGenerator {
       case POSTGRESQL -> "frameworks/spring/reactive/adapters/driven-adapters/postgresql/Adapter.java.ftl";
       case REST_CLIENT -> "frameworks/spring/reactive/adapters/driven-adapters/rest-client/Adapter.java.ftl";
       case KAFKA -> "frameworks/spring/reactive/adapters/driven-adapters/kafka/Adapter.java.ftl";
+      case SQS_PRODUCER -> "frameworks/spring/reactive/adapters/driven-adapters/sqs-producer/Adapter.java.ftl";
+      case DYNAMODB -> "frameworks/spring/reactive/adapters/driven-adapters/dynamodb/Adapter.java.ftl";
     };
   }
 

@@ -7,5 +7,7 @@ public enum InputAdapterType {
   REST,
   GRAPHQL,
   GRPC,
-  WEBSOCKET
+  WEBSOCKET,
+  SQS_CONSUMER,
+  SCHEDULED
 }
