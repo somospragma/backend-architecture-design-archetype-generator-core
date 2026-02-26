@@ -216,6 +216,15 @@ public class GenerateInputAdapterTask extends DefaultTask {
   }
 
   /**
+   * Determines if the adapter type requires endpoints.
+   * Only HTTP-based adapters (REST, GraphQL) need endpoint definitions.
+   */
+  private boolean requiresEndpoints(String adapterType) {
+    return adapterType.equalsIgnoreCase("rest")
+        || adapterType.equalsIgnoreCase("graphql");
+  }
+
+  /**
    * Validates task inputs.
    */
   private void validateInputs() {
@@ -230,9 +239,11 @@ public class GenerateInputAdapterTask extends DefaultTask {
           "Use case name is required for " + type + " adapters. Use --useCase=CreateUserUseCase");
     }
 
-    if (endpoints.isBlank()) {
+    // Only require endpoints for HTTP-based adapter types
+    if (requiresEndpoints(type) && endpoints.isBlank()) {
       throw new IllegalArgumentException(
-          "Endpoints are required. Use --endpoints=/users:POST:create:User:userData:BODY:CreateUserRequest");
+          "Endpoints are required for " + type
+              + " adapters. Use --endpoints=/users:POST:create:User:userData:BODY:CreateUserRequest");
     }
 
     // packageName is now optional - it will be inferred if not provided

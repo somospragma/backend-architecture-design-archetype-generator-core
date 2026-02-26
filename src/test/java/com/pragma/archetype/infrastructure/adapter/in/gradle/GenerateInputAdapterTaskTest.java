@@ -122,11 +122,12 @@ class GenerateInputAdapterTaskTest {
   }
 
   @Test
-  void shouldFailWithoutEndpoints() {
-    // Given
+  void shouldFailWithoutEndpointsForRestAdapter() {
+    // Given - REST adapter requires endpoints
     task.setAdapterName("UserController");
     task.setUseCaseName("CreateUserUseCase");
     task.setPackageName("com.test");
+    task.setType("rest");
 
     // When/Then
     RuntimeException exception = assertThrows(RuntimeException.class, () -> {
@@ -135,6 +136,23 @@ class GenerateInputAdapterTaskTest {
     assertTrue(exception.getCause() != null && exception.getCause().getMessage().contains("Endpoints are required"),
         "Expected cause to contain 'Endpoints are required' but was: " +
             (exception.getCause() != null ? exception.getCause().getMessage() : "null"));
+  }
+
+  @Test
+  void shouldNotRequireEndpointsForScheduledAdapter() {
+    // Given - Scheduled adapter does NOT require endpoints (Bug 5 fix)
+    task.setAdapterName("ScheduledTask");
+    task.setType("scheduled");
+    // Note: NOT setting endpoints - should be optional for scheduled adapters
+
+    // When/Then - Should not throw exception about missing endpoints
+    RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+      task.generateInputAdapter();
+    });
+    // Should fail on generation (missing templates), not on validation
+    // The error should NOT be about missing endpoints
+    assertTrue(exception.getMessage() == null || !exception.getMessage().contains("Endpoints are required"),
+        "Should not fail with 'Endpoints are required' for scheduled adapter");
   }
 
   @Test
