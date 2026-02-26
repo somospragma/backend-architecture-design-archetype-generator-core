@@ -65,7 +65,7 @@ public class InitCleanArchTask extends DefaultTask {
     return framework;
   }
 
-  @Option(option = "packageName", description = "Base package name (e.g., com.company.service)")
+  @Option(option = "package", description = "Base package name (e.g., com.company.service)")
   public void setPackageName(String packageName) {
     this.packageName = packageName;
   }
@@ -133,7 +133,7 @@ public class InitCleanArchTask extends DefaultTask {
   private void validateInputs() {
     if (packageName == null || packageName.isBlank()) {
       throw new IllegalArgumentException(
-          "Package name is required. Use --packageName=com.company.service");
+          "Package name is required. Use --package=com.company.service");
     }
 
     // Validate architecture
