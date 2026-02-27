@@ -26,10 +26,26 @@ import com.pragma.archetype.domain.port.out.TemplateRepository;
  */
 public class OutputAdapterGenerator {
 
+  private static final String TEMPLATE_TYPE_OUTPUT_ADAPTER = "outputAdapter";
+  private static final String TEMPLATE_TYPE_MAPPER = "mapper";
+  private static final String TEMPLATE_TYPE_DATA_ENTITY = "dataEntity";
+  private static final String VARIABLE_FRAMEWORK = "framework";
+  private static final String VARIABLE_PARADIGM = "paradigm";
+
+  private static final String VARIABLE_ADAPTER_DIR = "adapterDir";
+
+  private static final String VARIABLE_TYPE = "type";
+
+  private static final String VARIABLE_ARCHITECTURE = "architecture";
+
   private final TemplateRepository templateRepository;
+
   private final FileSystemPort fileSystemPort;
+
   private final PathResolver pathResolver;
+
   private final ProjectGenerator projectGenerator;
+
   private final AdapterDiscoveryPort adapterDiscovery;
 
   public OutputAdapterGenerator(
@@ -158,7 +174,7 @@ public class OutputAdapterGenerator {
   private GeneratedFile generateAdapterInModule(Path projectPath, OutputAdapterConfig config, String modulePath,
       ProjectConfig projectConfig) {
     Map<String, Object> data = prepareTemplateData(config, projectConfig);
-    String templatePath = getAdapterTemplate(config.type());
+    String templatePath = getAdapterTemplate(config.type(), data);
     String content = templateRepository.processTemplate(templatePath, data);
 
     String packagePath = config.packageName().replace('.', '/');
@@ -177,7 +193,7 @@ public class OutputAdapterGenerator {
   private GeneratedFile generateMapperInModule(Path projectPath, OutputAdapterConfig config, String modulePath,
       ProjectConfig projectConfig) {
     Map<String, Object> data = prepareTemplateData(config, projectConfig);
-    String content = templateRepository.processTemplate(getMapperTemplate(), data);
+    String content = templateRepository.processTemplate(getMapperTemplate(data), data);
 
     String mapperPackage = config.packageName() + ".mapper";
     String packagePath = mapperPackage.replace('.', '/');
@@ -196,7 +212,7 @@ public class OutputAdapterGenerator {
   private GeneratedFile generateDataEntityInModule(Path projectPath, OutputAdapterConfig config, String modulePath,
       ProjectConfig projectConfig) {
     Map<String, Object> data = prepareTemplateData(config, projectConfig);
-    String templatePath = getDataEntityTemplate(config.type());
+    String templatePath = getDataEntityTemplate(config.type(), data);
     String content = templateRepository.processTemplate(templatePath, data);
 
     String entityPackage = config.packageName() + ".entity";
@@ -213,7 +229,7 @@ public class OutputAdapterGenerator {
   private GeneratedFile generateAdapter(Path projectPath, OutputAdapterConfig config, Map<String, Object> data,
       ProjectConfig projectConfig) {
     // Select template based on adapter type
-    String templatePath = getAdapterTemplate(config.type());
+    String templatePath = getAdapterTemplate(config.type(), data);
 
     // Process template
     String content = templateRepository.processTemplate(templatePath, data);
@@ -260,7 +276,7 @@ public class OutputAdapterGenerator {
   private GeneratedFile generateMapper(Path projectPath, OutputAdapterConfig config, Map<String, Object> data,
       ProjectConfig projectConfig) {
     // Process mapper template with new structure
-    String content = templateRepository.processTemplate(getMapperTemplate(), data);
+    String content = templateRepository.processTemplate(getMapperTemplate(data), data);
 
     // Resolve mapper path using PathResolver if project config is available
     Path filePath;
@@ -306,7 +322,7 @@ public class OutputAdapterGenerator {
   private GeneratedFile generateDataEntity(Path projectPath, OutputAdapterConfig config, Map<String, Object> data,
       ProjectConfig projectConfig) {
     // Process data entity template
-    String templatePath = getDataEntityTemplate(config.type());
+    String templatePath = getDataEntityTemplate(config.type(), data);
     String content = templateRepository.processTemplate(templatePath, data);
 
     // Resolve entity path using PathResolver if project config is available
@@ -363,10 +379,115 @@ public class OutputAdapterGenerator {
         type.equals("dynamodb");
   }
 
-  private String getAdapterTemplate(String adapterType) {
-    // Dynamic template path based on adapter type
-    // New structure:
-    // frameworks/spring/reactive/adapters/driven-adapters/{type}/Adapter.java.ftl
+  private String getAdapterTemplate(String adapterType, Map<String, Object> data) {
+    try {
+      // Load StructureMetadata from architecture
+      String architecture = (String) data.get(VARIABLE_ARCHITECTURE);
+      if (architecture == null) {
+        // Fallback to hardcoded template path if architecture not provided
+        return getFallbackAdapterTemplate(adapterType);
+      }
+
+      com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
+          .loadStructureMetadata(com.pragma.archetype.domain.model.project.ArchitectureType.fromValue(architecture));
+
+      // Prepare variables for template path resolution
+      Map<String, String> variables = new java.util.HashMap<>();
+      variables.put(VARIABLE_FRAMEWORK, (String) data.get(VARIABLE_FRAMEWORK));
+      variables.put(VARIABLE_PARADIGM, (String) data.get(VARIABLE_PARADIGM));
+      variables.put(VARIABLE_ADAPTER_DIR, structureMetadata.getAdapterDirName("driven"));
+      variables.put(VARIABLE_TYPE, adapterType.toLowerCase().replace("_", "-"));
+      variables.put(VARIABLE_ARCHITECTURE, architecture);
+
+      // Resolve template path using StructureMetadata
+      return structureMetadata.resolveTemplatePath(TEMPLATE_TYPE_OUTPUT_ADAPTER, variables);
+
+    } catch (IllegalStateException e) {
+      throw new IllegalStateException(
+          com.pragma.archetype.domain.model.error.StructureErrorMessages.TEMPLATE_PATH_RESOLUTION_FAILED
+              + ": " + e.getMessage(),
+          e);
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(
+          com.pragma.archetype.domain.model.error.StructureErrorMessages.UNKNOWN_TEMPLATE_TYPE
+              + ": " + TEMPLATE_TYPE_OUTPUT_ADAPTER,
+          e);
+    }
+  }
+
+  private String getDataEntityTemplate(String adapterType, Map<String, Object> data) {
+    try {
+      // Load StructureMetadata from architecture
+      String architecture = (String) data.get(VARIABLE_ARCHITECTURE);
+      if (architecture == null) {
+        // Fallback to hardcoded template path if architecture not provided
+        return getFallbackDataEntityTemplate(adapterType);
+      }
+
+      com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
+          .loadStructureMetadata(com.pragma.archetype.domain.model.project.ArchitectureType.fromValue(architecture));
+
+      // Prepare variables for template path resolution
+      Map<String, String> variables = new java.util.HashMap<>();
+      variables.put(VARIABLE_FRAMEWORK, (String) data.get(VARIABLE_FRAMEWORK));
+      variables.put(VARIABLE_PARADIGM, (String) data.get(VARIABLE_PARADIGM));
+      variables.put(VARIABLE_ADAPTER_DIR, structureMetadata.getAdapterDirName("driven"));
+      variables.put(VARIABLE_TYPE, adapterType.toLowerCase().replace("_", "-"));
+      variables.put(VARIABLE_ARCHITECTURE, architecture);
+
+      // Resolve template path using StructureMetadata
+      return structureMetadata.resolveTemplatePath(TEMPLATE_TYPE_DATA_ENTITY, variables);
+
+    } catch (IllegalStateException e) {
+      throw new IllegalStateException(
+          com.pragma.archetype.domain.model.error.StructureErrorMessages.TEMPLATE_PATH_RESOLUTION_FAILED
+              + ": " + e.getMessage(),
+          e);
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(
+          com.pragma.archetype.domain.model.error.StructureErrorMessages.UNKNOWN_TEMPLATE_TYPE
+              + ": " + TEMPLATE_TYPE_DATA_ENTITY,
+          e);
+    }
+  }
+
+  private String getMapperTemplate(Map<String, Object> data) {
+    try {
+      // Load StructureMetadata from architecture
+      String architecture = (String) data.get(VARIABLE_ARCHITECTURE);
+      if (architecture == null) {
+        // Fallback to hardcoded template path if architecture not provided
+        return "frameworks/spring/reactive/adapters/driven-adapters/generic/Mapper.java.ftl";
+      }
+
+      com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
+          .loadStructureMetadata(com.pragma.archetype.domain.model.project.ArchitectureType.fromValue(architecture));
+
+      // Prepare variables for template path resolution
+      Map<String, String> variables = new java.util.HashMap<>();
+      variables.put(VARIABLE_FRAMEWORK, (String) data.get(VARIABLE_FRAMEWORK));
+      variables.put(VARIABLE_PARADIGM, (String) data.get(VARIABLE_PARADIGM));
+      variables.put(VARIABLE_ADAPTER_DIR, structureMetadata.getAdapterDirName("driven"));
+      variables.put(VARIABLE_ARCHITECTURE, architecture);
+
+      // Resolve template path using StructureMetadata
+      return structureMetadata.resolveTemplatePath(TEMPLATE_TYPE_MAPPER, variables);
+
+    } catch (IllegalStateException e) {
+      throw new IllegalStateException(
+          com.pragma.archetype.domain.model.error.StructureErrorMessages.TEMPLATE_PATH_RESOLUTION_FAILED
+              + ": " + e.getMessage(),
+          e);
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(
+          com.pragma.archetype.domain.model.error.StructureErrorMessages.UNKNOWN_TEMPLATE_TYPE
+              + ": " + TEMPLATE_TYPE_MAPPER,
+          e);
+    }
+  }
+
+  private String getFallbackAdapterTemplate(String adapterType) {
+    // Fallback to hardcoded template paths for backward compatibility
     String type = adapterType.toLowerCase().replace("_", "-");
     return switch (type) {
       case "redis" -> "frameworks/spring/reactive/adapters/driven-adapters/redis/Adapter.java.ftl";
@@ -382,10 +503,8 @@ public class OutputAdapterGenerator {
     };
   }
 
-  private String getDataEntityTemplate(String adapterType) {
-    // Dynamic template path based on adapter type
-    // New structure:
-    // frameworks/spring/reactive/adapters/driven-adapters/{type}/Entity.java.ftl
+  private String getFallbackDataEntityTemplate(String adapterType) {
+    // Fallback to hardcoded template paths for backward compatibility
     String type = adapterType.toLowerCase().replace("_", "-");
     return switch (type) {
       case "redis" -> "frameworks/spring/reactive/adapters/driven-adapters/redis/Entity.java.ftl";
@@ -394,12 +513,6 @@ public class OutputAdapterGenerator {
       case "dynamodb" -> "frameworks/spring/reactive/adapters/driven-adapters/dynamodb/Entity.java.ftl";
       default -> "frameworks/spring/reactive/adapters/driven-adapters/generic/Entity.java.ftl";
     };
-  }
-
-  private String getMapperTemplate() {
-    // New structure:
-    // frameworks/spring/reactive/adapters/driven-adapters/generic/Mapper.java.ftl
-    return "frameworks/spring/reactive/adapters/driven-adapters/generic/Mapper.java.ftl";
   }
 
   /**

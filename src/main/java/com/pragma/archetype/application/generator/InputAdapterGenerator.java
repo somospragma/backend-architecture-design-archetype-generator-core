@@ -24,6 +24,16 @@ import com.pragma.archetype.domain.port.out.TemplateRepository;
  */
 public class InputAdapterGenerator {
 
+  private static final String TEMPLATE_TYPE_INPUT_ADAPTER = "inputAdapter";
+  private static final String VARIABLE_FRAMEWORK = "framework";
+  private static final String VARIABLE_PARADIGM = "paradigm";
+
+  private static final String VARIABLE_ADAPTER_DIR = "adapterDir";
+
+  private static final String VARIABLE_TYPE = "type";
+
+  private static final String VARIABLE_ARCHITECTURE = "architecture";
+
   private final TemplateRepository templateRepository;
   private final FileSystemPort fileSystemPort;
   private final AdapterDiscoveryPort adapterDiscovery;
@@ -63,13 +73,13 @@ public class InputAdapterGenerator {
   }
 
   private GeneratedFile generateController(Path projectPath, InputAdapterConfig config, Map<String, Object> data) {
-    // Get adapter metadata to determine template path
+    // Get adapter metadata to determine suffix (with fallback)
     AdapterMetadata metadata = adapterDiscovery
         .findAdapter(config.type(), AdapterDirection.INPUT)
-        .orElseThrow(() -> new IllegalArgumentException("Adapter not found: " + config.type()));
+        .orElse(null);
 
     // Select template based on adapter type (dynamic from metadata)
-    String templatePath = getControllerTemplate(config.type());
+    String templatePath = getControllerTemplate(config, data);
 
     // Process template
     String content = templateRepository.processTemplate(templatePath, data);
@@ -77,7 +87,7 @@ public class InputAdapterGenerator {
     // Calculate file path:
     // infrastructure/adapter/in/{type}/{ControllerName}Controller.java
     String packagePath = config.packageName().replace('.', '/');
-    String fileName = config.name() + getControllerSuffix(config.type()) + ".java";
+    String fileName = config.name() + getControllerSuffix(metadata, config.type()) + ".java";
     Path filePath = projectPath
         .resolve("src/main/java")
         .resolve(packagePath)
@@ -86,10 +96,44 @@ public class InputAdapterGenerator {
     return GeneratedFile.javaSource(filePath, content);
   }
 
-  private String getControllerTemplate(String adapterType) {
-    // Dynamic template path based on adapter type
-    // New structure:
-    // frameworks/spring/reactive/adapters/entry-points/{type}/Controller.java.ftl
+  private String getControllerTemplate(InputAdapterConfig config, Map<String, Object> data) {
+    try {
+      // Load StructureMetadata from architecture
+      String architecture = (String) data.get(VARIABLE_ARCHITECTURE);
+      if (architecture == null) {
+        // Fallback to hardcoded template path if architecture not provided
+        return getFallbackControllerTemplate(config.type());
+      }
+
+      com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
+          .loadStructureMetadata(com.pragma.archetype.domain.model.project.ArchitectureType.fromValue(architecture));
+
+      // Prepare variables for template path resolution
+      Map<String, String> variables = new java.util.HashMap<>();
+      variables.put(VARIABLE_FRAMEWORK, (String) data.get(VARIABLE_FRAMEWORK));
+      variables.put(VARIABLE_PARADIGM, (String) data.get(VARIABLE_PARADIGM));
+      variables.put(VARIABLE_ADAPTER_DIR, structureMetadata.getAdapterDirName("driving"));
+      variables.put(VARIABLE_TYPE, config.type().toLowerCase());
+      variables.put(VARIABLE_ARCHITECTURE, architecture);
+
+      // Resolve template path using StructureMetadata
+      return structureMetadata.resolveTemplatePath(TEMPLATE_TYPE_INPUT_ADAPTER, variables);
+
+    } catch (IllegalStateException e) {
+      throw new IllegalStateException(
+          com.pragma.archetype.domain.model.error.StructureErrorMessages.TEMPLATE_PATH_RESOLUTION_FAILED
+              + ": " + e.getMessage(),
+          e);
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(
+          com.pragma.archetype.domain.model.error.StructureErrorMessages.UNKNOWN_TEMPLATE_TYPE
+              + ": " + TEMPLATE_TYPE_INPUT_ADAPTER,
+          e);
+    }
+  }
+
+  private String getFallbackControllerTemplate(String adapterType) {
+    // Fallback to hardcoded template paths for backward compatibility
     return switch (adapterType.toLowerCase()) {
       case "rest" -> "frameworks/spring/reactive/adapters/entry-points/rest/Controller.java.ftl";
       case "graphql" -> "frameworks/spring/reactive/adapters/entry-points/graphql/Resolver.java.ftl";
@@ -102,7 +146,16 @@ public class InputAdapterGenerator {
     };
   }
 
-  private String getControllerSuffix(String adapterType) {
+  private String getControllerSuffix(AdapterMetadata metadata, String adapterType) {
+    // Use suffix from AdapterMetadata if available
+    if (metadata != null && metadata.getSuffix() != null && !metadata.getSuffix().isBlank()) {
+      return metadata.getSuffix();
+    }
+    // Fallback based on adapter type
+    return getFallbackSuffix(adapterType);
+  }
+
+  private String getFallbackSuffix(String adapterType) {
     return switch (adapterType.toLowerCase()) {
       case "rest" -> "Controller";
       case "graphql" -> "Resolver";
@@ -110,7 +163,7 @@ public class InputAdapterGenerator {
       case "websocket" -> "Handler";
       case "sqs-consumer", "sqs_consumer" -> "Consumer";
       case "scheduled" -> "ScheduledTask";
-      default -> "Adapter"; // Generic suffix for unknown types
+      default -> "Adapter";
     };
   }
 
@@ -120,6 +173,13 @@ public class InputAdapterGenerator {
     data.put("packageName", config.packageName());
     data.put("useCaseName", config.useCaseName());
     data.put("adapterType", config.type().toLowerCase());
+
+    // Add required variables for template path resolution
+    // These should be provided by the caller or extracted from config
+    // For now, using defaults - this will need to be enhanced
+    data.put(VARIABLE_FRAMEWORK, "spring");
+    data.put(VARIABLE_PARADIGM, "reactive");
+    data.put(VARIABLE_ARCHITECTURE, "hexagonal-single");
 
     // Convert endpoints to Maps for Freemarker
     List<Map<String, Object>> endpointMaps = new ArrayList<>();

@@ -13,6 +13,8 @@ public final class StructureErrorMessages {
   public static final String PACKAGE_TYPE_NOT_FOUND = "Package type '%s' not found in module '%s'";
   public static final String ENTITY_MODULE_NOT_CONFIGURED = "Entity module not configured in structure.yml";
   public static final String USE_CASE_MODULE_NOT_CONFIGURED = "Use case module not configured in structure.yml";
+  public static final String TEMPLATE_PATH_RESOLUTION_FAILED = "Failed to resolve template path";
+  public static final String UNKNOWN_TEMPLATE_TYPE = "Unknown template type";
   // Validation errors
   public static final String MODULE_NAME_EMPTY = "Module name cannot be empty";
 

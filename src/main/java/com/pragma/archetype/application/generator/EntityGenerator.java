@@ -116,12 +116,45 @@ public class EntityGenerator {
           .resolve(entityConfig.name() + ".java");
     }
 
-    // For multi-module architectures, entity goes in domain module
-    return projectPath
-        .resolve("domain")
-        .resolve("src/main/java")
-        .resolve(packagePath)
-        .resolve(entityConfig.name() + ".java");
+    // For multi-module architectures, use dynamic module resolution
+    try {
+      // Load StructureMetadata
+      com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
+          .loadStructureMetadata(projectConfig.architecture());
+
+      // Get entity module metadata
+      com.pragma.archetype.domain.model.structure.ModuleMetadata entityModule = structureMetadata.getEntityModule();
+
+      // Get module path
+      Path modulePath = projectPath.resolve(entityModule.getPath());
+
+      // Get model package from entity module
+      String modelPackage = entityModule.getPackage("model");
+      if (modelPackage == null) {
+        // Fallback to default package path
+        return modulePath
+            .resolve("src/main/java")
+            .resolve(packagePath)
+            .resolve(entityConfig.name() + ".java");
+      }
+
+      // Use model package from module metadata
+      String modelPackagePath = modelPackage.replace('.', '/');
+      return modulePath
+          .resolve("src/main/java")
+          .resolve(modelPackagePath)
+          .resolve(entityConfig.name() + ".java");
+
+    } catch (IllegalStateException e) {
+      throw new IllegalStateException(
+          com.pragma.archetype.domain.model.error.StructureErrorMessages.ENTITY_MODULE_NOT_CONFIGURED
+              + ": " + e.getMessage(),
+          e);
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(
+          "Invalid package type 'model' for entity module: " + e.getMessage(),
+          e);
+    }
   }
 
   /**
