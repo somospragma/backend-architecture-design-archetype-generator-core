@@ -137,6 +137,9 @@ public class TemplateAdapterDiscovery implements AdapterDiscoveryPort {
       String paradigm) {
     String indexPath = buildIndexPath(framework, paradigm, direction);
 
+    logger.info("Checking if adapter exists: name={}, direction={}, framework={}, paradigm={}, indexPath={}",
+        adapterName, direction, framework, paradigm, indexPath);
+
     if (!templateRepository.templateExists(indexPath)) {
       logger.warn("Index file not found: {}", indexPath);
       return false;
@@ -144,8 +147,18 @@ public class TemplateAdapterDiscovery implements AdapterDiscoveryPort {
 
     try {
       AdapterIndex index = readIndexJson(indexPath);
-      return index.getAdapters().stream()
-          .anyMatch(a -> a.getName().equals(adapterName));
+      logger.info("Index loaded successfully. Adapters found: {}",
+          index.getAdapters().stream().map(a -> a.getName()).toList());
+
+      boolean exists = index.getAdapters().stream()
+          .anyMatch(a -> {
+            boolean matches = a.getName().equals(adapterName);
+            logger.debug("Comparing '{}' with '{}': {}", a.getName(), adapterName, matches);
+            return matches;
+          });
+
+      logger.info("Adapter '{}' exists: {}", adapterName, exists);
+      return exists;
     } catch (Exception e) {
       logger.error("Failed to check adapter existence: {}", adapterName, e);
       return false;

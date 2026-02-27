@@ -2,11 +2,9 @@ package com.pragma.archetype.domain.model.adapter;
 
 import java.util.List;
 
-import org.gradle.internal.impldep.com.fasterxml.jackson.annotation.JsonCreator;
-import org.gradle.internal.impldep.com.fasterxml.jackson.annotation.JsonProperty;
-
 import lombok.Builder;
 import lombok.Value;
+import lombok.extern.jackson.Jacksonized;
 
 /**
  * Represents the index.json file that lists available adapters for a specific
@@ -19,12 +17,14 @@ import lombok.Value;
  */
 @Value
 @Builder
+@Jacksonized
 public class AdapterIndex {
   /**
    * Represents a single adapter entry in the index.
    */
   @Value
   @Builder
+  @Jacksonized
   public static class AdapterIndexEntry {
     /**
      * Adapter name (e.g., "rest", "graphql", "postgresql").
@@ -56,22 +56,6 @@ public class AdapterIndex {
      * Adapter version (e.g., "1.0.0").
      */
     String version;
-
-    @JsonCreator
-    public AdapterIndexEntry(
-        @JsonProperty("name") String name,
-        @JsonProperty("displayName") String displayName,
-        @JsonProperty("description") String description,
-        @JsonProperty("type") String type,
-        @JsonProperty("status") String status,
-        @JsonProperty("version") String version) {
-      this.name = name;
-      this.displayName = displayName;
-      this.description = description;
-      this.type = type;
-      this.status = status;
-      this.version = version;
-    }
   }
 
   /**
@@ -88,14 +72,4 @@ public class AdapterIndex {
    * List of adapters available in this framework/paradigm/direction.
    */
   List<AdapterIndexEntry> adapters;
-
-  @JsonCreator
-  public AdapterIndex(
-      @JsonProperty("version") String version,
-      @JsonProperty("lastUpdated") String lastUpdated,
-      @JsonProperty("adapters") List<AdapterIndexEntry> adapters) {
-    this.version = version;
-    this.lastUpdated = lastUpdated;
-    this.adapters = adapters;
-  }
 }
