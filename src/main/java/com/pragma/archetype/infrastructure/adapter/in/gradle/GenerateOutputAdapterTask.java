@@ -119,25 +119,33 @@ public class GenerateOutputAdapterTask extends DefaultTask {
       // 2. Validate inputs
       validateInputs();
 
-      // 3. Resolve package name (auto-detect if not provided)
+      // 3. Read framework and paradigm from project config
+      var projectConfig = configurationPort.readConfiguration(projectPath)
+          .orElseThrow(() -> new RuntimeException("Project configuration not found"));
+      String framework = projectConfig.framework().getValue();
+      String paradigm = projectConfig.paradigm().getValue();
+
+      // 4. Resolve package name (auto-detect if not provided)
       String resolvedPackageName = resolvePackageName(type);
 
-      // 4. Use adapter type as String (no need to parse to enum)
+      // 5. Use adapter type as String (no need to parse to enum)
       String adapterType = type;
 
-      // 5. Parse methods (if provided)
+      // 6. Parse methods (if provided)
       List<AdapterMethod> adapterMethods = new ArrayList<>();
       if (!methods.isBlank()) {
         adapterMethods = parseMethods(methods);
       }
 
-      // 6. Create configuration
+      // 7. Create configuration
       OutputAdapterConfig config = OutputAdapterConfig.builder()
           .name(adapterName)
           .entityName(entityName)
           .type(adapterType)
           .packageName(resolvedPackageName)
           .methods(adapterMethods)
+          .framework(framework)
+          .paradigm(paradigm)
           .build();
 
       // 7. Setup dependencies (reuse instances from validation)

@@ -4,9 +4,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.adapter.AdapterMethod;
 import com.pragma.archetype.domain.model.adapter.MethodParameter;
+import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
@@ -57,13 +57,20 @@ public class AdapterValidator {
         errors.addAll(packageValidation.errors());
       }
 
-      // Additional adapter-specific package validation
-      if (config.packageName().contains(".adapter.out.")) {
-        errors.add(
-            "Invalid package structure: use 'driven-adapters' instead of 'adapter.out'. Example: com.company.infrastructure.driven-adapters.redis");
-      } else if (config.packageName().contains(".adapter.in.")) {
-        errors.add(
-            "Invalid package structure: use 'entry-points' instead of 'adapter.in'. Example: com.company.infrastructure.entry-points.rest");
+      // Additional adapter-specific package validation (architecture-aware)
+      var projectConfigOpt2 = configurationPort.readConfiguration(projectPath);
+      String architecture = projectConfigOpt2.map(pc -> pc.architecture().getValue()).orElse("hexagonal");
+
+      // Only validate package structure for hexagonal architecture
+      // Onion architecture uses adapter.in/adapter.out convention
+      if (architecture.toLowerCase().contains("hexagonal")) {
+        if (config.packageName().contains(".adapter.out.")) {
+          errors.add(
+              "Invalid package structure: use 'driven-adapters' instead of 'adapter.out'. Example: com.company.infrastructure.driven-adapters.redis");
+        } else if (config.packageName().contains(".adapter.in.")) {
+          errors.add(
+              "Invalid package structure: use 'entry-points' instead of 'adapter.in'. Example: com.company.infrastructure.entry-points.rest");
+        }
       }
 
       // Validate base package consistency if project config is available

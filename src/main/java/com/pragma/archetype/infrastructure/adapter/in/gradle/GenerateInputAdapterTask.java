@@ -122,22 +122,30 @@ public class GenerateInputAdapterTask extends DefaultTask {
         getLogger().lifecycle("  Inferred package: {}", packageName);
       }
 
-      // 3. Validate inputs
+      // 3. Read framework and paradigm from project config
+      var projectConfig = configurationPort.readConfiguration(projectPath)
+          .orElseThrow(() -> new RuntimeException("Project configuration not found"));
+      String framework = projectConfig.framework().getValue();
+      String paradigm = projectConfig.paradigm().getValue();
+
+      // 4. Validate inputs
       validateInputs();
 
-      // 4. Use adapter type as String (no need to parse to enum)
+      // 5. Use adapter type as String (no need to parse to enum)
       String adapterType = type;
 
-      // 5. Parse endpoints
+      // 6. Parse endpoints
       List<Endpoint> endpointList = parseEndpoints(endpoints);
 
-      // 6. Create configuration
+      // 7. Create configuration
       InputAdapterConfig config = InputAdapterConfig.builder()
           .name(adapterName)
           .useCaseName(useCaseName)
           .type(adapterType)
           .packageName(packageName)
           .endpoints(endpointList)
+          .framework(framework)
+          .paradigm(paradigm)
           .build();
 
       // 7. Setup dependencies (reuse instances from validation)

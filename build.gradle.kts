@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "co.com.pragma"
-version = "1.3.1-SNAPSHOT"
+version = "1.3.3-SNAPSHOT"
 
 java {
     toolchain {
@@ -42,6 +42,7 @@ dependencies {
     
     // JSON processing
     implementation("com.google.code.gson:gson:2.10.1")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.16.0")
     
     // Logging
     implementation("org.slf4j:slf4j-api:2.0.9")
