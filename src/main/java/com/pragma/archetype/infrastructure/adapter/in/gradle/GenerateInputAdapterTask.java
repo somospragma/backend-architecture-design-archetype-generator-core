@@ -30,14 +30,16 @@ import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTempla
 
 /**
  * Gradle task for generating input adapters (entry points: REST controllers,
- * GraphQL
- * resolvers, etc.).
+ * GraphQL resolvers, etc.).
  * 
  * Usage:
- * ./gradlew generateInputAdapter --name=User --useCase=CreateUserUseCase
+ * ./gradlew generateInputAdapter --name=User --type=rest
  * --endpoints=/users:POST:create:User:userData:BODY:CreateUserRequest
- * --packageName=com.pragma.infrastructure.entry-points.rest
- * --type=rest
+ * 
+ * Optional parameters:
+ * --useCase=CreateUserUseCase (for documentation/reference only)
+ * --packageName=com.pragma.infrastructure.entry-points.rest (auto-inferred if
+ * not provided)
  */
 public class GenerateInputAdapterTask extends DefaultTask {
 
@@ -57,7 +59,7 @@ public class GenerateInputAdapterTask extends DefaultTask {
     return adapterName;
   }
 
-  @Option(option = "useCase", description = "Use case name (e.g., CreateUserUseCase)")
+  @Option(option = "useCase", description = "Use case name (optional, for documentation/reference)")
   public void setUseCaseName(String useCaseName) {
     this.useCaseName = useCaseName;
   }
@@ -252,9 +254,9 @@ public class GenerateInputAdapterTask extends DefaultTask {
    * invocation.
    */
   private boolean requiresUseCase(String adapterType) {
-    return adapterType.equalsIgnoreCase("rest")
-        || adapterType.equalsIgnoreCase("graphql")
-        || adapterType.equalsIgnoreCase("grpc");
+    // Use case is now optional for all adapter types
+    // Controllers can inject multiple use cases or none initially
+    return false;
   }
 
   /**

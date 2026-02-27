@@ -111,15 +111,11 @@ public class InputAdapterValidator {
 
   /**
    * Determines if the adapter type requires a use case.
+   * Use case is now optional for all adapter types since controllers
+   * can inject multiple use cases or none initially.
    */
   private boolean requiresUseCase(String type) {
-    if (type == null || type.isBlank()) {
-      return false;
-    }
-    var typeLower = type.toLowerCase();
-    return typeLower.equals("rest")
-        || typeLower.equals("graphql")
-        || typeLower.equals("grpc");
+    return false;
   }
 
   /**

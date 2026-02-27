@@ -291,6 +291,18 @@ public class ProjectGenerator {
                                 resourcesPath.resolve("application.yml"),
                                 applicationYmlContent));
 
+                // Generate banner.txt if exists
+                try {
+                        String bannerContent = templateRepository.getTemplateContent(
+                                        frameworkPath + "/banner.txt");
+
+                        files.add(GeneratedFile.create(
+                                        resourcesPath.resolve("banner.txt"),
+                                        bannerContent));
+                } catch (Exception e) {
+                        // Banner is optional, continue if not found
+                }
+
                 // Generate main Application class
                 String applicationClassContent = templateRepository.processTemplate(
                                 frameworkPath + "/Application.java.ftl",

@@ -172,13 +172,19 @@ public class InitCleanArchTask extends DefaultTask {
     // Automatically enable adaptersAsModules for hexagonal-multi-granular
     boolean adaptersAsModules = (archType == ArchitectureType.HEXAGONAL_MULTI_GRANULAR);
 
+    // Get plugin version dynamically from project
+    String pluginVersion = getProject().getVersion().toString();
+    if (pluginVersion == null || pluginVersion.equals("unspecified")) {
+      pluginVersion = "1.3.4-SNAPSHOT"; // Fallback version
+    }
+
     return ProjectConfig.builder()
         .name(projectName)
         .basePackage(packageName)
         .architecture(archType)
         .paradigm(Paradigm.valueOf(paradigm.toUpperCase()))
         .framework(Framework.valueOf(framework.toUpperCase()))
-        .pluginVersion("0.1.15-SNAPSHOT")
+        .pluginVersion(pluginVersion)
         .adaptersAsModules(adaptersAsModules)
         .build();
   }
