@@ -330,4 +330,122 @@ class AdapterMetadataLoaderTest {
     assertTrue(metadata.testDependencies().isEmpty());
     assertTrue(metadata.configurationClasses().isEmpty());
   }
+
+  @Test
+  @DisplayName("Should load adapter metadata with suffix")
+  void load_withSuffix_parsesCorrectly() {
+    // Given
+    String yaml = """
+        name: test
+        type: INPUT
+        displayName: Test Adapter
+        description: Test adapter for unit testing
+        suffix: Controller
+        templates:
+          - source: Controller.java.ftl
+            target: {entityName}Controller.java
+            outputDir: src/main/java
+        """;
+    String metadataPath = "frameworks/spring/imperative/adapters/entry-points/test-adapter/metadata.yml";
+    contentProvider.addTemplate(metadataPath, yaml);
+    contentProvider.addTemplate("frameworks/spring/imperative/adapters/entry-points/test-adapter/Controller.java.ftl",
+        "template");
+
+    // When
+    AdapterMetadata metadata = loader.loadMetadata(metadataPath);
+
+    // Then
+    assertNotNull(metadata);
+    assertEquals("Controller", metadata.getSuffix());
+  }
+
+  @Test
+  @DisplayName("Should load adapter metadata with applicationPropertiesTemplate")
+  void load_withApplicationPropertiesTemplate_parsesCorrectly() {
+    // Given
+    String yaml = """
+        name: test
+        type: INPUT
+        displayName: Test Adapter
+        description: Test adapter for unit testing
+        applicationPropertiesTemplate: application-test.yml.ftl
+        templates:
+          - source: Controller.java.ftl
+            target: {entityName}Controller.java
+            outputDir: src/main/java
+        """;
+    String metadataPath = "frameworks/spring/imperative/adapters/entry-points/test-adapter/metadata.yml";
+    contentProvider.addTemplate(metadataPath, yaml);
+    contentProvider.addTemplate("frameworks/spring/imperative/adapters/entry-points/test-adapter/Controller.java.ftl",
+        "template");
+    contentProvider.addTemplate(
+        "frameworks/spring/imperative/adapters/entry-points/test-adapter/application-test.yml.ftl", "props");
+
+    // When
+    AdapterMetadata metadata = loader.loadMetadata(metadataPath);
+
+    // Then
+    assertNotNull(metadata);
+    assertEquals("application-test.yml.ftl", metadata.applicationPropertiesTemplate());
+  }
+
+  @Test
+  @DisplayName("Should load adapter metadata with dependencies as strings")
+  void load_withDependencies_parsesCorrectly() {
+    // Given
+    String yaml = """
+        name: test
+        type: INPUT
+        displayName: Test Adapter
+        description: Test adapter for unit testing
+        dependencies:
+          - org.springframework.boot:spring-boot-starter-web
+        templates:
+          - source: Controller.java.ftl
+            target: {entityName}Controller.java
+            outputDir: src/main/java
+        """;
+    String metadataPath = "frameworks/spring/imperative/adapters/entry-points/test-adapter/metadata.yml";
+    contentProvider.addTemplate(metadataPath, yaml);
+    contentProvider.addTemplate("frameworks/spring/imperative/adapters/entry-points/test-adapter/Controller.java.ftl",
+        "template");
+
+    // When
+    AdapterMetadata metadata = loader.loadMetadata(metadataPath);
+
+    // Then
+    assertNotNull(metadata);
+    assertNotNull(metadata.dependencies());
+    assertEquals(1, metadata.dependencies().size());
+    assertEquals("org.springframework.boot:spring-boot-starter-web", metadata.dependencies().get(0));
+  }
+
+  @Test
+  @DisplayName("Should load adapter metadata with unified templates")
+  void load_withUnifiedTemplates_parsesCorrectly() {
+    // Given
+    String yaml = """
+        name: test
+        type: INPUT
+        displayName: Test Adapter
+        description: Test adapter for unit testing
+        templates:
+          - source: Controller.java.ftl
+            target: {entityName}Controller.java
+            outputDir: src/main/java
+        """;
+    String metadataPath = "frameworks/spring/imperative/adapters/entry-points/test-adapter/metadata.yml";
+    contentProvider.addTemplate(metadataPath, yaml);
+    contentProvider.addTemplate("frameworks/spring/imperative/adapters/entry-points/test-adapter/Controller.java.ftl",
+        "template");
+
+    // When
+    AdapterMetadata metadata = loader.loadMetadata(metadataPath);
+
+    // Then
+    assertNotNull(metadata);
+    assertNotNull(metadata.getTemplates());
+    assertEquals(1, metadata.getTemplates().size());
+    assertEquals("Controller.java.ftl", metadata.getTemplates().get(0).getSource());
+  }
 }

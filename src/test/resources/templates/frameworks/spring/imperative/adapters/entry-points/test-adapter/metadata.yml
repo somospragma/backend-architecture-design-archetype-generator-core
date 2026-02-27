@@ -1,0 +1,21 @@
+name: "test"
+type: "INPUT"
+displayName: "Test Adapter"
+description: "Test adapter for unit testing"
+suffix: "Controller"
+applicationPropertiesTemplate: "application-test.yml.ftl"
+
+requiredParameters:
+  - "useCase"
+  - "entityName"
+
+optionalParameters:
+  - "basePath"
+
+templates:
+  - source: "Controller.java.ftl"
+    target: "{entityName}Controller.java"
+    outputDir: "src/main/java"
+
+dependencies:
+  - "org.springframework.boot:spring-boot-starter-web"

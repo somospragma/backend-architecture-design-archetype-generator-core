@@ -1,0 +1,81 @@
+architecture: "test-architecture"
+
+templatePaths:
+  inputAdapter: "frameworks/{framework}/{paradigm}/adapters/entry-points/{type}"
+  outputAdapter: "frameworks/{framework}/{paradigm}/adapters/driven-adapters/{type}"
+  entity: "architectures/{architecture}/domain/entity"
+  useCase: "architectures/{architecture}/application/usecase"
+  config: "architectures/{architecture}/project"
+
+packageMappings:
+  rules:
+    removeHyphens: "true"
+    slashToDot: "true"
+  replacements:
+    entry-points: "entrypoints"
+    driven-adapters: "drivenadapters"
+
+entityModule: "domain"
+useCaseModule: "application"
+
+adapterPaths:
+  driven: "infrastructure/driven-adapters/{name}"
+  driving: "infrastructure/entry-points/{name}"
+
+packages:
+  - "domain/model"
+  - "domain/port/in"
+  - "domain/port/out"
+  - "application/usecase"
+  - "infrastructure/entry-points"
+  - "infrastructure/driven-adapters"
+  - "infrastructure/config"
+
+modules:
+  - name: "domain"
+    path: "domain"
+    packages:
+      - "model"
+      - "port/in"
+      - "port/out"
+    packageTypes:
+      model: "model"
+      portIn: "port/in"
+      portOut: "port/out"
+    dependencies: []
+    moduleDependencies: []
+    
+  - name: "application"
+    path: "application"
+    packages:
+      - "usecase"
+    packageTypes:
+      usecase: "usecase"
+    dependencies: []
+    moduleDependencies: ["domain"]
+    
+  - name: "infrastructure"
+    path: "infrastructure"
+    packages:
+      - "entry-points"
+      - "driven-adapters"
+      - "config"
+    packageTypes:
+      entryPoints: "entry-points"
+      drivenAdapters: "driven-adapters"
+      config: "config"
+    dependencies:
+      - "org.springframework.boot:spring-boot-starter-web"
+    moduleDependencies: ["domain", "application"]
+
+namingConventions:
+  suffixes:
+    port: "Port"
+    useCase: "UseCase"
+    adapter: "Adapter"
+  prefixes: {}
+
+layerDependencies:
+  domain: []
+  application: ["domain"]
+  infrastructure: ["domain", "application"]

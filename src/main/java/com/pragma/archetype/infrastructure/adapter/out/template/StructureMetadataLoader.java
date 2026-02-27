@@ -265,6 +265,7 @@ public class StructureMetadataLoader {
       return modulesList.stream()
           .map(m -> {
             Map<String, Object> moduleMap = (Map<String, Object>) m;
+            Map<String, String> packageTypes = extractStringMap(moduleMap, "packageTypes");
             return ModuleMetadata.builder()
                 .name((String) moduleMap.get("name"))
                 .path((String) moduleMap.getOrDefault("path", moduleMap.get("name")))
@@ -272,6 +273,7 @@ public class StructureMetadataLoader {
                 .dependencies((List<String>) moduleMap.getOrDefault("dependencies", java.util.Collections.emptyList()))
                 .moduleDependencies(
                     (List<String>) moduleMap.getOrDefault("moduleDependencies", java.util.Collections.emptyList()))
+                .packageTypes(packageTypes)
                 .build();
           })
           .toList();

@@ -314,4 +314,122 @@ class StructureMetadataLoaderTest {
     assertEquals(0, metadata.layerDependencies().getAllowedDependenciesFor("domain").size());
     assertEquals(1, metadata.layerDependencies().getAllowedDependenciesFor("application").size());
   }
+
+  @Test
+  void load_withPackageMappings_parsesCorrectly() {
+    // Given
+    ArchitectureType architecture = ArchitectureType.HEXAGONAL_SINGLE;
+    String yamlContent = """
+        architecture: hexagonal-single
+        adapterPaths:
+          driven: "infrastructure/driven-adapters/{name}"
+          driving: "infrastructure/entry-points/{name}"
+        packageMappings:
+          rules:
+            removeHyphens: "true"
+            slashToDot: "true"
+          replacements:
+            entry-points: "entrypoints"
+            driven-adapters: "drivenadapters"
+        """;
+
+    when(contentProvider.getTemplateContent("architectures/hexagonal-single/structure.yml"))
+        .thenReturn(yamlContent);
+
+    // When
+    StructureMetadata metadata = loader.loadStructureMetadata(architecture);
+
+    // Then
+    assertNotNull(metadata);
+    assertNotNull(metadata.packageMappings());
+    assertTrue(metadata.packageMappings().getRules().containsKey("removeHyphens"));
+    assertTrue(metadata.packageMappings().getReplacements().containsKey("entry-points"));
+    assertEquals("entrypoints", metadata.packageMappings().getReplacements().get("entry-points"));
+  }
+
+  @Test
+  void load_withEntityModule_parsesCorrectly() {
+    // Given
+    ArchitectureType architecture = ArchitectureType.HEXAGONAL_SINGLE;
+    String yamlContent = """
+        architecture: hexagonal-single
+        adapterPaths:
+          driven: "infrastructure/driven-adapters/{name}"
+          driving: "infrastructure/entry-points/{name}"
+        entityModule: "domain"
+        modules:
+          - name: "domain"
+            path: "domain"
+        """;
+
+    when(contentProvider.getTemplateContent("architectures/hexagonal-single/structure.yml"))
+        .thenReturn(yamlContent);
+
+    // When
+    StructureMetadata metadata = loader.loadStructureMetadata(architecture);
+
+    // Then
+    assertNotNull(metadata);
+    assertEquals("domain", metadata.entityModule());
+  }
+
+  @Test
+  void load_withUseCaseModule_parsesCorrectly() {
+    // Given
+    ArchitectureType architecture = ArchitectureType.HEXAGONAL_SINGLE;
+    String yamlContent = """
+        architecture: hexagonal-single
+        adapterPaths:
+          driven: "infrastructure/driven-adapters/{name}"
+          driving: "infrastructure/entry-points/{name}"
+        useCaseModule: "application"
+        modules:
+          - name: "application"
+            path: "application"
+        """;
+
+    when(contentProvider.getTemplateContent("architectures/hexagonal-single/structure.yml"))
+        .thenReturn(yamlContent);
+
+    // When
+    StructureMetadata metadata = loader.loadStructureMetadata(architecture);
+
+    // Then
+    assertNotNull(metadata);
+    assertEquals("application", metadata.useCaseModule());
+  }
+
+  @Test
+  void load_withModulePackageTypes_parsesCorrectly() {
+    // Given
+    ArchitectureType architecture = ArchitectureType.HEXAGONAL_SINGLE;
+    String yamlContent = """
+        architecture: hexagonal-single
+        adapterPaths:
+          driven: "infrastructure/driven-adapters/{name}"
+          driving: "infrastructure/entry-points/{name}"
+        modules:
+          - name: "domain"
+            path: "domain"
+            packageTypes:
+              model: "model"
+              portIn: "port/in"
+              portOut: "port/out"
+        """;
+
+    when(contentProvider.getTemplateContent("architectures/hexagonal-single/structure.yml"))
+        .thenReturn(yamlContent);
+
+    // When
+    StructureMetadata metadata = loader.loadStructureMetadata(architecture);
+
+    // Then
+    assertNotNull(metadata);
+    assertNotNull(metadata.moduleMetadata());
+    assertFalse(metadata.moduleMetadata().isEmpty());
+    var domainModule = metadata.getModule("domain");
+    assertNotNull(domainModule);
+    assertTrue(domainModule.getPackageTypes().containsKey("model"));
+    assertEquals("model", domainModule.getPackageTypes().get("model"));
+  }
 }
