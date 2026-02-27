@@ -14,7 +14,7 @@ import lombok.Builder;
  * Configuration for a clean architecture project.
  * Uses Java 21 record for immutability and conciseness.
  */
-@Builder
+@Builder(toBuilder = true)
 public record ProjectConfig(
     String name,
     String basePackage,

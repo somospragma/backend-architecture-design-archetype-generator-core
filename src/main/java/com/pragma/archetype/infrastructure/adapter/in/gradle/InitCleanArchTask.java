@@ -3,7 +3,6 @@ package com.pragma.archetype.infrastructure.adapter.in.gradle;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.options.Option;
@@ -28,7 +27,7 @@ import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTempla
  * Gradle task for initializing a clean architecture project.
  * This is an input adapter that drives the use case.
  */
-public class InitCleanArchTask extends DefaultTask {
+public class InitCleanArchTask extends BaseCleanArchTask {
 
   private String architecture = "hexagonal-single";
   private String paradigm = "reactive";
@@ -172,11 +171,8 @@ public class InitCleanArchTask extends DefaultTask {
     // Automatically enable adaptersAsModules for hexagonal-multi-granular
     boolean adaptersAsModules = (archType == ArchitectureType.HEXAGONAL_MULTI_GRANULAR);
 
-    // Get plugin version dynamically from project
-    String pluginVersion = getProject().getVersion().toString();
-    if (pluginVersion == null || pluginVersion.equals("unspecified")) {
-      pluginVersion = "1.3.4-SNAPSHOT"; // Fallback version
-    }
+    // Get plugin version from the base class method
+    String pluginVersion = getPluginVersion();
 
     return ProjectConfig.builder()
         .name(projectName)

@@ -64,6 +64,21 @@ dependencies {
     testImplementation("io.kotest:kotest-framework-datatest:5.8.0")
 }
 
+// Generate plugin.properties with version information
+val generatePluginProperties by tasks.registering {
+    val propertiesFile = file("$buildDir/resources/main/plugin.properties")
+    outputs.file(propertiesFile)
+    
+    doLast {
+        propertiesFile.parentFile.mkdirs()
+        propertiesFile.writeText("version=${project.version}\n")
+    }
+}
+
+tasks.named("processResources") {
+    dependsOn(generatePluginProperties)
+}
+
 gradlePlugin {
     website.set("https://github.com/somospragma/backend-architecture-design-archetype-generator-core")
     vcsUrl.set("https://github.com/somospragma/backend-architecture-design-archetype-generator-core.git")

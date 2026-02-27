@@ -4,7 +4,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
@@ -38,7 +37,7 @@ import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTempla
  * --entity=User --type=redis
  * --packageName=com.pragma.infrastructure.driven-adapters.redis
  */
-public class GenerateOutputAdapterTask extends DefaultTask {
+public class GenerateOutputAdapterTask extends BaseCleanArchTask {
 
   private String adapterName = "";
   private String entityName = "";
@@ -102,6 +101,9 @@ public class GenerateOutputAdapterTask extends DefaultTask {
     getLogger().lifecycle("Generating {} adapter: {}", type, adapterName);
 
     try {
+      // 0. Update plugin version in .cleanarch.yml if needed
+      updatePluginVersionIfNeeded();
+
       // 1. Validate project configuration exists
       Path projectPath = getProject().getProjectDir().toPath();
       FileSystemPort fileSystemPort = new LocalFileSystemAdapter();
