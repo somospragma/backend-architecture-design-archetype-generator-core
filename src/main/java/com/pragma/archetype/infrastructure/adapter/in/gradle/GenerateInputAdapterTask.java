@@ -171,11 +171,18 @@ public class GenerateInputAdapterTask extends DefaultTask {
       com.pragma.archetype.infrastructure.adapter.out.template.TemplateAdapterDiscovery adapterDiscovery = new com.pragma.archetype.infrastructure.adapter.out.template.TemplateAdapterDiscovery(
           templateRepository, metadataLoader);
       InputAdapterGenerator generator = new InputAdapterGenerator(templateRepository, fileSystemPort, adapterDiscovery);
+
+      // Cast configurationPort to YamlConfigurationAdapter for YAML operations
+      YamlConfigurationAdapter yamlConfigurationAdapter = (YamlConfigurationAdapter) configurationPort;
+
       GenerateInputAdapterUseCase useCase = new GenerateInputAdapterUseCaseImpl(
           validator,
           generator,
           configurationPort,
-          fileSystemPort);
+          fileSystemPort,
+          adapterDiscovery,
+          templateRepository,
+          yamlConfigurationAdapter);
 
       // 9. Execute use case
       GenerationResult result = useCase.execute(projectPath, config);
