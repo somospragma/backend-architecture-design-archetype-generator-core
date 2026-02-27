@@ -193,6 +193,11 @@ public class ProjectGenerator {
                                 String drivingPackage = structureMetadata.pathToPackageName(drivingBasePath);
                                 context.put("drivingAdaptersPackage", config.basePackage() + "." + drivingPackage);
                         }
+
+                        // Add template paths if available
+                        if (structureMetadata.hasTemplatePaths()) {
+                                context.put("templatePaths", structureMetadata.templatePaths());
+                        }
                 } catch (Exception e) {
                         // If structure metadata loading fails, continue without adapter packages
                         System.err.println(
@@ -304,24 +309,50 @@ public class ProjectGenerator {
                                 applicationClassContent));
 
                 // Generate BeanConfiguration class (Spring dependency injection config)
-                String architecturePath = "architectures/"
-                                + config.architecture().getValue();
+                try {
+                        StructureMetadata structureMetadata = templateRepository
+                                        .loadStructureMetadata(config.architecture());
 
-                String beanConfigContent = templateRepository.processTemplate(
-                                architecturePath + "/project/BeanConfiguration.java.ftl",
-                                context);
+                        // Resolve template path dynamically
+                        Map<String, String> variables = Map.of("architecture", config.architecture().getValue());
+                        String templatePath = structureMetadata.resolveTemplatePath("config", variables);
 
-                Path configPath = projectPath
-                                .resolve("src/main/java")
-                                .resolve(config.basePackage().replace('.', '/'))
-                                .resolve("infrastructure/config")
-                                .resolve("BeanConfiguration.java");
+                        String beanConfigContent = templateRepository.processTemplate(
+                                        templatePath + "/BeanConfiguration.java.ftl",
+                                        context);
 
-                fileSystemPort.createDirectory(configPath.getParent());
+                        Path configPath = projectPath
+                                        .resolve("src/main/java")
+                                        .resolve(config.basePackage().replace('.', '/'))
+                                        .resolve("infrastructure/config")
+                                        .resolve("BeanConfiguration.java");
 
-                files.add(GeneratedFile.create(
-                                configPath,
-                                beanConfigContent));
+                        fileSystemPort.createDirectory(configPath.getParent());
+
+                        files.add(GeneratedFile.create(
+                                        configPath,
+                                        beanConfigContent));
+                } catch (Exception e) {
+                        // Fallback to hardcoded path if template path resolution fails
+                        String architecturePath = "architectures/"
+                                        + config.architecture().getValue();
+
+                        String beanConfigContent = templateRepository.processTemplate(
+                                        architecturePath + "/project/BeanConfiguration.java.ftl",
+                                        context);
+
+                        Path configPath = projectPath
+                                        .resolve("src/main/java")
+                                        .resolve(config.basePackage().replace('.', '/'))
+                                        .resolve("infrastructure/config")
+                                        .resolve("BeanConfiguration.java");
+
+                        fileSystemPort.createDirectory(configPath.getParent());
+
+                        files.add(GeneratedFile.create(
+                                        configPath,
+                                        beanConfigContent));
+                }
 
                 return files;
         }
