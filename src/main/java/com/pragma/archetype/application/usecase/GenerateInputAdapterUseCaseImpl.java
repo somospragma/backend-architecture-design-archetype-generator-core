@@ -75,6 +75,9 @@ public class GenerateInputAdapterUseCaseImpl implements GenerateInputAdapterUseC
       // 4. Merge application properties if adapter has applicationPropertiesTemplate
       mergeApplicationPropertiesIfNeeded(projectPath, config);
 
+      // 5. Add dependencies to build.gradle.kts if adapter has dependencies
+      addDependenciesIfNeeded(projectPath, config);
+
       return GenerationResult.success(generatedFiles);
 
     } catch (Exception e) {
@@ -173,5 +176,118 @@ public class GenerateInputAdapterUseCaseImpl implements GenerateInputAdapterUseC
     }
 
     return context;
+  }
+
+  /**
+   * Adds dependencies to the build file if the adapter has dependencies.
+   * Dependencies are added with implementation scope in Gradle.
+   *
+   * @param projectPath path to the project root
+   * @param config      adapter configuration
+   */
+  private void addDependenciesIfNeeded(Path projectPath, InputAdapterConfig config) {
+    try {
+      // 1. Load adapter metadata to check if it has dependencies
+      AdapterMetadata metadata = adapterDiscovery
+          .findAdapter(config.type(), AdapterDirection.INPUT, config.framework(), config.paradigm())
+          .orElse(null);
+
+      if (metadata == null || metadata.getDependencies().isEmpty()) {
+        logger.debug("Adapter {} does not have dependencies, skipping", config.name());
+        return;
+      }
+
+      logger.info("Adding dependencies for adapter: {}", config.name());
+
+      // 2. Determine the build file path
+      Path buildFilePath = projectPath.resolve("build.gradle.kts");
+
+      if (!fileSystemPort.exists(buildFilePath)) {
+        logger.warn("Build file not found at {}, skipping dependency addition", buildFilePath);
+        return;
+      }
+
+      // 3. Read the current build file content
+      String buildFileContent = fileSystemPort.readFile(buildFilePath);
+
+      // 4. Add each dependency
+      String updatedContent = buildFileContent;
+      for (String dep : metadata.getDependencies()) {
+        updatedContent = addDependencyToBuildFile(updatedContent, dep);
+      }
+
+      // 5. Write the updated build file if changes were made
+      if (!updatedContent.equals(buildFileContent)) {
+        fileSystemPort.writeFile(GeneratedFile.create(buildFilePath, updatedContent));
+        logger.info("Successfully added {} dependencies for adapter: {}",
+            metadata.getDependencies().size(), config.name());
+      } else {
+        logger.debug("No new dependencies to add for adapter: {}", config.name());
+      }
+
+    } catch (Exception e) {
+      logger.error("Failed to add dependencies for adapter {}: {}",
+          config.name(), e.getMessage(), e);
+      // Don't fail the entire generation if dependency addition fails
+    }
+  }
+
+  /**
+   * Adds a dependency to the build file content.
+   * Uses implementation scope for Gradle.
+   *
+   * @param buildFileContent current build file content
+   * @param dependency       dependency coordinate string (group:artifact:version)
+   * @return updated build file content
+   */
+  private String addDependencyToBuildFile(String buildFileContent, String dependency) {
+    // Parse dependency coordinate
+    String[] parts = dependency.split(":");
+    if (parts.length < 3) {
+      logger.warn("Invalid dependency format: {}. Expected group:artifact:version", dependency);
+      return buildFileContent;
+    }
+
+    String group = parts[0];
+    String artifact = parts[1];
+    String version = parts[2];
+
+    // Format: implementation("group:artifact:version")
+    String dependencyStatement = String.format("    implementation(\"%s:%s:%s\")",
+        group, artifact, version);
+
+    // Check if dependency is already present
+    if (buildFileContent.contains(dependencyStatement)) {
+      logger.debug("Dependency already present: {}", dependency);
+      return buildFileContent;
+    }
+
+    // Find the dependencies block and add the dependency
+    if (buildFileContent.contains("dependencies {")) {
+      // Look for existing implementation dependencies section or add at the beginning
+      if (buildFileContent.contains("implementation(")) {
+        // Add after the last implementation
+        int lastImpl = buildFileContent.lastIndexOf("implementation(");
+        int endOfLine = buildFileContent.indexOf('\n', lastImpl);
+        if (endOfLine != -1) {
+          return buildFileContent.substring(0, endOfLine + 1) +
+              dependencyStatement + "\n" +
+              buildFileContent.substring(endOfLine + 1);
+        }
+      }
+
+      // If no implementation found, add after "dependencies {"
+      int dependenciesStart = buildFileContent.indexOf("dependencies {");
+      int lineEnd = buildFileContent.indexOf('\n', dependenciesStart);
+      if (lineEnd != -1) {
+        return buildFileContent.substring(0, lineEnd + 1) +
+            dependencyStatement + "\n" +
+            buildFileContent.substring(lineEnd + 1);
+      }
+    }
+
+    logger.warn("Could not find dependencies block in build file, dependency not added: {}",
+        dependency);
+    return buildFileContent;
   }
 }

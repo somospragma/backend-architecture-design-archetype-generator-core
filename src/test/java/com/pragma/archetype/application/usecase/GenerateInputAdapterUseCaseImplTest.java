@@ -18,16 +18,18 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.pragma.archetype.application.generator.InputAdapterGenerator;
+import com.pragma.archetype.application.port.out.AdapterDiscoveryPort;
 import com.pragma.archetype.domain.model.adapter.Endpoint;
 import com.pragma.archetype.domain.model.adapter.HttpMethod;
 import com.pragma.archetype.domain.model.adapter.InputAdapterConfig;
-import com.pragma.archetype.domain.model.adapter.InputAdapterType;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateInputAdapterUseCase.GenerationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
+import com.pragma.archetype.domain.port.out.TemplateRepository;
 import com.pragma.archetype.domain.service.InputAdapterValidator;
+import com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter;
 
 @ExtendWith(MockitoExtension.class)
 class GenerateInputAdapterUseCaseImplTest {
@@ -44,11 +46,27 @@ class GenerateInputAdapterUseCaseImplTest {
   @Mock
   private FileSystemPort fileSystemPort;
 
+  @Mock
+  private AdapterDiscoveryPort adapterDiscoveryPort;
+
+  @Mock
+  private TemplateRepository templateRepository;
+
+  @Mock
+  private YamlConfigurationAdapter yamlConfigurationAdapter;
+
   private GenerateInputAdapterUseCaseImpl useCase;
 
   @BeforeEach
   void setUp() {
-    useCase = new GenerateInputAdapterUseCaseImpl(validator, generator, configurationPort, fileSystemPort);
+    useCase = new GenerateInputAdapterUseCaseImpl(
+        validator,
+        generator,
+        configurationPort,
+        fileSystemPort,
+        adapterDiscoveryPort,
+        templateRepository,
+        yamlConfigurationAdapter);
   }
 
   @Test
