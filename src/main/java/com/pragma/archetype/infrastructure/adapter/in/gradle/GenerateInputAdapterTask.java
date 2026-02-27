@@ -197,19 +197,32 @@ public class GenerateInputAdapterTask extends DefaultTask {
   private String inferPackageName(Path projectPath, FileSystemPort fileSystemPort,
       ConfigurationPort configurationPort) {
     try {
-      // Read project configuration to get basePackage
+      // Read project configuration to get basePackage and architecture
       var projectConfig = configurationPort.readConfiguration(projectPath)
           .orElseThrow(() -> new IllegalStateException(".cleanarch.yml not found"));
       var basePackage = projectConfig.basePackage();
+      var architecture = projectConfig.architecture();
 
       getLogger().debug("Base package from .cleanarch.yml: {}", basePackage);
+      getLogger().debug("Architecture from .cleanarch.yml: {}", architecture);
 
-      // For now, return basePackage + default adapter path structure
-      // The actual path resolution will be handled by PathResolverImpl using
-      // adapterPaths
-      // This is a simplified inference - the full path will be resolved during
-      // generation
-      return basePackage;
+      // Load StructureMetadata to get dynamic adapter paths
+      TemplateRepository templateRepository = createTemplateRepository();
+      com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
+          .loadStructureMetadata(architecture);
+
+      // Get adapter base path for driving adapters (input/entry-points)
+      String adapterBasePath = structureMetadata.getAdapterBaseDirectory("driving");
+
+      // Transform path to package name using structure metadata
+      String adapterPackageSuffix = structureMetadata.pathToPackageName(adapterBasePath);
+
+      // Construct full package: basePackage + adapterPackageSuffix + adapterType
+      String fullPackage = basePackage + "." + adapterPackageSuffix + "." + type.toLowerCase();
+
+      getLogger().debug("Inferred package: {}", fullPackage);
+
+      return fullPackage;
 
     } catch (Exception e) {
       throw new IllegalStateException(

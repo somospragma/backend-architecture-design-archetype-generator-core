@@ -221,16 +221,26 @@ public class GenerateOutputAdapterTask extends DefaultTask {
       return packageName;
     }
 
-    // Otherwise, read from .cleanarch.yml
+    // Otherwise, read from .cleanarch.yml and structure.yml
     try {
       ConfigurationPort configurationPort = new YamlConfigurationAdapter();
       Path projectPath = getProject().getProjectDir().toPath();
       ProjectConfig projectConfig = configurationPort.readConfiguration(projectPath)
           .orElseThrow(() -> new IllegalArgumentException(".cleanarch.yml not found"));
 
-      // For hexagonal-single, driven adapters go in
-      // infrastructure.drivenadapters.{type}
-      return projectConfig.basePackage() + ".infrastructure.drivenadapters." + adapterType.toLowerCase();
+      // Load StructureMetadata to get dynamic adapter paths
+      TemplateRepository templateRepository = createTemplateRepository();
+      com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
+          .loadStructureMetadata(projectConfig.architecture());
+
+      // Get adapter base path for driven adapters (output)
+      String adapterBasePath = structureMetadata.getAdapterBaseDirectory("driven");
+
+      // Transform path to package name using structure metadata
+      String adapterPackageSuffix = structureMetadata.pathToPackageName(adapterBasePath);
+
+      // Construct full package: basePackage + adapterPackageSuffix + adapterType
+      return projectConfig.basePackage() + "." + adapterPackageSuffix + "." + adapterType.toLowerCase();
     } catch (Exception e) {
       throw new IllegalArgumentException(
           "Could not auto-detect package name. Please provide --packageName or ensure .cleanarch.yml exists", e);
