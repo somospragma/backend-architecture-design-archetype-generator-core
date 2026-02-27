@@ -281,20 +281,11 @@ public class GenerateInputAdapterTask extends DefaultTask {
   }
 
   /**
-   * Parses adapter type string into InputAdapterType enum.
+   * Normalizes adapter type string to lowercase.
    */
   private String parseAdapterType(String typeStr) {
-    return switch (typeStr.toLowerCase()) {
-      case "rest" -> "rest";
-      case "graphql" -> "graphql";
-      case "grpc" -> "grpc";
-      case "websocket" -> "websocket";
-      case "sqs-consumer" -> "sqs-consumer";
-      case "scheduled" -> "scheduled";
-      default -> throw new IllegalArgumentException(
-          "Invalid adapter type: " + typeStr
-              + ". Valid types: rest, graphql, grpc, websocket, sqs-consumer, scheduled");
-    };
+    // Simply normalize to lowercase - validation happens in generator
+    return typeStr.toLowerCase().trim();
   }
 
   /**

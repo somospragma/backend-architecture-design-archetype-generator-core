@@ -12,9 +12,11 @@ import lombok.Builder;
  */
 @Builder
 public record InputAdapterConfig(
-        String name,
-        String packageName,
-        String type, // Changed from InputAdapterType enum to String for dynamic discovery
-        String useCaseName,
-        List<Endpoint> endpoints) {
+                String name,
+                String packageName,
+                String type, // Changed from InputAdapterType enum to String for dynamic discovery
+                String useCaseName,
+                List<Endpoint> endpoints,
+                String framework, // Framework (spring, quarkus, etc.)
+                String paradigm) { // Paradigm (reactive, imperative)
 }

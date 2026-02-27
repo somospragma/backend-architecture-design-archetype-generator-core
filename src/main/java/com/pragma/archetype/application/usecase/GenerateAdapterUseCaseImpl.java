@@ -297,36 +297,30 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
 
   /**
    * Gets the adapter template path for a given adapter type.
-   * This mirrors the logic in AdapterGenerator.getAdapterTemplate().
+   * 
+   * @deprecated This method uses hardcoded paths. Template validation should be
+   *             done in the generator.
    */
+  @Deprecated
   private String getAdapterTemplatePath(String type) {
-    var typeLower = type.toLowerCase();
-    return switch (typeLower) {
-      case "redis" -> "frameworks/spring/reactive/adapters/driven-adapters/redis/Adapter.java.ftl";
-      case "mongodb" -> "frameworks/spring/reactive/adapters/driven-adapters/mongodb/Adapter.java.ftl";
-      case "postgresql" -> "frameworks/spring/reactive/adapters/driven-adapters/postgresql/Adapter.java.ftl";
-      case "rest_client", "rest-client" ->
-        "frameworks/spring/reactive/adapters/driven-adapters/rest-client/Adapter.java.ftl";
-      case "kafka" -> "frameworks/spring/reactive/adapters/driven-adapters/kafka/Adapter.java.ftl";
-      case "sqs_producer", "sqs-producer" ->
-        "frameworks/spring/reactive/adapters/driven-adapters/sqs-producer/Adapter.java.ftl";
-      case "dynamodb" -> "frameworks/spring/reactive/adapters/driven-adapters/dynamodb/Adapter.java.ftl";
-      default -> "frameworks/spring/reactive/adapters/driven-adapters/generic/Adapter.java.ftl";
-    };
+    // Return generic path - actual validation happens in generator with dynamic
+    // discovery
+    String typeLower = type.toLowerCase().replace("_", "-");
+    return String.format("frameworks/spring/reactive/adapters/driven-adapters/%s/Adapter.java.ftl", typeLower);
   }
 
   /**
    * Gets the data entity template path for a given adapter type.
-   * This mirrors the logic in AdapterGenerator.getDataEntityTemplate().
+   * 
+   * @deprecated This method uses hardcoded paths. Template validation should be
+   *             done in the generator.
    */
+  @Deprecated
   private String getDataEntityTemplatePath(String type) {
-    var typeLower = type.toLowerCase();
-    return switch (typeLower) {
-      case "redis" -> "frameworks/spring/reactive/adapters/driven-adapters/redis/Entity.java.ftl";
-      case "mongodb" -> "frameworks/spring/reactive/adapters/driven-adapters/mongodb/Entity.java.ftl";
-      case "postgresql" -> "frameworks/spring/reactive/adapters/driven-adapters/postgresql/Entity.java.ftl";
-      default -> "frameworks/spring/reactive/adapters/driven-adapters/generic/Entity.java.ftl";
-    };
+    // Return generic path - actual validation happens in generator with dynamic
+    // discovery
+    String typeLower = type.toLowerCase().replace("_", "-");
+    return String.format("frameworks/spring/reactive/adapters/driven-adapters/%s/Entity.java.ftl", typeLower);
   }
 
   /**

@@ -53,12 +53,17 @@ public class InputAdapterGenerator {
   public List<GeneratedFile> generate(Path projectPath, InputAdapterConfig config) {
     List<GeneratedFile> generatedFiles = new ArrayList<>();
 
-    // Validate adapter type exists
+    // Get framework and paradigm from config
+    String framework = config.framework();
+    String paradigm = config.paradigm();
+
+    // Validate adapter type exists (with framework/paradigm)
     String adapterType = config.type();
-    if (!adapterDiscovery.adapterExists(adapterType, AdapterDirection.INPUT)) {
-      List<String> availableAdapters = adapterDiscovery.listAdapterNames(AdapterDirection.INPUT);
+    if (!adapterDiscovery.adapterExists(adapterType, AdapterDirection.INPUT, framework, paradigm)) {
+      List<String> availableAdapters = adapterDiscovery.listAdapterNames(AdapterDirection.INPUT, framework, paradigm);
       throw new IllegalArgumentException(
           "Unknown input adapter type: " + adapterType +
+              " for " + framework + "/" + paradigm +
               ". Available adapters: " + String.join(", ", availableAdapters));
     }
 
@@ -73,13 +78,23 @@ public class InputAdapterGenerator {
   }
 
   private GeneratedFile generateController(Path projectPath, InputAdapterConfig config, Map<String, Object> data) {
-    // Get adapter metadata to determine suffix (with fallback)
+    // Get framework and paradigm from config
+    String framework = config.framework();
+    String paradigm = config.paradigm();
+
+    // Get adapter metadata (REQUIRED - no fallback)
     AdapterMetadata metadata = adapterDiscovery
-        .findAdapter(config.type(), AdapterDirection.INPUT)
-        .orElse(null);
+        .findAdapter(config.type(), AdapterDirection.INPUT, framework, paradigm)
+        .orElseThrow(() -> {
+          List<String> available = adapterDiscovery.listAdapterNames(AdapterDirection.INPUT, framework, paradigm);
+          return new IllegalArgumentException(
+              "Unknown input adapter type: " + config.type() +
+                  " for " + framework + "/" + paradigm +
+                  ". Available adapters: " + String.join(", ", available));
+        });
 
     // Select template based on adapter type (dynamic from metadata)
-    String templatePath = getControllerTemplate(config, data);
+    String templatePath = getControllerTemplate(config, data, metadata);
 
     // Process template
     String content = templateRepository.processTemplate(templatePath, data);
@@ -96,75 +111,31 @@ public class InputAdapterGenerator {
     return GeneratedFile.javaSource(filePath, content);
   }
 
-  private String getControllerTemplate(InputAdapterConfig config, Map<String, Object> data) {
-    try {
-      // Load StructureMetadata from architecture
-      String architecture = (String) data.get(VARIABLE_ARCHITECTURE);
-      if (architecture == null) {
-        // Fallback to hardcoded template path if architecture not provided
-        return getFallbackControllerTemplate(config.type());
-      }
+  private String getControllerTemplate(InputAdapterConfig config, Map<String, Object> data, AdapterMetadata metadata) {
+    // Get framework and paradigm from config
+    String framework = config.framework();
+    String paradigm = config.paradigm();
 
-      com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
-          .loadStructureMetadata(com.pragma.archetype.domain.model.project.ArchitectureType.fromValue(architecture));
+    // Get main template from discovered templates
+    com.pragma.archetype.domain.model.adapter.TemplateFile mainTemplate = metadata.getDiscoveredTemplates().stream()
+        .filter(t -> "main".equals(t.getType()))
+        .findFirst()
+        .orElseThrow(() -> new IllegalStateException(
+            "No main template found for adapter: " + config.type()));
 
-      // Prepare variables for template path resolution
-      Map<String, String> variables = new java.util.HashMap<>();
-      variables.put(VARIABLE_FRAMEWORK, (String) data.get(VARIABLE_FRAMEWORK));
-      variables.put(VARIABLE_PARADIGM, (String) data.get(VARIABLE_PARADIGM));
-      variables.put(VARIABLE_ADAPTER_DIR, structureMetadata.getAdapterDirName("driving"));
-      variables.put(VARIABLE_TYPE, config.type().toLowerCase());
-      variables.put(VARIABLE_ARCHITECTURE, architecture);
-
-      // Resolve template path using StructureMetadata
-      return structureMetadata.resolveTemplatePath(TEMPLATE_TYPE_INPUT_ADAPTER, variables);
-
-    } catch (IllegalStateException e) {
-      throw new IllegalStateException(
-          com.pragma.archetype.domain.model.error.StructureErrorMessages.TEMPLATE_PATH_RESOLUTION_FAILED
-              + ": " + e.getMessage(),
-          e);
-    } catch (IllegalArgumentException e) {
-      throw new IllegalArgumentException(
-          com.pragma.archetype.domain.model.error.StructureErrorMessages.UNKNOWN_TEMPLATE_TYPE
-              + ": " + TEMPLATE_TYPE_INPUT_ADAPTER,
-          e);
-    }
-  }
-
-  private String getFallbackControllerTemplate(String adapterType) {
-    // Fallback to hardcoded template paths for backward compatibility
-    return switch (adapterType.toLowerCase()) {
-      case "rest" -> "frameworks/spring/reactive/adapters/entry-points/rest/Controller.java.ftl";
-      case "graphql" -> "frameworks/spring/reactive/adapters/entry-points/graphql/Resolver.java.ftl";
-      case "grpc" -> "frameworks/spring/reactive/adapters/entry-points/grpc/Service.java.ftl";
-      case "websocket" -> "frameworks/spring/reactive/adapters/entry-points/websocket/Handler.java.ftl";
-      case "sqs-consumer", "sqs_consumer" ->
-        "frameworks/spring/reactive/adapters/entry-points/sqs-consumer/Consumer.java.ftl";
-      case "scheduled" -> "frameworks/spring/reactive/adapters/entry-points/scheduled/ScheduledTask.java.ftl";
-      default -> throw new IllegalArgumentException("No template defined for adapter type: " + adapterType);
-    };
+    // Build template path
+    String adapterDir = "entry-points";
+    return String.format("frameworks/%s/%s/adapters/%s/%s/%s",
+        framework, paradigm, adapterDir, config.type(), mainTemplate.getName());
   }
 
   private String getControllerSuffix(AdapterMetadata metadata, String adapterType) {
-    // Use suffix from AdapterMetadata if available
-    if (metadata != null && metadata.getSuffix() != null && !metadata.getSuffix().isBlank()) {
+    // Use suffix from metadata (REQUIRED - no fallback)
+    if (metadata.getSuffix() != null && !metadata.getSuffix().isBlank()) {
       return metadata.getSuffix();
     }
-    // Fallback based on adapter type
-    return getFallbackSuffix(adapterType);
-  }
-
-  private String getFallbackSuffix(String adapterType) {
-    return switch (adapterType.toLowerCase()) {
-      case "rest" -> "Controller";
-      case "graphql" -> "Resolver";
-      case "grpc" -> "Service";
-      case "websocket" -> "Handler";
-      case "sqs-consumer", "sqs_consumer" -> "Consumer";
-      case "scheduled" -> "ScheduledTask";
-      default -> "Adapter";
-    };
+    // Generic default if metadata doesn't specify
+    return "Adapter";
   }
 
   private Map<String, Object> prepareTemplateData(InputAdapterConfig config) {
@@ -174,12 +145,9 @@ public class InputAdapterGenerator {
     data.put("useCaseName", config.useCaseName());
     data.put("adapterType", config.type().toLowerCase());
 
-    // Add required variables for template path resolution
-    // These should be provided by the caller or extracted from config
-    // For now, using defaults - this will need to be enhanced
-    data.put(VARIABLE_FRAMEWORK, "spring");
-    data.put(VARIABLE_PARADIGM, "reactive");
-    data.put(VARIABLE_ARCHITECTURE, "hexagonal-single");
+    // Add framework and paradigm from config
+    data.put(VARIABLE_FRAMEWORK, config.framework());
+    data.put(VARIABLE_PARADIGM, config.paradigm());
 
     // Convert endpoints to Maps for Freemarker
     List<Map<String, Object>> endpointMaps = new ArrayList<>();

@@ -248,20 +248,18 @@ public class GenerateOutputAdapterTask extends DefaultTask {
   }
 
   /**
-   * Parses adapter type string.
+   * Normalizes adapter type string to lowercase and handles aliases.
    */
   private String parseAdapterType(String typeStr) {
-    return switch (typeStr.toLowerCase()) {
-      case "redis" -> "redis";
-      case "mongodb", "mongo" -> "mongodb";
-      case "postgresql", "postgres" -> "postgresql";
-      case "rest-client", "rest" -> "rest-client";
-      case "kafka" -> "kafka";
-      case "sqs-producer" -> "sqs-producer";
-      case "dynamodb" -> "dynamodb";
-      default -> throw new IllegalArgumentException(
-          "Invalid adapter type: " + typeStr
-              + ". Valid values: redis, mongodb, postgresql, rest-client, kafka, sqs-producer, dynamodb");
+    // Normalize to lowercase and handle common aliases
+    String normalized = typeStr.toLowerCase().trim();
+
+    // Handle aliases
+    return switch (normalized) {
+      case "mongo" -> "mongodb";
+      case "postgres" -> "postgresql";
+      case "rest" -> "rest-client";
+      default -> normalized;
     };
   }
 

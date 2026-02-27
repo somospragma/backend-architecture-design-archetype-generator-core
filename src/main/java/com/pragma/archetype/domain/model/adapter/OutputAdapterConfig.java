@@ -13,9 +13,11 @@ import lombok.Builder;
  */
 @Builder
 public record OutputAdapterConfig(
-        String name,
-        String packageName,
-        String type, // Changed from AdapterType enum to String for dynamic discovery
-        String entityName,
-        List<AdapterMethod> methods) {
+                String name,
+                String packageName,
+                String type, // Changed from AdapterType enum to String for dynamic discovery
+                String entityName,
+                List<AdapterMethod> methods,
+                String framework, // Framework (spring, quarkus, etc.)
+                String paradigm) { // Paradigm (reactive, imperative)
 }

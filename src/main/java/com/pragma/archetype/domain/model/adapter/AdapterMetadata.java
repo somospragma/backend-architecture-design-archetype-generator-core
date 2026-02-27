@@ -13,7 +13,7 @@ import lombok.Value;
  * discovery.
  */
 @Value
-@Builder
+@Builder(toBuilder = true)
 public class AdapterMetadata {
   /**
    * Represents a dependency (Maven/Gradle artifact).
@@ -126,6 +126,44 @@ public class AdapterMetadata {
    */
   @Builder.Default
   List<TemplateMapping> templates = Collections.emptyList();
+
+  /**
+   * List of discovered template files (*.ftl) in adapter directory.
+   * Used for automatic template discovery.
+   */
+  @Builder.Default
+  List<TemplateFile> discoveredTemplates = Collections.emptyList();
+
+  /**
+   * Whether this adapter requires a use case parameter.
+   * Used for validation in task classes.
+   */
+  @Builder.Default
+  boolean requiresUseCase = false;
+
+  /**
+   * Whether this adapter requires endpoints parameter.
+   * Used for validation in task classes.
+   */
+  @Builder.Default
+  boolean requiresEndpoints = false;
+
+  /**
+   * Whether this adapter needs an entity mapper.
+   * Used to determine if mapper and data entity should be generated.
+   */
+  @Builder.Default
+  boolean needsMapper = false;
+
+  /**
+   * Adapter status from index.json: stable, beta, experimental, deprecated.
+   */
+  String status;
+
+  /**
+   * Adapter version from index.json.
+   */
+  String version;
 
   /**
    * Class name suffix for generated classes (e.g., "Controller", "Repository").
