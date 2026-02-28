@@ -9,6 +9,7 @@ import java.util.Map;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
+import com.pragma.archetype.domain.model.structure.StaticFile;
 import com.pragma.archetype.domain.model.structure.StructureMetadata;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
@@ -55,7 +56,10 @@ public class ProjectGenerator {
                         generatedFiles.addAll(generateArchitectureStructure(projectPath, config, context));
                 }
 
-                // 4. Write all files to disk
+                // 4. Generate static files from structure.yml
+                generatedFiles.addAll(generateStaticFiles(projectPath, config, context));
+
+                // 5. Write all files to disk
                 fileSystemPort.writeFiles(generatedFiles);
 
                 return generatedFiles;
@@ -816,6 +820,67 @@ public class ProjectGenerator {
                 files.add(GeneratedFile.create(
                                 configPath,
                                 beanConfigContent));
+
+                return files;
+        }
+
+        /**
+         * Generates static files defined in structure.yml.
+         * These files are processed as FreeMarker templates and copied to specified
+         * destinations.
+         * 
+         * @param projectPath the project root path
+         * @param config      the project configuration
+         * @param context     the template context
+         * @return list of generated files
+         */
+        private List<GeneratedFile> generateStaticFiles(
+                        Path projectPath,
+                        ProjectConfig config,
+                        Map<String, Object> context) {
+
+                List<GeneratedFile> files = new ArrayList<>();
+
+                try {
+                        // Load structure metadata to get static files configuration
+                        StructureMetadata structureMetadata = templateRepository
+                                        .loadStructureMetadata(config.architecture());
+
+                        if (!structureMetadata.hasStaticFiles()) {
+                                // No static files configured, return empty list
+                                return files;
+                        }
+
+                        String architecturePath = "architectures/" + config.architecture().getValue();
+
+                        // Process each static file
+                        for (StaticFile staticFile : structureMetadata.getStaticFiles()) {
+                                try {
+                                        // Build source template path
+                                        String templatePath = architecturePath + "/" + staticFile.getSource();
+
+                                        // Process template with context
+                                        String content = templateRepository.processTemplate(templatePath, context);
+
+                                        // Resolve destination path (replace {basePackage} placeholder)
+                                        String destination = staticFile.resolveDestination(config.basePackage());
+
+                                        // Create generated file
+                                        Path destinationPath = projectPath.resolve(destination);
+                                        files.add(GeneratedFile.create(destinationPath, content));
+
+                                } catch (Exception e) {
+                                        // Log warning but continue processing other files
+                                        System.err.println("Warning: Failed to generate static file: "
+                                                        + staticFile.getSource() + " - " + e.getMessage());
+                                }
+                        }
+
+                } catch (Exception e) {
+                        // If structure metadata loading fails, log warning and continue
+                        System.err.println("Warning: Failed to load structure metadata for static files: "
+                                        + e.getMessage());
+                }
 
                 return files;
         }

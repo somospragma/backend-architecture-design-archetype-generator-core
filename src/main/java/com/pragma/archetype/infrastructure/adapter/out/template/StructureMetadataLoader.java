@@ -10,6 +10,7 @@ import com.pragma.archetype.domain.model.structure.LayerDependencies;
 import com.pragma.archetype.domain.model.structure.ModuleMetadata;
 import com.pragma.archetype.domain.model.structure.NamingConventions;
 import com.pragma.archetype.domain.model.structure.PackageMappings;
+import com.pragma.archetype.domain.model.structure.StaticFile;
 import com.pragma.archetype.domain.model.structure.StructureMetadata;
 import com.pragma.archetype.domain.model.structure.TemplatePaths;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
@@ -68,6 +69,7 @@ public class StructureMetadataLoader {
       PackageMappings packageMappings = extractPackageMappings(data);
       String entityModule = extractEntityModule(data);
       String useCaseModule = extractUseCaseModule(data);
+      java.util.List<StaticFile> staticFiles = extractStaticFiles(data);
 
       // Create and validate the metadata
       StructureMetadata metadata = new StructureMetadata(
@@ -80,7 +82,8 @@ public class StructureMetadataLoader {
           packages,
           moduleMetadata,
           entityModule,
-          useCaseModule);
+          useCaseModule,
+          staticFiles);
 
       ValidationResult validation = metadata.validate();
       if (!validation.valid()) {
@@ -328,5 +331,30 @@ public class StructureMetadataLoader {
    */
   private String extractUseCaseModule(Map<String, Object> data) {
     return (String) data.get("useCaseModule");
+  }
+
+  /**
+   * Extracts static files configuration from the YAML data.
+   */
+  @SuppressWarnings("unchecked")
+  private java.util.List<StaticFile> extractStaticFiles(Map<String, Object> data) {
+    Object staticFilesObj = data.get("staticFiles");
+    if (staticFilesObj == null) {
+      return null;
+    }
+
+    if (!(staticFilesObj instanceof java.util.List)) {
+      return null;
+    }
+
+    java.util.List<Map<String, Object>> staticFilesList = (java.util.List<Map<String, Object>>) staticFilesObj;
+
+    return staticFilesList.stream()
+        .map(fileData -> StaticFile.builder()
+            .source((String) fileData.get("source"))
+            .destination((String) fileData.get("destination"))
+            .description((String) fileData.get("description"))
+            .build())
+        .collect(java.util.stream.Collectors.toList());
   }
 }

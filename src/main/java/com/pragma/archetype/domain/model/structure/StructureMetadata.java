@@ -20,7 +20,8 @@ public record StructureMetadata(
     java.util.List<String> packages,
     java.util.List<ModuleMetadata> moduleMetadata,
     String entityModule,
-    String useCaseModule) {
+    String useCaseModule,
+    java.util.List<StaticFile> staticFiles) {
 
   public StructureMetadata {
     Objects.requireNonNull(architectureType, "Architecture type cannot be null");
@@ -31,6 +32,9 @@ public record StructureMetadata(
     }
     if (moduleMetadata != null) {
       moduleMetadata = Collections.unmodifiableList(moduleMetadata);
+    }
+    if (staticFiles != null) {
+      staticFiles = Collections.unmodifiableList(staticFiles);
     }
   }
 
@@ -238,5 +242,21 @@ public record StructureMetadata(
    */
   public TemplatePaths getTemplatePathsOrDefault() {
     return templatePaths != null ? templatePaths : TemplatePaths.builder().build();
+  }
+
+  /**
+   * Gets the list of static files to be copied.
+   * 
+   * @return List of static files or empty list if none configured
+   */
+  public java.util.List<StaticFile> getStaticFiles() {
+    return staticFiles != null ? staticFiles : Collections.emptyList();
+  }
+
+  /**
+   * Checks if this structure has static files configured.
+   */
+  public boolean hasStaticFiles() {
+    return staticFiles != null && !staticFiles.isEmpty();
   }
 }
