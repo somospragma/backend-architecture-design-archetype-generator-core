@@ -354,11 +354,19 @@ public class StructureMetadataLoader {
           // Read processAsTemplate flag, default to true if not specified
           Boolean processAsTemplate = (Boolean) fileData.get("processAsTemplate");
 
+          // Read binary flag, default to false if not specified
+          Boolean binary = (Boolean) fileData.get("binary");
+
+          // Read executable flag, default to false if not specified
+          Boolean executable = (Boolean) fileData.get("executable");
+
           return StaticFile.builder()
               .source((String) fileData.get("source"))
               .destination((String) fileData.get("destination"))
               .description((String) fileData.get("description"))
               .processAsTemplate(processAsTemplate != null ? processAsTemplate : true)
+              .binary(binary != null ? binary : false)
+              .executable(executable != null ? executable : false)
               .build();
         })
         .collect(java.util.stream.Collectors.toList());

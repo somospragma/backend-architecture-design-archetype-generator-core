@@ -23,28 +23,56 @@ public record GeneratedFile(
    * Creates a Java source file.
    */
   public static GeneratedFile javaSource(Path path, String content) {
-    return new GeneratedFile(path, content, FileType.JAVA_SOURCE, false);
+    return javaSource(path, content, false);
+  }
+
+  /**
+   * Creates a Java source file with executable flag.
+   */
+  public static GeneratedFile javaSource(Path path, String content, boolean executable) {
+    return new GeneratedFile(path, content, FileType.JAVA_SOURCE, executable);
   }
 
   /**
    * Creates a Gradle build file.
    */
   public static GeneratedFile gradleBuild(Path path, String content) {
-    return new GeneratedFile(path, content, FileType.GRADLE_BUILD, false);
+    return gradleBuild(path, content, false);
+  }
+
+  /**
+   * Creates a Gradle build file with executable flag.
+   */
+  public static GeneratedFile gradleBuild(Path path, String content, boolean executable) {
+    return new GeneratedFile(path, content, FileType.GRADLE_BUILD, executable);
   }
 
   /**
    * Creates a YAML configuration file.
    */
   public static GeneratedFile yamlConfig(Path path, String content) {
-    return new GeneratedFile(path, content, FileType.YAML_CONFIG, false);
+    return yamlConfig(path, content, false);
+  }
+
+  /**
+   * Creates a YAML configuration file with executable flag.
+   */
+  public static GeneratedFile yamlConfig(Path path, String content, boolean executable) {
+    return new GeneratedFile(path, content, FileType.YAML_CONFIG, executable);
   }
 
   /**
    * Creates a markdown file.
    */
   public static GeneratedFile markdown(Path path, String content) {
-    return new GeneratedFile(path, content, FileType.MARKDOWN, false);
+    return markdown(path, content, false);
+  }
+
+  /**
+   * Creates a markdown file with executable flag.
+   */
+  public static GeneratedFile markdown(Path path, String content, boolean executable) {
+    return new GeneratedFile(path, content, FileType.MARKDOWN, executable);
   }
 
   /**
@@ -61,19 +89,19 @@ public record GeneratedFile(
     String fileName = path.getFileName().toString().toLowerCase();
 
     if (fileName.endsWith(".java")) {
-      return javaSource(path, content);
+      return javaSource(path, content, executable);
     } else if (fileName.endsWith(".kt") || fileName.endsWith(".kts")) {
       return new GeneratedFile(path, content, FileType.KOTLIN_SOURCE, executable);
     } else if (fileName.equals("build.gradle.kts") || fileName.equals("build.gradle")) {
-      return gradleBuild(path, content);
+      return gradleBuild(path, content, executable);
     } else if (fileName.equals("settings.gradle.kts") || fileName.equals("settings.gradle")) {
       return new GeneratedFile(path, content, FileType.GRADLE_SETTINGS, executable);
     } else if (fileName.endsWith(".yml") || fileName.endsWith(".yaml")) {
-      return yamlConfig(path, content);
+      return yamlConfig(path, content, executable);
     } else if (fileName.endsWith(".properties")) {
       return new GeneratedFile(path, content, FileType.PROPERTIES_CONFIG, executable);
     } else if (fileName.endsWith(".md")) {
-      return markdown(path, content);
+      return markdown(path, content, executable);
     } else if (fileName.equals(".gitignore")) {
       return new GeneratedFile(path, content, FileType.GITIGNORE, executable);
     } else {

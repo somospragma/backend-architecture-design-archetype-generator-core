@@ -892,6 +892,7 @@ public class ProjectGenerator {
                                         // Log warning but continue processing other files
                                         System.err.println("Warning: Failed to generate static file: "
                                                         + staticFile.getSource() + " - " + e.getMessage());
+                                        e.printStackTrace(); // Add stack trace for debugging
                                 }
                         }
 

@@ -30,6 +30,11 @@ public class LocalFileSystemAdapter implements FileSystemPort {
       Files.move(tempFile, file.path(), java.nio.file.StandardCopyOption.REPLACE_EXISTING,
           java.nio.file.StandardCopyOption.ATOMIC_MOVE);
 
+      // Apply executable permissions if needed
+      if (file.executable()) {
+        setExecutable(file.path());
+      }
+
     } catch (IOException e) {
       throw new FileWriteException(
           "Failed to write file: " + file.path(),
