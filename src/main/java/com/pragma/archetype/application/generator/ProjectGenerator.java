@@ -859,8 +859,14 @@ public class ProjectGenerator {
                                         // Build source template path
                                         String templatePath = architecturePath + "/" + staticFile.getSource();
 
-                                        // Process template with context
-                                        String content = templateRepository.processTemplate(templatePath, context);
+                                        String content;
+                                        if (staticFile.isProcessAsTemplate()) {
+                                                // Process as FreeMarker template
+                                                content = templateRepository.processTemplate(templatePath, context);
+                                        } else {
+                                                // Copy as-is without processing (for binary files, scripts, etc.)
+                                                content = templateRepository.getTemplateContent(templatePath);
+                                        }
 
                                         // Resolve destination path (replace {basePackage} placeholder)
                                         String destination = staticFile.resolveDestination(config.basePackage());

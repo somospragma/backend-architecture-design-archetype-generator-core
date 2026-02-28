@@ -350,11 +350,17 @@ public class StructureMetadataLoader {
     java.util.List<Map<String, Object>> staticFilesList = (java.util.List<Map<String, Object>>) staticFilesObj;
 
     return staticFilesList.stream()
-        .map(fileData -> StaticFile.builder()
-            .source((String) fileData.get("source"))
-            .destination((String) fileData.get("destination"))
-            .description((String) fileData.get("description"))
-            .build())
+        .map(fileData -> {
+          // Read processAsTemplate flag, default to true if not specified
+          Boolean processAsTemplate = (Boolean) fileData.get("processAsTemplate");
+
+          return StaticFile.builder()
+              .source((String) fileData.get("source"))
+              .destination((String) fileData.get("destination"))
+              .description((String) fileData.get("description"))
+              .processAsTemplate(processAsTemplate != null ? processAsTemplate : true)
+              .build();
+        })
         .collect(java.util.stream.Collectors.toList());
   }
 }

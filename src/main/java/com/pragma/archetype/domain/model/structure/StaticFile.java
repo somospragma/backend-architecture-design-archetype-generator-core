@@ -7,18 +7,17 @@ import lombok.Value;
  * Represents a static file to be copied from template to project.
  * Loaded from structure.yml staticFiles section.
  * 
- * Static files are processed as FreeMarker templates and copied to the
- * specified destination.
+ * Static files can be processed as FreeMarker templates or copied directly
+ * (for binary files like JARs or executable scripts).
  * This allows architectures to define additional files (Dockerfile, tests,
- * etc.) without
- * hardcoding them in the generator code.
+ * wrapper, etc.) without hardcoding them in the generator code.
  */
 @Value
 @Builder
 public class StaticFile {
   /**
    * Source path relative to architecture template directory.
-   * Example: "project/Dockerfile.ftl"
+   * Example: "project/Dockerfile.ftl" or "project/gradlew"
    */
   String source;
 
@@ -35,6 +34,15 @@ public class StaticFile {
    * Optional description of what this file does.
    */
   String description;
+
+  /**
+   * Whether to process this file as a FreeMarker template.
+   * Default: true
+   * Set to false for binary files (JARs, executables) or files that should be
+   * copied as-is.
+   */
+  @Builder.Default
+  boolean processAsTemplate = true;
 
   /**
    * Resolves the destination path by replacing placeholders.
