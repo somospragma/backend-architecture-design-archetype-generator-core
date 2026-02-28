@@ -602,6 +602,31 @@ public class AdapterMetadataLoader {
     if (!(depsObj instanceof List)) {
       throw new IllegalArgumentException("Field 'dependencies' must be a list");
     }
-    return (List<String>) depsObj;
+
+    List<?> depsList = (List<?>) depsObj;
+    return depsList.stream()
+        .map(dep -> {
+          if (dep instanceof String) {
+            // Already in string format (group:artifact:version)
+            return (String) dep;
+          } else if (dep instanceof Map) {
+            // Parse from map format (group, artifact, version)
+            Map<String, Object> depMap = (Map<String, Object>) dep;
+            String group = (String) depMap.get("group");
+            String artifact = (String) depMap.get("artifact");
+            String version = (String) depMap.get("version");
+
+            if (group == null || artifact == null || version == null) {
+              throw new IllegalArgumentException(
+                  "Dependency must have 'group', 'artifact', and 'version' fields");
+            }
+
+            return String.format("%s:%s:%s", group, artifact, version);
+          } else {
+            throw new IllegalArgumentException(
+                "Dependency must be either a String or a Map with group/artifact/version");
+          }
+        })
+        .toList();
   }
 }

@@ -317,13 +317,8 @@ public class GenerateInputAdapterTask extends BaseCleanArchTask {
   private List<Endpoint> parseEndpoints(String endpointsStr) {
     List<Endpoint> result = new ArrayList<>();
 
-    // Throw exception if endpoints string is empty (not null, but empty/blank)
-    if (endpointsStr != null && endpointsStr.isBlank()) {
-      throw new IllegalArgumentException("Endpoints string cannot be empty");
-    }
-
-    // Return empty list if endpoints string is null
-    if (endpointsStr == null) {
+    // Return empty list if endpoints string is null or blank
+    if (endpointsStr == null || endpointsStr.isBlank()) {
       return result;
     }
 
