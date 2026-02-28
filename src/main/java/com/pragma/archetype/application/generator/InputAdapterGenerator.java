@@ -74,6 +74,10 @@ public class InputAdapterGenerator {
     GeneratedFile controllerFile = generateController(projectPath, config, data);
     generatedFiles.add(controllerFile);
 
+    // Generate additional resources (GraphQL schemas, OpenAPI specs, etc.)
+    List<GeneratedFile> additionalFiles = generateAdditionalResources(projectPath, config, data);
+    generatedFiles.addAll(additionalFiles);
+
     return generatedFiles;
   }
 
@@ -176,5 +180,68 @@ public class InputAdapterGenerator {
     data.put("endpoints", endpointMaps);
 
     return data;
+  }
+
+  /**
+   * Generates additional resource files (GraphQL schemas, OpenAPI specs, etc.).
+   * Similar to generateStaticFiles in ProjectGenerator.
+   */
+  private List<GeneratedFile> generateAdditionalResources(
+      Path projectPath,
+      InputAdapterConfig config,
+      Map<String, Object> data) {
+
+    List<GeneratedFile> files = new ArrayList<>();
+
+    try {
+      // Get adapter metadata
+      AdapterMetadata metadata = adapterDiscovery
+          .findAdapter(config.type(), AdapterDirection.INPUT, config.framework(), config.paradigm())
+          .orElse(null);
+
+      if (metadata == null || !metadata.hasAdditionalResources()) {
+        return files;
+      }
+
+      // Build base path for templates
+      String basePath = String.format("frameworks/%s/%s/adapters/entry-points/%s",
+          config.framework(), config.paradigm(), config.type());
+
+      // Process each additional resource
+      for (com.pragma.archetype.domain.model.adapter.AdditionalResource resource : metadata.getAdditionalResources()) {
+        try {
+          // Build template path
+          String templatePath = basePath + "/" + resource.templatePath();
+
+          // Resolve destination path
+          String destination = resource.resolveDestination(config.name());
+          Path destinationPath = projectPath.resolve(destination);
+
+          // Process resource
+          String content;
+          if (resource.shouldProcessAsTemplate()) {
+            // Process as FreeMarker template
+            content = templateRepository.processTemplate(templatePath, data);
+          } else {
+            // Copy as-is without processing
+            content = templateRepository.getTemplateContent(templatePath);
+          }
+
+          // Create generated file
+          files.add(GeneratedFile.create(destinationPath, content, false));
+
+        } catch (Exception e) {
+          // Log warning but continue processing other files
+          System.err.println("Warning: Failed to generate additional resource: "
+              + resource.name() + " - " + e.getMessage());
+        }
+      }
+
+    } catch (Exception e) {
+      // If metadata loading fails, log warning and continue
+      System.err.println("Warning: Failed to load additional resources: " + e.getMessage());
+    }
+
+    return files;
   }
 }

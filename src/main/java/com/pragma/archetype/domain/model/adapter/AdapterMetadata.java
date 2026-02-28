@@ -203,6 +203,13 @@ public class AdapterMetadata {
   List<Dependency> testDependencies = Collections.emptyList();
 
   /**
+   * Additional resource files to generate with this adapter.
+   * Examples: GraphQL schemas, OpenAPI specs, configuration files.
+   */
+  @Builder.Default
+  List<AdditionalResource> additionalResources = Collections.emptyList();
+
+  /**
    * Application properties template path.
    * 
    * @deprecated Kept for backward compatibility.
@@ -299,6 +306,13 @@ public class AdapterMetadata {
   @Deprecated
   public boolean hasTestDependencies() {
     return !testDependencies.isEmpty();
+  }
+
+  /**
+   * Checks if this adapter has additional resources to generate.
+   */
+  public boolean hasAdditionalResources() {
+    return !additionalResources.isEmpty();
   }
 
   /**

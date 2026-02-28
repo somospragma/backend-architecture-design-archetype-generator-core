@@ -10,6 +10,7 @@ import com.pragma.archetype.domain.model.adapter.AdapterDirection;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata.ConfigurationClass;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata.Dependency;
+import com.pragma.archetype.domain.model.adapter.AdditionalResource;
 import com.pragma.archetype.domain.model.adapter.TemplateMapping;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.TemplateRepository.TemplateNotFoundException;
@@ -167,6 +168,7 @@ public class AdapterMetadataLoader {
       String suffix = extractSuffix(data);
       String appPropsTemplate = extractAppPropsTemplate(data);
       List<String> dependencyStrings = extractDependencyStrings(data);
+      List<AdditionalResource> additionalResources = extractAdditionalResources(data);
 
       // Validate referenced template files exist
       // Extract base path from metadata path (remove /metadata.yml)
@@ -185,6 +187,7 @@ public class AdapterMetadataLoader {
           .suffix(suffix)
           .applicationPropertiesTemplate(appPropsTemplate)
           .dependencies(dependencyStrings)
+          .additionalResources(additionalResources)
           .runtimeDependencies(runtimeDependencies)
           .testDependencies(testDependencies)
           .legacyApplicationPropertiesTemplate(applicationPropertiesTemplate)
@@ -626,6 +629,45 @@ public class AdapterMetadataLoader {
             throw new IllegalArgumentException(
                 "Dependency must be either a String or a Map with group/artifact/version");
           }
+        })
+        .toList();
+  }
+
+  /**
+   * Extracts additional resources from metadata.
+   * Similar to staticFiles in structure.yml.
+   */
+  @SuppressWarnings("unchecked")
+  private List<AdditionalResource> extractAdditionalResources(Map<String, Object> data) {
+    Object resourcesObj = data.get("additionalResources");
+    if (resourcesObj == null) {
+      return List.of();
+    }
+    if (!(resourcesObj instanceof List)) {
+      throw new IllegalArgumentException("Field 'additionalResources' must be a list");
+    }
+
+    List<?> resourcesList = (List<?>) resourcesObj;
+    return resourcesList.stream()
+        .map(resource -> {
+          if (!(resource instanceof Map)) {
+            throw new IllegalArgumentException("Each additional resource must be a map");
+          }
+
+          Map<String, Object> resourceMap = (Map<String, Object>) resource;
+          String name = extractRequiredString(resourceMap, "name");
+          String targetPath = extractOptionalString(resourceMap, "targetPath");
+          String templatePath = extractRequiredString(resourceMap, "templatePath");
+
+          // processAsTemplate is optional, defaults to checking if templatePath ends with
+          // .ftl
+          boolean processAsTemplate = false;
+          Object processObj = resourceMap.get("processAsTemplate");
+          if (processObj instanceof Boolean) {
+            processAsTemplate = (Boolean) processObj;
+          }
+
+          return new AdditionalResource(name, targetPath, templatePath, processAsTemplate);
         })
         .toList();
   }
