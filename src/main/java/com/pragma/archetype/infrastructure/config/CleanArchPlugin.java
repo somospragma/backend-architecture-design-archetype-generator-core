@@ -10,6 +10,7 @@ import com.pragma.archetype.infrastructure.adapter.in.gradle.GenerateOutputAdapt
 import com.pragma.archetype.infrastructure.adapter.in.gradle.GenerateUseCaseTask;
 import com.pragma.archetype.infrastructure.adapter.in.gradle.InitCleanArchTask;
 import com.pragma.archetype.infrastructure.adapter.in.gradle.UpdateTemplatesTask;
+import com.pragma.archetype.infrastructure.adapter.in.gradle.ValidateStructureTask;
 import com.pragma.archetype.infrastructure.adapter.in.gradle.ValidateTemplatesTask;
 
 /**
@@ -66,6 +67,12 @@ public class CleanArchPlugin implements Plugin<Project> {
     project.getTasks().register("validateTemplates", ValidateTemplatesTask.class, task -> {
       task.setGroup("clean architecture");
       task.setDescription("Validate architecture and adapter templates");
+    });
+
+    // Register validateStructure task
+    project.getTasks().register("validateStructure", ValidateStructureTask.class, task -> {
+      task.setGroup("clean architecture");
+      task.setDescription("Validate project architecture by copying ArchUnit tests from templates and running them");
     });
 
     // Future tasks will be registered here:
