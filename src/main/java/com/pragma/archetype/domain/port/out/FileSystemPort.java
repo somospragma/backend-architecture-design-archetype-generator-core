@@ -97,4 +97,13 @@ public interface FileSystemPort {
    * @throws FileWriteException if appending fails
    */
   void appendToFile(Path path, String content);
+
+  /**
+   * Sets executable permissions on a file (Unix/Linux/Mac).
+   * On Windows, this is a no-op.
+   *
+   * @param path the file path
+   * @throws FileWriteException if setting permissions fails
+   */
+  void setExecutable(Path path);
 }

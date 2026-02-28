@@ -174,7 +174,7 @@ public class OutputAdapterGenerator {
     String content = templateRepository.processTemplate(templatePath, data);
 
     Path filePath = projectPath.resolve(modulePath).resolve("build.gradle.kts");
-    return new GeneratedFile(filePath, content, FileType.GRADLE_BUILD);
+    return new GeneratedFile(filePath, content, FileType.GRADLE_BUILD, false);
   }
 
   /**

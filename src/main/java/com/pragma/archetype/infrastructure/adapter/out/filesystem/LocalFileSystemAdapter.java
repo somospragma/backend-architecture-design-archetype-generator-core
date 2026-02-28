@@ -140,4 +140,19 @@ public class LocalFileSystemAdapter implements FileSystemPort {
           e);
     }
   }
+
+  @Override
+  public void setExecutable(Path path) {
+    try {
+      // Set executable permissions (Unix/Linux/Mac only)
+      // On Windows, this is a no-op
+      if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+        path.toFile().setExecutable(true, false);
+      }
+    } catch (Exception e) {
+      throw new FileWriteException(
+          "Failed to set executable permissions on file: " + path,
+          e);
+    }
+  }
 }

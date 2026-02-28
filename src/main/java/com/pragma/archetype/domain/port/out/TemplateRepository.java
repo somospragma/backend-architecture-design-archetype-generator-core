@@ -1,5 +1,6 @@
 package com.pragma.archetype.domain.port.out;
 
+import java.nio.file.Path;
 import java.util.Map;
 
 import com.pragma.archetype.domain.model.project.ArchitectureType;
@@ -56,6 +57,16 @@ public interface TemplateRepository {
    * @throws TemplateNotFoundException if template is not found
    */
   String getTemplateContent(String templatePath);
+
+  /**
+   * Copies a binary file from the template directory to a destination.
+   * Used for files like gradle-wrapper.jar that cannot be read as text.
+   *
+   * @param templatePath path to the template file (relative to templates root)
+   * @param destination  destination path where the file should be copied
+   * @throws TemplateNotFoundException if template is not found
+   */
+  void copyBinaryFile(String templatePath, Path destination);
 
   /**
    * Loads structure metadata for a given architecture type.

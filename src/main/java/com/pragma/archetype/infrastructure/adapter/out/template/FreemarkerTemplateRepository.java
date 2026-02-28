@@ -211,6 +211,44 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
         null);
   }
 
+  @Override
+  public void copyBinaryFile(String templatePath, Path destination) {
+    try {
+      // Create parent directories if they don't exist
+      Path parent = destination.getParent();
+      if (parent != null && !Files.exists(parent)) {
+        Files.createDirectories(parent);
+      }
+
+      // Try local filesystem first
+      if (templatesBasePath != null) {
+        Path sourcePath = templatesBasePath.resolve(templatePath);
+        if (Files.exists(sourcePath)) {
+          Files.copy(sourcePath, destination,
+              java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+          return;
+        }
+      }
+
+      // Try embedded resources as fallback
+      var resource = getClass().getClassLoader().getResourceAsStream("templates/" + templatePath);
+      if (resource != null) {
+        Files.copy(resource, destination,
+            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        return;
+      }
+
+      throw new TemplateProcessingException(
+          "Binary file not found: " + templatePath,
+          null);
+
+    } catch (IOException e) {
+      throw new TemplateProcessingException(
+          "Failed to copy binary file: " + templatePath,
+          e);
+    }
+  }
+
   /**
    * Gets the downloader instance (for testing or cache management).
    */

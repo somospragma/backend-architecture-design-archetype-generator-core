@@ -45,6 +45,23 @@ public class StaticFile {
   boolean processAsTemplate = true;
 
   /**
+   * Whether this file is a binary file (JAR, executable, etc.).
+   * Binary files are copied directly from the filesystem instead of being read as
+   * text.
+   * Default: false
+   */
+  @Builder.Default
+  boolean binary = false;
+
+  /**
+   * Whether to set executable permissions on this file (Unix/Linux/Mac).
+   * Useful for shell scripts like gradlew.
+   * Default: false
+   */
+  @Builder.Default
+  boolean executable = false;
+
+  /**
    * Resolves the destination path by replacing placeholders.
    * 
    * @param basePackage The base package name (e.g., "com.example.app")
