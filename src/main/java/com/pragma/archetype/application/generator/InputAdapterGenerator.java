@@ -141,6 +141,7 @@ public class InputAdapterGenerator {
   private Map<String, Object> prepareTemplateData(InputAdapterConfig config) {
     Map<String, Object> data = new HashMap<>();
     data.put("controllerName", config.name());
+    data.put("adapterName", config.name()); // Alias for GraphQL and other templates
     data.put("packageName", config.packageName());
     data.put("useCaseName", config.useCaseName());
     data.put("adapterType", config.type().toLowerCase());

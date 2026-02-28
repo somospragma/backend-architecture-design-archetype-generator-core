@@ -266,8 +266,7 @@ public class GenerateInputAdapterTask extends BaseCleanArchTask {
    * Only HTTP-based adapters (REST, GraphQL) need endpoint definitions.
    */
   private boolean requiresEndpoints(String adapterType) {
-    return adapterType.equalsIgnoreCase("rest")
-        || adapterType.equalsIgnoreCase("graphql");
+    return adapterType.equalsIgnoreCase("rest");
   }
 
   /**

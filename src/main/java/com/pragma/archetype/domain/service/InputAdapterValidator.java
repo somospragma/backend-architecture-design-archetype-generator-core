@@ -120,14 +120,15 @@ public class InputAdapterValidator {
 
   /**
    * Determines if the adapter type requires endpoints.
+   * Only REST adapters require endpoints.
+   * GraphQL uses a schema-first approach with static examples.
    */
   private boolean requiresEndpoints(String type) {
     if (type == null || type.isBlank()) {
       return false;
     }
     var typeLower = type.toLowerCase();
-    return typeLower.equals("rest")
-        || typeLower.equals("graphql");
+    return typeLower.equals("rest");
   }
 
   private void validateEndpoints(List<Endpoint> endpoints, List<String> errors) {
