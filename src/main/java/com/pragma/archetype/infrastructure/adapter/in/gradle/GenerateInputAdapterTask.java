@@ -237,7 +237,9 @@ public class GenerateInputAdapterTask extends BaseCleanArchTask {
       String adapterPackageSuffix = structureMetadata.pathToPackageName(adapterBasePath);
 
       // Construct full package: basePackage + adapterPackageSuffix + adapterType
-      String fullPackage = basePackage + "." + adapterPackageSuffix + "." + type.toLowerCase();
+      // Sanitize adapter type: remove hyphens for valid Java package names
+      String sanitizedType = sanitizeAdapterType(type);
+      String fullPackage = basePackage + "." + adapterPackageSuffix + "." + sanitizedType;
 
       getLogger().debug("Inferred package: {}", fullPackage);
 
@@ -248,6 +250,21 @@ public class GenerateInputAdapterTask extends BaseCleanArchTask {
           "Failed to infer package name. Please provide --packageName explicitly or ensure .cleanarch.yml exists with basePackage configured.",
           e);
     }
+  }
+
+  /**
+   * Sanitizes adapter type for use in Java package names.
+   * Removes hyphens and converts to lowercase.
+   * 
+   * @param adapterType the adapter type (e.g., "sqs-consumer", "rest")
+   * @return sanitized type (e.g., "sqsconsumer", "rest")
+   */
+  private String sanitizeAdapterType(String adapterType) {
+    if (adapterType == null) {
+      return "";
+    }
+    // Remove hyphens and convert to lowercase
+    return adapterType.replace("-", "").toLowerCase();
   }
 
   /**

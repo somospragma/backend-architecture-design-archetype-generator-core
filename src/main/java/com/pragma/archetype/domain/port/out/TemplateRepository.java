@@ -139,4 +139,14 @@ public interface TemplateRepository {
    * @throws TemplateProcessingException if template processing fails
    */
   String processInlineTemplate(String templateContent, java.util.Map<String, Object> context);
+
+  /**
+   * Lists all template files in a directory.
+   * Used for dynamic template discovery without hardcoding file names.
+   *
+   * @param directoryPath path to the directory (relative to templates root)
+   * @return list of template file names in the directory (not full paths, just
+   *         names)
+   */
+  java.util.List<String> listTemplatesInDirectory(String directoryPath);
 }

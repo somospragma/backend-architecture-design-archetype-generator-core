@@ -94,6 +94,10 @@ public class GenerateInputAdapterUseCaseImpl implements GenerateInputAdapterUseC
       // 8. Add build plugins and configuration if adapter has them
       addBuildPluginsAndConfigurationIfNeeded(projectPath, config, structureMetadata);
 
+      // 9. Generate configuration classes if adapter has configurationClasses
+      List<GeneratedFile> configFiles = generateConfigurationClassesIfNeeded(projectPath, config);
+      generatedFiles.addAll(configFiles);
+
       return GenerationResult.success(generatedFiles);
 
     } catch (Exception e) {
@@ -377,5 +381,117 @@ public class GenerateInputAdapterUseCaseImpl implements GenerateInputAdapterUseC
           config.name(), e.getMessage(), e);
       // Don't fail the entire generation if build configuration fails
     }
+  }
+
+  /**
+   * Generates configuration classes if the adapter has configurationClasses
+   * defined.
+   * 
+   * @param projectPath path to the project root
+   * @param config      input adapter configuration
+   * @return list of generated configuration class files
+   */
+  private List<GeneratedFile> generateConfigurationClassesIfNeeded(Path projectPath, InputAdapterConfig config) {
+    List<GeneratedFile> configFiles = new java.util.ArrayList<>();
+
+    try {
+      // 1. Load adapter metadata to check if it has configuration classes
+      AdapterMetadata metadata = adapterDiscovery
+          .findAdapter(config.type(), AdapterDirection.INPUT, config.framework(), config.paradigm())
+          .orElse(null);
+
+      if (metadata == null || !metadata.hasConfigurationClasses()) {
+        logger.debug("Adapter {} does not have configuration classes, skipping generation",
+            config.name());
+        return configFiles;
+      }
+
+      logger.info("Generating configuration classes for adapter: {}", config.name());
+
+      // 2. Read project configuration to get base package
+      var projectConfig = configurationPort.readConfiguration(projectPath).orElse(null);
+      if (projectConfig == null) {
+        logger.warn("Could not read project configuration, skipping configuration class generation");
+        return configFiles;
+      }
+
+      String basePackage = projectConfig.basePackage();
+
+      // 3. Prepare template context
+      Map<String, Object> templateContext = prepareConfigurationClassContext(config, projectConfig);
+
+      // 4. Process each configuration class
+      for (AdapterMetadata.ConfigurationClass configClass : metadata.configurationClasses()) {
+        try {
+          // Build template path:
+          // frameworks/{framework}/{paradigm}/adapters/entry-points/{type}/{templatePath}
+          String configTemplatePath = String.format("frameworks/%s/%s/adapters/entry-points/%s/%s",
+              config.framework(), config.paradigm(), config.type(), configClass.templatePath());
+
+          // Process the template
+          String processedContent = templateRepository.processTemplate(configTemplatePath, templateContext);
+
+          // Resolve package path for the configuration class
+          String fullPackage = basePackage + "." + configClass.packagePath();
+          String packagePath = fullPackage.replace('.', '/');
+
+          // Build file path: src/main/java/{basePackage}/{packagePath}/{ClassName}.java
+          Path configFilePath = projectPath
+              .resolve("src/main/java")
+              .resolve(packagePath)
+              .resolve(configClass.name() + ".java");
+
+          // Create GeneratedFile
+          GeneratedFile configFile = GeneratedFile.javaSource(configFilePath, processedContent);
+          configFiles.add(configFile);
+
+          // Write file to disk immediately
+          fileSystemPort.writeFile(configFile);
+
+          logger.info("Generated configuration class: {} at {}", configClass.name(), configFilePath);
+
+        } catch (TemplateRepository.TemplateNotFoundException e) {
+          logger.warn("Configuration class template not found: {} for adapter {}",
+              configClass.templatePath(), config.name());
+        } catch (Exception e) {
+          logger.error("Failed to generate configuration class {} for adapter {}: {}",
+              configClass.name(), config.name(), e.getMessage(), e);
+        }
+      }
+
+      logger.info("Successfully generated {} configuration class(es) for adapter: {}",
+          configFiles.size(), config.name());
+
+    } catch (Exception e) {
+      logger.error("Failed to generate configuration classes for adapter {}: {}",
+          config.name(), e.getMessage(), e);
+      // Don't fail the entire generation if configuration class generation fails
+      // The adapter code is already generated, configuration can be added manually
+    }
+
+    return configFiles;
+  }
+
+  /**
+   * Prepares template context for processing configuration class templates.
+   *
+   * @param config        input adapter configuration
+   * @param projectConfig project configuration
+   * @return template context map
+   */
+  private Map<String, Object> prepareConfigurationClassContext(
+      InputAdapterConfig config,
+      com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
+    Map<String, Object> context = new HashMap<>();
+    context.put("adapterName", config.name());
+    context.put("adapterType", config.type().toLowerCase());
+    context.put("packageName", projectConfig.basePackage());
+    context.put("useCaseName", config.useCaseName());
+    context.put("basePackage", projectConfig.basePackage());
+    context.put("projectName", projectConfig.name());
+    context.put("framework", config.framework());
+    context.put("paradigm", config.paradigm());
+
+    return context;
   }
 }

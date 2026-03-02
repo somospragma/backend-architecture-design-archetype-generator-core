@@ -432,6 +432,40 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
     }
   }
 
+  @Override
+  public List<String> listTemplatesInDirectory(String directoryPath) {
+    List<String> templateFiles = new ArrayList<>();
+
+    try {
+      // Try local filesystem first
+      if (templatesBasePath != null) {
+        Path fullPath = templatesBasePath.resolve(directoryPath);
+        if (Files.exists(fullPath) && Files.isDirectory(fullPath)) {
+          try (var stream = Files.list(fullPath)) {
+            stream.filter(Files::isRegularFile)
+                .filter(path -> path.toString().endsWith(".ftl"))
+                .forEach(path -> templateFiles.add(path.getFileName().toString()));
+          }
+          logger.debug("Found {} template files in local directory: {}", templateFiles.size(), directoryPath);
+          return templateFiles;
+        }
+      }
+
+      // Try remote if configured
+      if (downloader != null && templateConfig != null) {
+        // For remote mode, we would need to implement directory listing in
+        // GitHubTemplateDownloader
+        // For now, fall back to empty list
+        logger.warn("Directory listing not yet supported for remote templates: {}", directoryPath);
+      }
+
+    } catch (IOException e) {
+      logger.error("Failed to list templates in directory: {}", directoryPath, e);
+    }
+
+    return templateFiles;
+  }
+
   /**
    * Gets a Freemarker template.
    */

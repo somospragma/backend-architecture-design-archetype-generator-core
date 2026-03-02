@@ -250,11 +250,28 @@ public class GenerateOutputAdapterTask extends BaseCleanArchTask {
       String adapterPackageSuffix = structureMetadata.pathToPackageName(adapterBasePath);
 
       // Construct full package: basePackage + adapterPackageSuffix + adapterType
-      return projectConfig.basePackage() + "." + adapterPackageSuffix + "." + adapterType.toLowerCase();
+      // Sanitize adapter type: remove hyphens for valid Java package names
+      String sanitizedType = sanitizeAdapterType(adapterType);
+      return projectConfig.basePackage() + "." + adapterPackageSuffix + "." + sanitizedType;
     } catch (Exception e) {
       throw new IllegalArgumentException(
           "Could not auto-detect package name. Please provide --packageName or ensure .cleanarch.yml exists", e);
     }
+  }
+
+  /**
+   * Sanitizes adapter type for use in Java package names.
+   * Removes hyphens and converts to lowercase.
+   * 
+   * @param adapterType the adapter type (e.g., "sqs-consumer", "postgresql")
+   * @return sanitized type (e.g., "sqsconsumer", "postgresql")
+   */
+  private String sanitizeAdapterType(String adapterType) {
+    if (adapterType == null) {
+      return "";
+    }
+    // Remove hyphens and convert to lowercase
+    return adapterType.replace("-", "").toLowerCase();
   }
 
   /**

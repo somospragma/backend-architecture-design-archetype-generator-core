@@ -5,10 +5,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pragma.archetype.application.port.out.AdapterDiscoveryPort;
 import com.pragma.archetype.domain.model.adapter.AdapterDirection;
 import com.pragma.archetype.domain.model.adapter.AdapterIndex;
@@ -249,27 +249,61 @@ public class TemplateAdapterDiscovery implements AdapterDiscoveryPort {
     String templateDir = String.format("frameworks/%s/%s/adapters/%s/%s",
         framework, paradigm, adapterDir, adapterName);
 
-    // Discover all .ftl files in adapter directory
-    List<TemplateFile> templates = new ArrayList<>();
-
-    // Try common template names
-    String[] commonTemplates = {
-        "Controller.java.ftl", "Adapter.java.ftl", "Repository.java.ftl",
-        "Mapper.java.ftl", "Entity.java.ftl", "Config.java.ftl",
-        "Resolver.java.ftl", "Service.java.ftl", "Handler.java.ftl",
-        "Consumer.java.ftl", "Producer.java.ftl", "ScheduledTask.java.ftl"
-    };
-
-    for (String templateName : commonTemplates) {
-      String templatePath = templateDir + "/" + templateName;
-      if (templateRepository.templateExists(templatePath)) {
-        templates.add(TemplateFile.builder()
-            .name(templateName)
-            .type("main")
-            .destination(templateName.replace(".ftl", ""))
-            .build());
-      }
+    // Load metadata to get the suffix
+    AdapterMetadata metadata = null;
+    try {
+      metadata = templateRepository.loadAdapterMetadata(adapterName, framework, paradigm, adapterDir);
+    } catch (Exception e) {
+      logger.warn("Failed to load metadata for adapter '{}': {}", adapterName, e.getMessage());
     }
+
+    // Determine the main template name based on suffix from metadata
+    String mainTemplateName = null;
+    if (metadata != null && metadata.getSuffix() != null && !metadata.getSuffix().isBlank()) {
+      mainTemplateName = metadata.getSuffix() + ".java.ftl";
+      logger.debug("Main template determined from suffix: {}", mainTemplateName);
+    }
+
+    // Discover all .ftl files dynamically in the adapter directory
+    List<String> templateFileNames = templateRepository.listTemplatesInDirectory(templateDir);
+
+    if (templateFileNames.isEmpty()) {
+      logger.warn("No template files found in directory: {}", templateDir);
+      return Collections.emptyList();
+    }
+
+    logger.debug("Discovered {} template files in {}: {}", templateFileNames.size(), templateDir, templateFileNames);
+
+    // Build TemplateFile list
+    List<TemplateFile> templates = new ArrayList<>();
+    for (String templateName : templateFileNames) {
+      // Mark as "main" only if it matches the suffix from metadata
+      String type = (mainTemplateName != null && templateName.equals(mainTemplateName)) ? "main" : "secondary";
+
+      templates.add(TemplateFile.builder()
+          .name(templateName)
+          .type(type)
+          .destination(templateName.replace(".ftl", ""))
+          .build());
+    }
+
+    // If no main template was found but we have templates, mark the first one as
+    // main (fallback)
+    if (templates.stream().noneMatch(t -> "main".equals(t.getType())) && !templates.isEmpty()) {
+      logger.warn("No template matched suffix '{}', using first template as main: {}",
+          mainTemplateName, templates.get(0).getName());
+      TemplateFile firstTemplate = templates.get(0);
+      templates.set(0, TemplateFile.builder()
+          .name(firstTemplate.getName())
+          .type("main")
+          .destination(firstTemplate.getDestination())
+          .build());
+    }
+
+    logger.debug("Template discovery complete. Main: {}, Secondary: {}",
+        templates.stream().filter(t -> "main".equals(t.getType())).map(TemplateFile::getName).findFirst()
+            .orElse("none"),
+        templates.stream().filter(t -> "secondary".equals(t.getType())).count());
 
     return templates;
   }
