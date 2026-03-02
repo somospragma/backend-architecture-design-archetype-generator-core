@@ -34,18 +34,35 @@ public record AdditionalResource(
   /**
    * Resolves the full destination path for this resource.
    * 
-   * @param adapterName The adapter name (for variable substitution)
+   * @param adapterName   The adapter name (for variable substitution)
+   * @param resourcesPath The base resources path from architecture (e.g.,
+   *                      "src/main/resources" or
+   *                      "infrastructure/src/main/resources")
    * @return The resolved destination path relative to project root
    */
-  public String resolveDestination(String adapterName) {
-    // Build path: src/main/resources/{targetPath}/{name}
+  public String resolveDestination(String adapterName, String resourcesPath) {
+    // Build path: {resourcesPath}/{targetPath}/{name}
     String resolvedName = name.replace("{adapterName}", adapterName);
 
     if (targetPath == null || targetPath.isBlank()) {
-      return "src/main/resources/" + resolvedName;
+      return resourcesPath + "/" + resolvedName;
     }
 
-    return "src/main/resources/" + targetPath + "/" + resolvedName;
+    return resourcesPath + "/" + targetPath + "/" + resolvedName;
+  }
+
+  /**
+   * Resolves the full destination path for this resource using default resources
+   * path.
+   * 
+   * @deprecated Use resolveDestination(String, String) with explicit
+   *             resourcesPath
+   * @param adapterName The adapter name (for variable substitution)
+   * @return The resolved destination path relative to project root
+   */
+  @Deprecated
+  public String resolveDestination(String adapterName) {
+    return resolveDestination(adapterName, "src/main/resources");
   }
 
   /**

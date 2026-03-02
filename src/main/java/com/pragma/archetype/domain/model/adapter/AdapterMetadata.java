@@ -88,6 +88,25 @@ public class AdapterMetadata {
   }
 
   /**
+   * Represents a Gradle plugin required by an adapter.
+   */
+  public record BuildPlugin(String id, String version) {
+
+    public BuildPlugin {
+      Objects.requireNonNull(id, "Plugin id cannot be null");
+      Objects.requireNonNull(version, "Plugin version cannot be null");
+    }
+
+    /**
+     * Converts to Gradle plugin declaration.
+     * Example: id("com.google.protobuf") version "0.9.4"
+     */
+    public String toGradleDeclaration() {
+      return String.format("    id(\"%s\") version \"%s\"", id, version);
+    }
+  }
+
+  /**
    * Adapter type identifier (e.g., "rest", "kafka-consumer", "postgresql").
    * Used in command line: --type=rest
    */
@@ -210,6 +229,19 @@ public class AdapterMetadata {
   List<AdditionalResource> additionalResources = Collections.emptyList();
 
   /**
+   * Build plugins required by this adapter.
+   * Example: Protobuf plugin for gRPC
+   */
+  @Builder.Default
+  List<BuildPlugin> buildPlugins = Collections.emptyList();
+
+  /**
+   * Build configuration to add to build.gradle.kts.
+   * Can use FreeMarker variables like ${resourcesPath}
+   */
+  String buildConfiguration;
+
+  /**
    * Application properties template path.
    * 
    * @deprecated Kept for backward compatibility.
@@ -313,6 +345,20 @@ public class AdapterMetadata {
    */
   public boolean hasAdditionalResources() {
     return !additionalResources.isEmpty();
+  }
+
+  /**
+   * Checks if this adapter has build plugins.
+   */
+  public boolean hasBuildPlugins() {
+    return !buildPlugins.isEmpty();
+  }
+
+  /**
+   * Checks if this adapter has build configuration.
+   */
+  public boolean hasBuildConfiguration() {
+    return buildConfiguration != null && !buildConfiguration.isBlank();
   }
 
   /**

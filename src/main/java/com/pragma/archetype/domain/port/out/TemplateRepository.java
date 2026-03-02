@@ -127,4 +127,16 @@ public interface TemplateRepository {
    * @throws TemplateNotFoundException if template is not found
    */
   java.util.Set<String> extractRequiredVariables(String templatePath);
+
+  /**
+   * Processes an inline template string with the given context.
+   * Used for processing configuration templates that are stored as strings
+   * rather than files (e.g., buildConfiguration in adapter metadata).
+   *
+   * @param templateContent template content as string
+   * @param context         context data for template processing
+   * @return processed template content
+   * @throws TemplateProcessingException if template processing fails
+   */
+  String processInlineTemplate(String templateContent, java.util.Map<String, Object> context);
 }

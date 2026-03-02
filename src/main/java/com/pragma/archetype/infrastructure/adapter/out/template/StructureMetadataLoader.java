@@ -1,10 +1,12 @@
 package com.pragma.archetype.infrastructure.adapter.out.template;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import org.yaml.snakeyaml.Yaml;
 
+import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.model.structure.LayerDependencies;
 import com.pragma.archetype.domain.model.structure.ModuleMetadata;
@@ -70,10 +72,12 @@ public class StructureMetadataLoader {
       String entityModule = extractEntityModule(data);
       String useCaseModule = extractUseCaseModule(data);
       java.util.List<StaticFile> staticFiles = extractStaticFiles(data);
+      String resourcesPath = extractResourcesPath(data);
 
       // Create and validate the metadata
       StructureMetadata metadata = new StructureMetadata(
           architectureType,
+          resourcesPath,
           adapterPaths,
           templatePaths,
           packageMappings,
@@ -317,6 +321,43 @@ public class StructureMetadataLoader {
         .rules(rules)
         .replacements(replacements)
         .build();
+  }
+
+  /**
+   * Extracts the resources path from structure.yml data.
+   * Returns null if not specified (will use default in StructureMetadata).
+   */
+  private String extractResourcesPath(Map<String, Object> data) {
+    return (String) data.get("resourcesPath");
+  }
+
+  /**
+   * Extracts build plugins from adapter metadata.
+   */
+  @SuppressWarnings("unchecked")
+  private List<AdapterMetadata.BuildPlugin> extractBuildPlugins(Map<String, Object> data) {
+    if (!data.containsKey("buildPlugins")) {
+      return Collections.emptyList();
+    }
+
+    Object pluginsObj = data.get("buildPlugins");
+    if (!(pluginsObj instanceof List)) {
+      return Collections.emptyList();
+    }
+
+    List<Map<String, Object>> pluginsList = (List<Map<String, Object>>) pluginsObj;
+    return pluginsList.stream()
+        .map(p -> new AdapterMetadata.BuildPlugin(
+            (String) p.get("id"),
+            (String) p.get("version")))
+        .toList();
+  }
+
+  /**
+   * Extracts build configuration from adapter metadata.
+   */
+  private String extractBuildConfiguration(Map<String, Object> data) {
+    return (String) data.get("buildConfiguration");
   }
 
   /**

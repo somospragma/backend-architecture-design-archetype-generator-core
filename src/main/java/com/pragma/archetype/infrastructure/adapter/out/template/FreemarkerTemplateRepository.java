@@ -409,6 +409,29 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
     }
   }
 
+  @Override
+  public String processInlineTemplate(String templateContent, Map<String, Object> context) {
+    try {
+      // Create a template from the string content
+      Template template = new Template("inline", templateContent, freemarkerConfig);
+
+      // Process template with context
+      StringWriter writer = new StringWriter();
+      template.process(context, writer);
+
+      return writer.toString();
+
+    } catch (IOException e) {
+      throw new TemplateProcessingException(
+          "Failed to create inline template",
+          e);
+    } catch (TemplateException e) {
+      throw new TemplateProcessingException(
+          "Failed to process inline template",
+          e);
+    }
+  }
+
   /**
    * Gets a Freemarker template.
    */

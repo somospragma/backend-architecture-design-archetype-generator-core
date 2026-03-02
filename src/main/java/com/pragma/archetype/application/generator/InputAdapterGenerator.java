@@ -13,6 +13,7 @@ import com.pragma.archetype.domain.model.adapter.Endpoint;
 import com.pragma.archetype.domain.model.adapter.EndpointParameter;
 import com.pragma.archetype.domain.model.adapter.InputAdapterConfig;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
+import com.pragma.archetype.domain.model.structure.StructureMetadata;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 
@@ -50,7 +51,8 @@ public class InputAdapterGenerator {
   /**
    * Generates input adapter files based on configuration.
    */
-  public List<GeneratedFile> generate(Path projectPath, InputAdapterConfig config) {
+  public List<GeneratedFile> generate(Path projectPath, InputAdapterConfig config,
+      StructureMetadata structureMetadata) {
     List<GeneratedFile> generatedFiles = new ArrayList<>();
 
     // Get framework and paradigm from config
@@ -74,8 +76,9 @@ public class InputAdapterGenerator {
     GeneratedFile controllerFile = generateController(projectPath, config, data);
     generatedFiles.add(controllerFile);
 
-    // Generate additional resources (GraphQL schemas, OpenAPI specs, etc.)
-    List<GeneratedFile> additionalFiles = generateAdditionalResources(projectPath, config, data);
+    // Generate additional resources (GraphQL schemas, gRPC protos, etc.)
+    String resourcesPath = structureMetadata.getResourcesPath();
+    List<GeneratedFile> additionalFiles = generateAdditionalResources(projectPath, config, data, resourcesPath);
     generatedFiles.addAll(additionalFiles);
 
     return generatedFiles;
@@ -183,13 +186,14 @@ public class InputAdapterGenerator {
   }
 
   /**
-   * Generates additional resource files (GraphQL schemas, OpenAPI specs, etc.).
+   * Generates additional resource files (GraphQL schemas, gRPC protos, etc.).
    * Similar to generateStaticFiles in ProjectGenerator.
    */
   private List<GeneratedFile> generateAdditionalResources(
       Path projectPath,
       InputAdapterConfig config,
-      Map<String, Object> data) {
+      Map<String, Object> data,
+      String resourcesPath) {
 
     List<GeneratedFile> files = new ArrayList<>();
 
@@ -213,8 +217,8 @@ public class InputAdapterGenerator {
           // Build template path
           String templatePath = basePath + "/" + resource.templatePath();
 
-          // Resolve destination path
-          String destination = resource.resolveDestination(config.name());
+          // Resolve destination path using resourcesPath from architecture
+          String destination = resource.resolveDestination(config.name(), resourcesPath);
           Path destinationPath = projectPath.resolve(destination);
 
           // Process resource

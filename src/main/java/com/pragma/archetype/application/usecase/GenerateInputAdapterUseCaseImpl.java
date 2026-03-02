@@ -37,6 +37,8 @@ public class GenerateInputAdapterUseCaseImpl implements GenerateInputAdapterUseC
   private final AdapterDiscoveryPort adapterDiscovery;
   private final TemplateRepository templateRepository;
   private final YamlConfigurationAdapter yamlConfigurationAdapter;
+  private final com.pragma.archetype.domain.service.BuildFileMerger buildFileMerger;
+  private final com.pragma.archetype.domain.service.BuildConfigurationProcessor buildConfigurationProcessor;
 
   public GenerateInputAdapterUseCaseImpl(
       InputAdapterValidator validator,
@@ -53,6 +55,9 @@ public class GenerateInputAdapterUseCaseImpl implements GenerateInputAdapterUseC
     this.adapterDiscovery = adapterDiscovery;
     this.templateRepository = templateRepository;
     this.yamlConfigurationAdapter = yamlConfigurationAdapter;
+    this.buildFileMerger = new com.pragma.archetype.domain.service.BuildFileMerger();
+    this.buildConfigurationProcessor = new com.pragma.archetype.domain.service.BuildConfigurationProcessor(
+        templateRepository);
   }
 
   @Override
@@ -64,19 +69,30 @@ public class GenerateInputAdapterUseCaseImpl implements GenerateInputAdapterUseC
     }
 
     try {
-      // 2. Generate input adapter files
-      List<GeneratedFile> generatedFiles = generator.generate(projectPath, config);
+      // 2. Load project configuration to get architecture
+      var projectConfig = configurationPort.readConfiguration(projectPath)
+          .orElseThrow(() -> new IllegalStateException("Project configuration not found"));
 
-      // 3. Write files to disk
+      // 3. Load structure metadata for the architecture
+      com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
+          .loadStructureMetadata(projectConfig.architecture());
+
+      // 4. Generate input adapter files
+      List<GeneratedFile> generatedFiles = generator.generate(projectPath, config, structureMetadata);
+
+      // 5. Write files to disk
       for (GeneratedFile file : generatedFiles) {
         fileSystemPort.writeFile(file);
       }
 
-      // 4. Merge application properties if adapter has applicationPropertiesTemplate
+      // 6. Merge application properties if adapter has applicationPropertiesTemplate
       mergeApplicationPropertiesIfNeeded(projectPath, config);
 
-      // 5. Add dependencies to build.gradle.kts if adapter has dependencies
+      // 7. Add dependencies to build.gradle.kts if adapter has dependencies
       addDependenciesIfNeeded(projectPath, config);
+
+      // 8. Add build plugins and configuration if adapter has them
+      addBuildPluginsAndConfigurationIfNeeded(projectPath, config, structureMetadata);
 
       return GenerationResult.success(generatedFiles);
 
@@ -289,5 +305,77 @@ public class GenerateInputAdapterUseCaseImpl implements GenerateInputAdapterUseC
     logger.warn("Could not find dependencies block in build file, dependency not added: {}",
         dependency);
     return buildFileContent;
+  }
+
+  /**
+   * Adds build plugins and configuration to build.gradle.kts if the adapter has
+   * them.
+   * Plugins are added to the plugins {} block, and configuration is appended to
+   * the end.
+   *
+   * @param projectPath       path to the project root
+   * @param config            adapter configuration
+   * @param structureMetadata structure metadata for variable replacement
+   */
+  private void addBuildPluginsAndConfigurationIfNeeded(
+      Path projectPath,
+      InputAdapterConfig config,
+      com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata) {
+
+    try {
+      // 1. Load adapter metadata to check if it has buildPlugins or
+      // buildConfiguration
+      AdapterMetadata metadata = adapterDiscovery
+          .findAdapter(config.type(), AdapterDirection.INPUT, config.framework(), config.paradigm())
+          .orElse(null);
+
+      if (metadata == null) {
+        logger.debug("Adapter metadata not found for {}, skipping build configuration", config.name());
+        return;
+      }
+
+      if (!metadata.hasBuildPlugins() && !metadata.hasBuildConfiguration()) {
+        logger.debug("Adapter {} does not have build plugins or configuration, skipping", config.name());
+        return;
+      }
+
+      logger.info("Processing build plugins and configuration for adapter: {}", config.name());
+
+      // 2. Determine the build file path
+      Path buildFilePath = projectPath.resolve("build.gradle.kts");
+
+      if (!fileSystemPort.exists(buildFilePath)) {
+        logger.warn("Build file not found at {}, skipping build configuration", buildFilePath);
+        return;
+      }
+
+      // 3. Read the current build file content
+      String buildFileContent = fileSystemPort.readFile(buildFilePath);
+
+      // 4. Add plugins if present
+      if (metadata.hasBuildPlugins()) {
+        buildFileContent = buildFileMerger.addPlugins(buildFileContent, metadata.getBuildPlugins());
+      }
+
+      // 5. Process and add build configuration if present
+      if (metadata.hasBuildConfiguration()) {
+        String processedConfig = buildConfigurationProcessor.process(
+            metadata.getBuildConfiguration(),
+            structureMetadata,
+            config);
+
+        buildFileContent = buildFileMerger.addBuildConfiguration(buildFileContent, processedConfig);
+      }
+
+      // 6. Write the updated build file
+      fileSystemPort.writeFile(GeneratedFile.create(buildFilePath, buildFileContent));
+
+      logger.info("Successfully added build plugins and configuration for adapter: {}", config.name());
+
+    } catch (Exception e) {
+      logger.error("Failed to add build plugins and configuration for adapter {}: {}",
+          config.name(), e.getMessage(), e);
+      // Don't fail the entire generation if build configuration fails
+    }
   }
 }

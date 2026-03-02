@@ -12,6 +12,7 @@ import com.pragma.archetype.domain.model.validation.ValidationResult;
  */
 public record StructureMetadata(
     String architectureType,
+    String resourcesPath,
     Map<String, String> adapterPaths,
     TemplatePaths templatePaths,
     PackageMappings packageMappings,
@@ -258,5 +259,18 @@ public record StructureMetadata(
    */
   public boolean hasStaticFiles() {
     return staticFiles != null && !staticFiles.isEmpty();
+  }
+
+  /**
+   * Gets the resources path for this architecture.
+   * Returns the configured path from structure.yml or defaults to
+   * "src/main/resources".
+   * 
+   * @return The resources path relative to project root
+   */
+  public String getResourcesPath() {
+    return resourcesPath != null && !resourcesPath.isBlank()
+        ? resourcesPath
+        : "src/main/resources";
   }
 }
