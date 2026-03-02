@@ -110,7 +110,7 @@ public class AdapterConfigurationService {
             // frameworks/{framework}/{paradigm}/adapters/{category}/{type}/{template}
             String propertiesTemplatePath = String.format("frameworks/%s/%s/adapters/%s/%s/%s",
                     framework, paradigm, adapterTypeCategory, adapterTypeLower,
-                    metadata.applicationPropertiesTemplate());
+                    metadata.getEffectiveApplicationPropertiesTemplate());
 
             logger.debug("Processing application properties template from: {}", propertiesTemplatePath);
             String processedProperties = templateRepository.processTemplate(propertiesTemplatePath, templateContext);
@@ -193,7 +193,7 @@ public class AdapterConfigurationService {
             Map<String, Object> templateContext = prepareConfigurationClassContext(config, projectConfig);
 
             // Process each configuration class
-            for (AdapterMetadata.ConfigurationClass configClass : metadata.configurationClasses()) {
+            for (AdapterMetadata.ConfigurationClass configClass : metadata.getConfigurationClasses()) {
                 try {
                     // Build dynamic template path:
                     // frameworks/{framework}/{paradigm}/adapters/{category}/{type}/{template}
@@ -331,7 +331,7 @@ public class AdapterConfigurationService {
 
             // Add each test dependency
             String updatedContent = buildFileContent;
-            for (AdapterMetadata.Dependency testDep : metadata.testDependencies()) {
+            for (AdapterMetadata.Dependency testDep : metadata.getTestDependencies()) {
                 // Convert Dependency to coordinate string
                 String coordinate = testDep.group() + ":" + testDep.artifact() + ":" + testDep.version();
                 updatedContent = addTestDependencyToBuildFile(updatedContent, coordinate);
@@ -341,7 +341,7 @@ public class AdapterConfigurationService {
             if (!updatedContent.equals(buildFileContent)) {
                 fileSystemPort.writeFile(GeneratedFile.create(buildFilePath, updatedContent));
                 logger.info("Successfully added {} test dependencies for adapter: {}",
-                        metadata.testDependencies().size(), config.name());
+                        metadata.getTestDependencies().size(), config.name());
             } else {
                 logger.debug("No new test dependencies to add for adapter: {}", config.name());
             }

@@ -114,9 +114,9 @@ class AdapterMetadataLoaderTest {
     // Then
     assertNotNull(metadata);
     assertTrue(metadata.hasTestDependencies());
-    assertEquals(1, metadata.testDependencies().size());
+    assertEquals(1, metadata.getTestDependencies().size());
 
-    Dependency testDep = metadata.testDependencies().get(0);
+    Dependency testDep = metadata.getTestDependencies().get(0);
     assertEquals("de.flapdoodle.embed", testDep.group());
     assertEquals("de.flapdoodle.embed.mongo", testDep.artifact());
     assertEquals("4.11.0", testDep.version());
@@ -147,7 +147,7 @@ class AdapterMetadataLoaderTest {
     // Then
     assertNotNull(metadata);
     assertTrue(metadata.hasApplicationProperties());
-    assertEquals("application-properties.yml.ftl", metadata.applicationPropertiesTemplate());
+    assertEquals("application-properties.yml.ftl", metadata.getEffectiveApplicationPropertiesTemplate());
   }
 
   @Test
@@ -176,9 +176,9 @@ class AdapterMetadataLoaderTest {
     // Then
     assertNotNull(metadata);
     assertTrue(metadata.hasConfigurationClasses());
-    assertEquals(1, metadata.configurationClasses().size());
+    assertEquals(1, metadata.getConfigurationClasses().size());
 
-    ConfigurationClass configClass = metadata.configurationClasses().get(0);
+    ConfigurationClass configClass = metadata.getConfigurationClasses().get(0);
     assertEquals("MongoConfig", configClass.name());
     assertEquals("config", configClass.packagePath());
     assertEquals("MongoConfig.java.ftl", configClass.templatePath());
@@ -224,10 +224,10 @@ class AdapterMetadataLoaderTest {
     assertEquals("mongodb-adapter", metadata.getName());
     assertEquals(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT, metadata.getDirection());
     assertEquals(1, metadata.dependencies().size());
-    assertEquals(1, metadata.testDependencies().size());
+    assertEquals(1, metadata.getTestDependencies().size());
     assertTrue(metadata.hasApplicationProperties());
     assertTrue(metadata.hasConfigurationClasses());
-    assertEquals(2, metadata.configurationClasses().size());
+    assertEquals(2, metadata.getConfigurationClasses().size());
   }
 
   @Test
@@ -327,8 +327,8 @@ class AdapterMetadataLoaderTest {
     assertFalse(metadata.hasTestDependencies());
     assertFalse(metadata.hasApplicationProperties());
     assertFalse(metadata.hasConfigurationClasses());
-    assertTrue(metadata.testDependencies().isEmpty());
-    assertTrue(metadata.configurationClasses().isEmpty());
+    assertTrue(metadata.getTestDependencies().isEmpty());
+    assertTrue(metadata.getConfigurationClasses().isEmpty());
   }
 
   @Test
@@ -386,7 +386,7 @@ class AdapterMetadataLoaderTest {
 
     // Then
     assertNotNull(metadata);
-    assertEquals("application-test.yml.ftl", metadata.applicationPropertiesTemplate());
+    assertEquals("application-test.yml.ftl", metadata.getEffectiveApplicationPropertiesTemplate());
   }
 
   @Test

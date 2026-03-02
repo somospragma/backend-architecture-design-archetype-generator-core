@@ -301,13 +301,10 @@ public class AdapterMetadata {
 
   /**
    * Checks if this adapter has application properties template.
-   * 
-   * @deprecated Kept for backward compatibility.
    */
-  @Deprecated
   public boolean hasApplicationProperties() {
-    return (applicationPropertiesTemplate != null && !applicationPropertiesTemplate.isBlank())
-        || (legacyApplicationPropertiesTemplate != null && !legacyApplicationPropertiesTemplate.isBlank());
+    return getEffectiveApplicationPropertiesTemplate() != null
+        && !getEffectiveApplicationPropertiesTemplate().isBlank();
   }
 
   /**
@@ -378,44 +375,12 @@ public class AdapterMetadata {
   }
 
   /**
-   * Gets the list of runtime dependencies.
-   * Explicit getter for backward compatibility with legacy code.
-   * 
-   * @return List of dependencies
-   * @deprecated Use the Lombok-generated getter instead
-   */
-  @Deprecated
-  public List<Dependency> dependencies() {
-    return runtimeDependencies;
-  }
-
-  /**
-   * Gets the list of test dependencies.
-   * 
-   * @return List of test dependencies with scope information
-   */
-  public List<Dependency> testDependencies() {
-    return testDependencies;
-  }
-
-  /**
-   * Gets the list of configuration classes.
-   * 
-   * @return List of configuration classes to generate
-   */
-  public List<ConfigurationClass> configurationClasses() {
-    return configurationClasses;
-  }
-
-  /**
-   * Gets the application properties template path.
-   * Explicit getter for backward compatibility with legacy code.
+   * Gets the application properties template path with fallback to legacy.
+   * This is the only custom getter needed because it has special logic.
    * 
    * @return Application properties template path
-   * @deprecated Use the Lombok-generated getter instead
    */
-  @Deprecated
-  public String applicationPropertiesTemplate() {
+  public String getEffectiveApplicationPropertiesTemplate() {
     return applicationPropertiesTemplate != null ? applicationPropertiesTemplate : legacyApplicationPropertiesTemplate;
   }
 }

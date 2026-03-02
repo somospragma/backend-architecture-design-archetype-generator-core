@@ -116,7 +116,7 @@ public class TemplateValidator {
 
       // 5. Validate application properties template if specified
       if (metadata.hasApplicationProperties()) {
-        String propsTemplate = "adapters/" + adapterName + "/" + metadata.applicationPropertiesTemplate();
+        String propsTemplate = "adapters/" + adapterName + "/" + metadata.getEffectiveApplicationPropertiesTemplate();
         ValidationResult propsValidation = templateRepository.validateTemplate(propsTemplate);
         if (!propsValidation.valid()) {
           errors.add("Application properties template not found or invalid: " + propsTemplate);
@@ -125,7 +125,7 @@ public class TemplateValidator {
 
       // 6. Validate configuration class templates if specified
       if (metadata.hasConfigurationClasses()) {
-        for (AdapterMetadata.ConfigurationClass configClass : metadata.configurationClasses()) {
+        for (AdapterMetadata.ConfigurationClass configClass : metadata.getConfigurationClasses()) {
           String configTemplate = "adapters/" + adapterName + "/" + configClass.templatePath();
           ValidationResult configValidation = templateRepository.validateTemplate(configTemplate);
           if (!configValidation.valid()) {

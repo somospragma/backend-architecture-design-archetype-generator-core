@@ -85,20 +85,20 @@ class AdapterMetadataLoaderIntegrationTest {
 
     // Verify test dependencies
     assertTrue(metadata.hasTestDependencies());
-    assertEquals(1, metadata.testDependencies().size());
-    assertEquals("de.flapdoodle.embed", metadata.testDependencies().get(0).group());
-    assertEquals("test", metadata.testDependencies().get(0).scope());
+    assertEquals(1, metadata.getTestDependencies().size());
+    assertEquals("de.flapdoodle.embed", metadata.getTestDependencies().get(0).group());
+    assertEquals("test", metadata.getTestDependencies().get(0).scope());
 
     // Verify application properties template
     assertTrue(metadata.hasApplicationProperties());
-    assertEquals("application-properties.yml.ftl", metadata.applicationPropertiesTemplate());
+    assertEquals("application-properties.yml.ftl", metadata.getEffectiveApplicationPropertiesTemplate());
 
     // Verify configuration classes
     assertTrue(metadata.hasConfigurationClasses());
-    assertEquals(1, metadata.configurationClasses().size());
-    assertEquals("MongoConfig", metadata.configurationClasses().get(0).name());
-    assertEquals("config", metadata.configurationClasses().get(0).packagePath());
-    assertEquals("MongoConfig.java.ftl", metadata.configurationClasses().get(0).templatePath());
+    assertEquals(1, metadata.getConfigurationClasses().size());
+    assertEquals("MongoConfig", metadata.getConfigurationClasses().get(0).name());
+    assertEquals("config", metadata.getConfigurationClasses().get(0).packagePath());
+    assertEquals("MongoConfig.java.ftl", metadata.getConfigurationClasses().get(0).templatePath());
   }
 
   @Test
