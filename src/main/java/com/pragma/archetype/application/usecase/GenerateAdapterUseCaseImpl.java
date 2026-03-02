@@ -2,9 +2,7 @@ package com.pragma.archetype.application.usecase;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +36,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
   private final YamlConfigurationAdapter yamlConfigurationAdapter;
   private final BackupService backupService;
   private final com.pragma.archetype.domain.service.DependencyConflictDetector conflictDetector;
+  private final com.pragma.archetype.domain.service.AdapterConfigurationService adapterConfigurationService;
 
   public GenerateAdapterUseCaseImpl(
       AdapterValidator validator,
@@ -55,6 +54,8 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
     this.yamlConfigurationAdapter = yamlConfigurationAdapter;
     this.backupService = backupService;
     this.conflictDetector = new com.pragma.archetype.domain.service.DependencyConflictDetector();
+    this.adapterConfigurationService = new com.pragma.archetype.domain.service.AdapterConfigurationService(
+        configurationPort, fileSystemPort, templateRepository, yamlConfigurationAdapter);
   }
 
   @Override
@@ -98,23 +99,45 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
         fileSystemPort.writeFile(file);
       }
 
-      // 7. Merge application properties if adapter has applicationPropertiesTemplate
-      mergeApplicationPropertiesIfNeeded(projectPath, config);
+      // 7. Load adapter metadata for configuration tasks
+      AdapterMetadata metadata = loadAdapterMetadataWithFallback(
+          config.type().toLowerCase(),
+          projectPath,
+          config);
 
-      // 8. Generate configuration classes if adapter has configurationClasses
-      List<GeneratedFile> configFiles = generateConfigurationClassesIfNeeded(projectPath, config);
+      // 8. Create adapter config for shared service
+      var adapterConfig = new com.pragma.archetype.domain.service.AdapterConfigurationService.AdapterConfig(
+          config.name(),
+          config.type(),
+          projectConfig.framework().name(),
+          projectConfig.paradigm().name(),
+          config.packageName(),
+          null, // useCaseName not applicable for output adapters
+          config.entityName(),
+          com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT);
+
+      // 9. Merge application properties if adapter has applicationPropertiesTemplate
+      adapterConfigurationService.mergeApplicationPropertiesIfNeeded(projectPath, adapterConfig, metadata);
+
+      // 10. Generate configuration classes if adapter has configurationClasses
+      List<GeneratedFile> configFiles = adapterConfigurationService.generateConfigurationClassesIfNeeded(
+          projectPath, adapterConfig, metadata);
       generatedFiles.addAll(configFiles);
 
-      // Write configuration class files to disk
-      for (GeneratedFile file : configFiles) {
-        fileSystemPort.writeFile(file);
-      }
+      // 11. Add dependencies if adapter has dependencies
+      adapterConfigurationService.addDependenciesIfNeeded(projectPath, adapterConfig, metadata);
 
-      // 9. Check for dependency conflicts before adding dependencies
+      // 12. Add build plugins and configuration if adapter has them
+      com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
+          .loadStructureMetadata(projectConfig.architecture());
+      adapterConfigurationService.addBuildPluginsAndConfigurationIfNeeded(
+          projectPath, adapterConfig, metadata, structureMetadata);
+
+      // 13. Add test dependencies if adapter has testDependencies
+      adapterConfigurationService.addTestDependenciesIfNeeded(projectPath, adapterConfig, metadata);
+
+      // 14. Check for dependency conflicts (informational only)
       checkDependencyConflicts(projectPath, config, projectConfig);
-
-      // 10. Add test dependencies if adapter has testDependencies
-      addTestDependenciesIfNeeded(projectPath, config);
 
       // 11. Delete backup on success
       if (backupId != null) {
@@ -175,7 +198,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
           // Use framework-aware loading
           String framework = projectConfig.framework().name().toLowerCase();
           String paradigm = projectConfig.paradigm().name().toLowerCase();
-          String adapterTypeCategory = determineAdapterTypeCategory(config);
+          String adapterTypeCategory = "driven-adapters"; // Output adapters are always driven-adapters
 
           metadata = templateRepository.loadAdapterMetadata(
               adapterTypeLower,
@@ -199,31 +222,41 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
       }
 
       // 3. Validate main adapter templates (from AdapterGenerator)
-      String adapterTemplate = getAdapterTemplatePath(config.type());
+      String adapterTemplate = getAdapterTemplatePath(config.type(), projectConfig);
       ValidationResult adapterTemplateValidation = templateRepository.validateTemplate(adapterTemplate);
       if (!adapterTemplateValidation.valid()) {
         errors.add(String.format("Main adapter template validation failed: %s",
             adapterTemplateValidation.errors().get(0)));
       }
 
-      String dataEntityTemplate = getDataEntityTemplatePath(config.type());
-      ValidationResult entityTemplateValidation = templateRepository.validateTemplate(dataEntityTemplate);
-      if (!entityTemplateValidation.valid()) {
-        errors.add(String.format("Data entity template validation failed: %s",
-            entityTemplateValidation.errors().get(0)));
+      String dataEntityTemplate = getDataEntityTemplatePath(config.type(), projectConfig);
+      if (templateRepository.templateExists(dataEntityTemplate)) {
+        ValidationResult entityTemplateValidation = templateRepository.validateTemplate(dataEntityTemplate);
+        if (!entityTemplateValidation.valid()) {
+          errors.add(String.format("Data entity template validation failed: %s",
+              entityTemplateValidation.errors().get(0)));
+        }
       }
+      // Entity template is optional - not all adapters need it
 
-      String mapperTemplate = getMapperTemplatePath();
-      ValidationResult mapperTemplateValidation = templateRepository.validateTemplate(mapperTemplate);
-      if (!mapperTemplateValidation.valid()) {
-        errors.add(String.format("Mapper template validation failed: %s",
-            mapperTemplateValidation.errors().get(0)));
+      String mapperTemplate = getMapperTemplatePath(projectConfig);
+      if (templateRepository.templateExists(mapperTemplate)) {
+        ValidationResult mapperTemplateValidation = templateRepository.validateTemplate(mapperTemplate);
+        if (!mapperTemplateValidation.valid()) {
+          errors.add(String.format("Mapper template validation failed: %s",
+              mapperTemplateValidation.errors().get(0)));
+        }
       }
+      // Mapper template is optional - not all adapters need it
 
       // 4. Validate application properties template if present
       if (metadata.hasApplicationProperties()) {
-        String propertiesTemplatePath = String.format("adapters/%s/%s",
-            adapterTypeLower, metadata.applicationPropertiesTemplate());
+        String framework = projectConfig != null ? projectConfig.framework().name().toLowerCase() : "spring";
+        String paradigm = projectConfig != null ? projectConfig.paradigm().name().toLowerCase() : "reactive";
+        String adapterTypeCategory = "driven-adapters"; // Output adapters are always driven-adapters
+
+        String propertiesTemplatePath = String.format("frameworks/%s/%s/adapters/%s/%s/%s",
+            framework, paradigm, adapterTypeCategory, adapterTypeLower, metadata.applicationPropertiesTemplate());
 
         if (!templateRepository.templateExists(propertiesTemplatePath)) {
           errors.add(String.format(
@@ -240,9 +273,13 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
 
       // 5. Validate configuration class templates if present
       if (metadata.hasConfigurationClasses()) {
+        String framework = projectConfig != null ? projectConfig.framework().name().toLowerCase() : "spring";
+        String paradigm = projectConfig != null ? projectConfig.paradigm().name().toLowerCase() : "reactive";
+        String adapterTypeCategory = "driven-adapters"; // Output adapters are always driven-adapters
+
         for (AdapterMetadata.ConfigurationClass configClass : metadata.configurationClasses()) {
-          String configTemplatePath = String.format("adapters/%s/%s",
-              adapterTypeLower, configClass.templatePath());
+          String configTemplatePath = String.format("frameworks/%s/%s/adapters/%s/%s/%s",
+              framework, paradigm, adapterTypeCategory, adapterTypeLower, configClass.templatePath());
 
           if (!templateRepository.templateExists(configTemplatePath)) {
             errors.add(String.format(
@@ -260,7 +297,9 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
 
       // 6. Validate module build template if adaptersAsModules is enabled
       if (projectConfig != null && projectConfig.adaptersAsModules()) {
-        String moduleBuildTemplate = "frameworks/spring/reactive/adapters/driven-adapters/module-build.gradle.kts.ftl";
+        String paradigm = projectConfig.paradigm().name().toLowerCase();
+        String moduleBuildTemplate = String
+            .format("frameworks/spring/%s/adapters/driven-adapters/module-build.gradle.kts.ftl", paradigm);
         if (!templateRepository.templateExists(moduleBuildTemplate)) {
           warnings.add(String.format(
               "Module build template not found: %s (required for adaptersAsModules=true)",
@@ -298,37 +337,51 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
   /**
    * Gets the adapter template path for a given adapter type.
    * 
+   * @param type          adapter type
+   * @param projectConfig project configuration (may be null)
+   * @return template path
    * @deprecated This method uses hardcoded paths. Template validation should be
    *             done in the generator.
    */
   @Deprecated
-  private String getAdapterTemplatePath(String type) {
+  private String getAdapterTemplatePath(String type,
+      com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
     // Return generic path - actual validation happens in generator with dynamic
     // discovery
     String typeLower = type.toLowerCase().replace("_", "-");
-    return String.format("frameworks/spring/reactive/adapters/driven-adapters/%s/Adapter.java.ftl", typeLower);
+    String paradigm = projectConfig != null ? projectConfig.paradigm().name().toLowerCase() : "reactive";
+    return String.format("frameworks/spring/%s/adapters/driven-adapters/%s/Adapter.java.ftl", paradigm, typeLower);
   }
 
   /**
    * Gets the data entity template path for a given adapter type.
    * 
+   * @param type          adapter type
+   * @param projectConfig project configuration (may be null)
+   * @return template path
    * @deprecated This method uses hardcoded paths. Template validation should be
    *             done in the generator.
    */
   @Deprecated
-  private String getDataEntityTemplatePath(String type) {
+  private String getDataEntityTemplatePath(String type,
+      com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
     // Return generic path - actual validation happens in generator with dynamic
     // discovery
     String typeLower = type.toLowerCase().replace("_", "-");
-    return String.format("frameworks/spring/reactive/adapters/driven-adapters/%s/Entity.java.ftl", typeLower);
+    String paradigm = projectConfig != null ? projectConfig.paradigm().name().toLowerCase() : "reactive";
+    return String.format("frameworks/spring/%s/adapters/driven-adapters/%s/Entity.java.ftl", paradigm, typeLower);
   }
 
   /**
    * Gets the mapper template path.
    * This mirrors the logic in AdapterGenerator.getMapperTemplate().
+   * 
+   * @param projectConfig project configuration (may be null)
+   * @return template path
    */
-  private String getMapperTemplatePath() {
-    return "frameworks/spring/reactive/adapters/driven-adapters/generic/Mapper.java.ftl";
+  private String getMapperTemplatePath(com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
+    String paradigm = projectConfig != null ? projectConfig.paradigm().name().toLowerCase() : "reactive";
+    return String.format("frameworks/spring/%s/adapters/driven-adapters/generic/Mapper.java.ftl", paradigm);
   }
 
   /**
@@ -357,13 +410,12 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
         }
       }
 
-      // 2. Build file will be modified if adapter has test dependencies
-      if (metadata.hasTestDependencies()) {
-        Path buildFile = determineBuildFilePath(projectPath, config).getFileName();
-        if (buildFile != null && fileSystemPort.exists(projectPath.resolve(buildFile))) {
-          // Get relative path from project root
-          Path relativeBuildPath = projectPath.relativize(determineBuildFilePath(projectPath, config));
-          filesToBackup.add(relativeBuildPath);
+      // 2. Build file will be modified if adapter has dependencies or test
+      // dependencies
+      if (!metadata.getDependencies().isEmpty() || metadata.hasTestDependencies()) {
+        Path buildFile = Path.of("build.gradle.kts");
+        if (fileSystemPort.exists(projectPath.resolve(buildFile))) {
+          filesToBackup.add(buildFile);
         }
       }
 
@@ -373,347 +425,6 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
     }
 
     return filesToBackup;
-  }
-
-  /**
-   * Merges application properties from adapter template into existing
-   * application.yml.
-   * Only merges if the adapter has an applicationPropertiesTemplate defined.
-   *
-   * @param projectPath path to the project root
-   * @param config      adapter configuration
-   */
-  private void mergeApplicationPropertiesIfNeeded(Path projectPath, OutputAdapterConfig config) {
-    try {
-      // 1. Load adapter metadata to check if it has applicationPropertiesTemplate
-      AdapterMetadata metadata = loadAdapterMetadataWithFallback(
-          config.type().toLowerCase(),
-          projectPath,
-          config);
-
-      if (!metadata.hasApplicationProperties()) {
-        logger.debug("Adapter {} does not have application properties template, skipping merge",
-            config.name());
-        return;
-      }
-
-      logger.info("Processing application properties template for adapter: {}", config.name());
-
-      // 2. Prepare template context with adapter information
-      Map<String, Object> templateContext = prepareApplicationPropertiesContext(config);
-
-      // 3. Process the application properties template
-      String adapterTypeLower = config.type().toLowerCase();
-      String propertiesTemplatePath = String.format("adapters/%s/%s", adapterTypeLower,
-          metadata.applicationPropertiesTemplate());
-      String processedProperties = templateRepository.processTemplate(propertiesTemplatePath, templateContext);
-
-      // 4. Parse the processed properties as YAML
-      org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml();
-      Map<String, Object> newProperties = yaml.load(processedProperties);
-
-      if (newProperties == null || newProperties.isEmpty()) {
-        logger.warn("Processed application properties template is empty for adapter: {}", config.name());
-        return;
-      }
-
-      // 5. Determine application.yml path
-      Path applicationYmlPath = projectPath.resolve("src/main/resources/application.yml");
-
-      // 6. Read existing application.yml if it exists
-      Map<String, Object> existingProperties = yamlConfigurationAdapter.readYaml(applicationYmlPath);
-
-      // 7. Merge new properties using YamlConfigurationAdapter
-      Map<String, Object> mergedProperties = yamlConfigurationAdapter.mergeYaml(existingProperties, newProperties);
-
-      // 8. Write merged properties back to application.yml
-      yamlConfigurationAdapter.writeYaml(applicationYmlPath, mergedProperties);
-
-      logger.info("Successfully merged application properties for adapter: {}", config.name());
-
-    } catch (TemplateRepository.TemplateNotFoundException e) {
-      logger.warn("Application properties template not found for adapter {}: {}",
-          config.name(), e.getMessage());
-    } catch (Exception e) {
-      logger.error("Failed to merge application properties for adapter {}: {}",
-          config.name(), e.getMessage(), e);
-      // Don't fail the entire generation if property merging fails
-      // The adapter code is already generated, properties can be added manually
-    }
-  }
-
-  /**
-   * Prepares template context for processing application properties template.
-   *
-   * @param config adapter configuration
-   * @return template context map
-   */
-  private Map<String, Object> prepareApplicationPropertiesContext(OutputAdapterConfig config) {
-    Map<String, Object> context = new HashMap<>();
-    context.put("adapterName", config.name());
-    context.put("adapterType", config.type().toLowerCase());
-    context.put("packageName", config.packageName());
-    context.put("entityName", config.entityName());
-
-    // Add project name if available (useful for database names, etc.)
-    try {
-      var projectConfig = configurationPort.readConfiguration(Path.of(".")).orElse(null);
-      if (projectConfig != null) {
-        context.put("projectName", projectConfig.name());
-        context.put("basePackage", projectConfig.basePackage());
-      }
-    } catch (Exception e) {
-      logger.debug("Could not read project configuration for template context: {}", e.getMessage());
-    }
-
-    return context;
-  }
-
-  /**
-   * Generates configuration classes if the adapter has configurationClasses
-   * defined.
-   * 
-   * @param projectPath path to the project root
-   * @param config      adapter configuration
-   * @return list of generated configuration class files
-   */
-  private List<GeneratedFile> generateConfigurationClassesIfNeeded(Path projectPath, OutputAdapterConfig config) {
-    List<GeneratedFile> configFiles = new ArrayList<>();
-
-    try {
-      // 1. Load adapter metadata to check if it has configuration classes
-      AdapterMetadata metadata = loadAdapterMetadataWithFallback(
-          config.type().toLowerCase(),
-          projectPath,
-          config);
-
-      if (!metadata.hasConfigurationClasses()) {
-        logger.debug("Adapter {} does not have configuration classes, skipping generation",
-            config.name());
-        return configFiles;
-      }
-
-      logger.info("Generating configuration classes for adapter: {}", config.name());
-
-      // 2. Read project configuration to get base package
-      var projectConfig = configurationPort.readConfiguration(projectPath).orElse(null);
-      if (projectConfig == null) {
-        logger.warn("Could not read project configuration, skipping configuration class generation");
-        return configFiles;
-      }
-
-      String basePackage = projectConfig.basePackage();
-
-      // 3. Prepare template context
-      Map<String, Object> templateContext = prepareConfigurationClassContext(config, projectConfig);
-
-      // 4. Process each configuration class
-      for (AdapterMetadata.ConfigurationClass configClass : metadata.configurationClasses()) {
-        try {
-          // Build template path: adapters/{adapterType}/{templatePath}
-          String adapterTypeLower = config.type().toLowerCase();
-          String configTemplatePath = String.format("adapters/%s/%s", adapterTypeLower,
-              configClass.templatePath());
-
-          // Process the template
-          String processedContent = templateRepository.processTemplate(configTemplatePath, templateContext);
-
-          // Resolve package path for the configuration class
-          String fullPackage = basePackage + "." + configClass.packagePath();
-          String packagePath = fullPackage.replace('.', '/');
-
-          // Build file path: src/main/java/{basePackage}/{packagePath}/{ClassName}.java
-          Path configFilePath = projectPath
-              .resolve("src/main/java")
-              .resolve(packagePath)
-              .resolve(configClass.name() + ".java");
-
-          // Create GeneratedFile
-          GeneratedFile configFile = GeneratedFile.javaSource(configFilePath, processedContent);
-          configFiles.add(configFile);
-
-          logger.info("Generated configuration class: {} at {}", configClass.name(), configFilePath);
-
-        } catch (TemplateRepository.TemplateNotFoundException e) {
-          logger.warn("Configuration class template not found: {} for adapter {}",
-              configClass.templatePath(), config.name());
-        } catch (Exception e) {
-          logger.error("Failed to generate configuration class {} for adapter {}: {}",
-              configClass.name(), config.name(), e.getMessage(), e);
-        }
-      }
-
-      logger.info("Successfully generated {} configuration class(es) for adapter: {}",
-          configFiles.size(), config.name());
-
-    } catch (TemplateRepository.TemplateNotFoundException e) {
-      logger.warn("Adapter metadata not found for adapter {}: {}",
-          config.name(), e.getMessage());
-    } catch (Exception e) {
-      logger.error("Failed to generate configuration classes for adapter {}: {}",
-          config.name(), e.getMessage(), e);
-      // Don't fail the entire generation if configuration class generation fails
-      // The adapter code is already generated, configuration can be added manually
-    }
-
-    return configFiles;
-  }
-
-  /**
-   * Prepares template context for processing configuration class templates.
-   *
-   * @param config        adapter configuration
-   * @param projectConfig project configuration
-   * @return template context map
-   */
-  private Map<String, Object> prepareConfigurationClassContext(OutputAdapterConfig config,
-      com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
-    Map<String, Object> context = new HashMap<>();
-    context.put("adapterName", config.name());
-    context.put("adapterType", config.type().toLowerCase());
-    context.put("packageName", config.packageName());
-    context.put("entityName", config.entityName());
-    context.put("projectName", projectConfig.name());
-    context.put("basePackage", projectConfig.basePackage());
-    return context;
-  }
-
-  /**
-   * Adds test dependencies to the build file if the adapter has testDependencies.
-   * Test dependencies are added with testImplementation scope in Gradle.
-   *
-   * @param projectPath path to the project root
-   * @param config      adapter configuration
-   */
-  private void addTestDependenciesIfNeeded(Path projectPath, OutputAdapterConfig config) {
-    try {
-      // 1. Load adapter metadata to check if it has test dependencies
-      AdapterMetadata metadata = loadAdapterMetadataWithFallback(
-          config.type().toLowerCase(),
-          projectPath,
-          config);
-
-      if (!metadata.hasTestDependencies()) {
-        logger.debug("Adapter {} does not have test dependencies, skipping", config.name());
-        return;
-      }
-
-      logger.info("Adding test dependencies for adapter: {}", config.name());
-
-      // 2. Determine the build file path
-      // For single-module projects: build.gradle.kts at project root
-      // For multi-module projects: build.gradle.kts in the adapter module
-      Path buildFilePath = determineBuildFilePath(projectPath, config);
-
-      if (!fileSystemPort.exists(buildFilePath)) {
-        logger.warn("Build file not found at {}, skipping test dependency addition", buildFilePath);
-        return;
-      }
-
-      // 3. Read the current build file content
-      String buildFileContent = fileSystemPort.readFile(buildFilePath);
-
-      // 4. Add each test dependency
-      String updatedContent = buildFileContent;
-      for (AdapterMetadata.Dependency testDep : metadata.testDependencies()) {
-        updatedContent = addTestDependencyToBuildFile(updatedContent, testDep);
-      }
-
-      // 5. Write the updated build file if changes were made
-      if (!updatedContent.equals(buildFileContent)) {
-        fileSystemPort.writeFile(GeneratedFile.create(buildFilePath, updatedContent));
-        logger.info("Successfully added {} test dependencies for adapter: {}",
-            metadata.testDependencies().size(), config.name());
-      } else {
-        logger.debug("No new test dependencies to add for adapter: {}", config.name());
-      }
-
-    } catch (TemplateRepository.TemplateNotFoundException e) {
-      logger.warn("Adapter metadata not found for adapter {}: {}", config.name(), e.getMessage());
-    } catch (Exception e) {
-      logger.error("Failed to add test dependencies for adapter {}: {}",
-          config.name(), e.getMessage(), e);
-      // Don't fail the entire generation if test dependency addition fails
-      // The adapter code is already generated, dependencies can be added manually
-    }
-  }
-
-  /**
-   * Determines the build file path based on project structure.
-   *
-   * @param projectPath path to the project root
-   * @param config      adapter configuration
-   * @return path to the build file
-   */
-  private Path determineBuildFilePath(Path projectPath, OutputAdapterConfig config) {
-    try {
-      var projectConfig = configurationPort.readConfiguration(projectPath).orElse(null);
-
-      // For multi-module projects with adaptersAsModules=true
-      if (projectConfig != null && projectConfig.adaptersAsModules()) {
-        String moduleName = config.name().toLowerCase().replaceAll("([a-z])([A-Z])", "$1-$2").toLowerCase();
-        String modulePath = "infrastructure/driven-adapters/" + moduleName;
-        return projectPath.resolve(modulePath).resolve("build.gradle.kts");
-      }
-    } catch (Exception e) {
-      logger.debug("Could not read project configuration: {}", e.getMessage());
-    }
-
-    // Default: single-module project
-    return projectPath.resolve("build.gradle.kts");
-  }
-
-  /**
-   * Adds a test dependency to the build file content.
-   * Uses testImplementation scope for Gradle.
-   *
-   * @param buildFileContent current build file content
-   * @param dependency       test dependency to add
-   * @return updated build file content
-   */
-  private String addTestDependencyToBuildFile(String buildFileContent, AdapterMetadata.Dependency dependency) {
-    // Format: testImplementation("group:artifact:version")
-    String dependencyStatement = String.format("    testImplementation(\"%s:%s:%s\")",
-        dependency.group(), dependency.artifact(), dependency.version());
-
-    // Check if dependency is already present
-    if (buildFileContent.contains(dependencyStatement)) {
-      logger.debug("Test dependency already present: {}", dependency.toCoordinate());
-      return buildFileContent;
-    }
-
-    // Find the dependencies block and add the test dependency
-    if (buildFileContent.contains("dependencies {")) {
-      // Look for existing test dependencies section or add at the end of dependencies
-      // block
-      if (buildFileContent.contains("testImplementation(")) {
-        // Add after the last testImplementation
-        int lastTestImpl = buildFileContent.lastIndexOf("testImplementation(");
-        int endOfLine = buildFileContent.indexOf('\n', lastTestImpl);
-        if (endOfLine != -1) {
-          return buildFileContent.substring(0, endOfLine + 1) +
-              dependencyStatement + "\n" +
-              buildFileContent.substring(endOfLine + 1);
-        }
-      }
-
-      // If no testImplementation found, add before the closing brace of dependencies
-      // block
-      int dependenciesStart = buildFileContent.indexOf("dependencies {");
-      int dependenciesEnd = findMatchingClosingBrace(buildFileContent, dependenciesStart + "dependencies {".length());
-
-      if (dependenciesEnd != -1) {
-        // Add before the closing brace
-        return buildFileContent.substring(0, dependenciesEnd) +
-            "\n    // Test dependencies\n" +
-            dependencyStatement + "\n" +
-            buildFileContent.substring(dependenciesEnd);
-      }
-    }
-
-    logger.warn("Could not find dependencies block in build file, dependency not added: {}",
-        dependency.toCoordinate());
-    return buildFileContent;
   }
 
   /**
@@ -798,43 +509,6 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
   }
 
   /**
-   * Finds the matching closing brace for a given opening position.
-   *
-   * @param content  the content to search
-   * @param startPos position after the opening brace
-   * @return position of the matching closing brace, or -1 if not found
-   */
-  private int findMatchingClosingBrace(String content, int startPos) {
-    int braceCount = 1;
-    for (int i = startPos; i < content.length(); i++) {
-      char c = content.charAt(i);
-      if (c == '{') {
-        braceCount++;
-      } else if (c == '}') {
-        braceCount--;
-        if (braceCount == 0) {
-          return i;
-        }
-      }
-    }
-    return -1;
-  }
-
-  /**
-   * Determines the adapter type category for framework-aware template loading.
-   * Maps adapter types to their category: "driven-adapters" or "entry-points".
-   * 
-   * @param config adapter configuration
-   * @return adapter type category string
-   */
-  private String determineAdapterTypeCategory(OutputAdapterConfig config) {
-    // All current adapter types are driven adapters (output/infrastructure
-    // adapters)
-    // In the future, entry points (REST, GRAPHQL, GRPC, WEBSOCKET) will be added
-    return "driven-adapters";
-  }
-
-  /**
    * Loads adapter metadata using framework-aware path if projectConfig is
    * available,
    * otherwise falls back to legacy loading.
@@ -856,7 +530,7 @@ public class GenerateAdapterUseCaseImpl implements GenerateAdapterUseCase {
         // Use framework-aware loading
         String framework = projectConfig.framework().name().toLowerCase();
         String paradigm = projectConfig.paradigm().name().toLowerCase();
-        String adapterTypeCategory = determineAdapterTypeCategory(config);
+        String adapterTypeCategory = "driven-adapters"; // Output adapters are always driven-adapters
 
         return templateRepository.loadAdapterMetadata(
             adapterTypeLower,

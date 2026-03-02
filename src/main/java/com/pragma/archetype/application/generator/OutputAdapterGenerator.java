@@ -237,11 +237,29 @@ public class OutputAdapterGenerator {
 
   private GeneratedFile generateAdapter(Path projectPath, OutputAdapterConfig config, Map<String, Object> data,
       ProjectConfig projectConfig) {
+    // Get framework and paradigm from config
+    String framework = config.framework();
+    String paradigm = config.paradigm();
+
+    // Get adapter metadata (REQUIRED - no fallback)
+    com.pragma.archetype.domain.model.adapter.AdapterMetadata metadata = adapterDiscovery
+        .findAdapter(config.type(), AdapterDirection.OUTPUT, framework, paradigm)
+        .orElseThrow(() -> {
+          List<String> available = adapterDiscovery.listAdapterNames(AdapterDirection.OUTPUT, framework, paradigm);
+          return new IllegalArgumentException(
+              "Unknown output adapter type: " + config.type() +
+                  " for " + framework + "/" + paradigm +
+                  ". Available adapters: " + String.join(", ", available));
+        });
+
     // Select template based on adapter type
     String templatePath = getAdapterTemplate(config.type(), data);
 
     // Process template
     String content = templateRepository.processTemplate(templatePath, data);
+
+    // Get suffix from metadata for file naming
+    String suffix = getAdapterSuffix(metadata, config.type());
 
     // Resolve adapter path using PathResolver if project config is available
     Path filePath;
@@ -263,23 +281,33 @@ public class OutputAdapterGenerator {
       // Convert base package to path
       String basePackagePath = projectConfig.basePackage().replace('.', '/');
 
-      // Build full file path:
-      // src/main/java/{basePackage}/{resolvedPath}/{AdapterName}Adapter.java
+      // Build full file path with suffix from metadata
+      // src/main/java/{basePackage}/{resolvedPath}/{AdapterName}{Suffix}.java
       filePath = projectPath
           .resolve("src/main/java")
           .resolve(basePackagePath)
           .resolve(adapterBasePath)
-          .resolve(config.name() + "Adapter.java");
+          .resolve(config.name() + suffix + ".java");
     } else {
       // Fallback to hardcoded path if project config not available
       String packagePath = config.packageName().replace('.', '/');
       filePath = projectPath
           .resolve("src/main/java")
           .resolve(packagePath)
-          .resolve(config.name() + "Adapter.java");
+          .resolve(config.name() + suffix + ".java");
     }
 
     return GeneratedFile.javaSource(filePath, content);
+  }
+
+  private String getAdapterSuffix(com.pragma.archetype.domain.model.adapter.AdapterMetadata metadata,
+      String adapterType) {
+    // Use suffix from metadata (REQUIRED - no fallback)
+    if (metadata.getSuffix() != null && !metadata.getSuffix().isBlank()) {
+      return metadata.getSuffix();
+    }
+    // Generic default if metadata doesn't specify
+    return "Adapter";
   }
 
   private GeneratedFile generateMapper(Path projectPath, OutputAdapterConfig config, Map<String, Object> data,

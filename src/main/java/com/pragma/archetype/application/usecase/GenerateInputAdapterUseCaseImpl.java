@@ -1,9 +1,7 @@
 package com.pragma.archetype.application.usecase;
 
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,8 +35,7 @@ public class GenerateInputAdapterUseCaseImpl implements GenerateInputAdapterUseC
   private final AdapterDiscoveryPort adapterDiscovery;
   private final TemplateRepository templateRepository;
   private final YamlConfigurationAdapter yamlConfigurationAdapter;
-  private final com.pragma.archetype.domain.service.BuildFileMerger buildFileMerger;
-  private final com.pragma.archetype.domain.service.BuildConfigurationProcessor buildConfigurationProcessor;
+  private final com.pragma.archetype.domain.service.AdapterConfigurationService adapterConfigurationService;
 
   public GenerateInputAdapterUseCaseImpl(
       InputAdapterValidator validator,
@@ -55,9 +52,8 @@ public class GenerateInputAdapterUseCaseImpl implements GenerateInputAdapterUseC
     this.adapterDiscovery = adapterDiscovery;
     this.templateRepository = templateRepository;
     this.yamlConfigurationAdapter = yamlConfigurationAdapter;
-    this.buildFileMerger = new com.pragma.archetype.domain.service.BuildFileMerger();
-    this.buildConfigurationProcessor = new com.pragma.archetype.domain.service.BuildConfigurationProcessor(
-        templateRepository);
+    this.adapterConfigurationService = new com.pragma.archetype.domain.service.AdapterConfigurationService(
+        configurationPort, fileSystemPort, templateRepository, yamlConfigurationAdapter);
   }
 
   @Override
@@ -85,18 +81,39 @@ public class GenerateInputAdapterUseCaseImpl implements GenerateInputAdapterUseC
         fileSystemPort.writeFile(file);
       }
 
-      // 6. Merge application properties if adapter has applicationPropertiesTemplate
-      mergeApplicationPropertiesIfNeeded(projectPath, config);
+      // 6. Load adapter metadata for configuration tasks
+      AdapterMetadata metadata = adapterDiscovery
+          .findAdapter(config.type(), AdapterDirection.INPUT, config.framework(), config.paradigm())
+          .orElseThrow(() -> new IllegalStateException("Adapter metadata not found for: " + config.type()));
 
-      // 7. Add dependencies to build.gradle.kts if adapter has dependencies
-      addDependenciesIfNeeded(projectPath, config);
+      // 7. Create adapter config for shared service
+      var adapterConfig = new com.pragma.archetype.domain.service.AdapterConfigurationService.AdapterConfig(
+          config.name(),
+          config.type(),
+          config.framework(),
+          config.paradigm(),
+          config.packageName(),
+          config.useCaseName(),
+          null, // entityName not applicable for input adapters
+          AdapterDirection.INPUT);
 
-      // 8. Add build plugins and configuration if adapter has them
-      addBuildPluginsAndConfigurationIfNeeded(projectPath, config, structureMetadata);
+      // 8. Merge application properties if adapter has applicationPropertiesTemplate
+      adapterConfigurationService.mergeApplicationPropertiesIfNeeded(projectPath, adapterConfig, metadata);
 
-      // 9. Generate configuration classes if adapter has configurationClasses
-      List<GeneratedFile> configFiles = generateConfigurationClassesIfNeeded(projectPath, config);
+      // 9. Add dependencies to build.gradle.kts if adapter has dependencies
+      adapterConfigurationService.addDependenciesIfNeeded(projectPath, adapterConfig, metadata);
+
+      // 10. Add build plugins and configuration if adapter has them
+      adapterConfigurationService.addBuildPluginsAndConfigurationIfNeeded(
+          projectPath, adapterConfig, metadata, structureMetadata);
+
+      // 11. Generate configuration classes if adapter has configurationClasses
+      List<GeneratedFile> configFiles = adapterConfigurationService.generateConfigurationClassesIfNeeded(
+          projectPath, adapterConfig, metadata);
       generatedFiles.addAll(configFiles);
+
+      // 12. Add test dependencies if adapter has testDependencies
+      adapterConfigurationService.addTestDependenciesIfNeeded(projectPath, adapterConfig, metadata);
 
       return GenerationResult.success(generatedFiles);
 
@@ -105,393 +122,4 @@ public class GenerateInputAdapterUseCaseImpl implements GenerateInputAdapterUseC
     }
   }
 
-  /**
-   * Merges application properties from adapter template into existing
-   * application.yml.
-   * Only merges if the adapter has an applicationPropertiesTemplate defined.
-   *
-   * @param projectPath path to the project root
-   * @param config      input adapter configuration
-   */
-  private void mergeApplicationPropertiesIfNeeded(Path projectPath, InputAdapterConfig config) {
-    try {
-      // 1. Load adapter metadata to check if it has applicationPropertiesTemplate
-      AdapterMetadata metadata = adapterDiscovery
-          .findAdapter(config.type(), AdapterDirection.INPUT, config.framework(), config.paradigm())
-          .orElse(null);
-
-      if (metadata == null || !metadata.hasApplicationProperties()) {
-        logger.debug("Adapter {} does not have application properties template, skipping merge",
-            config.name());
-        return;
-      }
-
-      logger.info("Processing application properties template for adapter: {}", config.name());
-
-      // 2. Prepare template context with adapter information
-      Map<String, Object> templateContext = prepareApplicationPropertiesContext(config, projectPath);
-
-      // 3. Process the application properties template
-      String propertiesTemplatePath = String.format("frameworks/%s/%s/adapters/entry-points/%s/%s",
-          config.framework(), config.paradigm(), config.type(), metadata.applicationPropertiesTemplate());
-      String processedProperties = templateRepository.processTemplate(propertiesTemplatePath, templateContext);
-
-      // 4. Parse the processed properties as YAML
-      org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml();
-      Map<String, Object> newProperties = yaml.load(processedProperties);
-
-      if (newProperties == null || newProperties.isEmpty()) {
-        logger.warn("Processed application properties template is empty for adapter: {}", config.name());
-        return;
-      }
-
-      // 5. Determine application.yml path
-      Path applicationYmlPath = projectPath.resolve("src/main/resources/application.yml");
-
-      // 6. Read existing application.yml if it exists
-      Map<String, Object> existingProperties = yamlConfigurationAdapter.readYaml(applicationYmlPath);
-
-      // 7. Merge new properties using YamlConfigurationAdapter
-      Map<String, Object> mergedProperties = yamlConfigurationAdapter.mergeYaml(existingProperties, newProperties);
-
-      // 8. Write merged properties back to application.yml
-      yamlConfigurationAdapter.writeYaml(applicationYmlPath, mergedProperties);
-
-      logger.info("Successfully merged application properties for adapter: {}", config.name());
-
-    } catch (TemplateRepository.TemplateNotFoundException e) {
-      logger.warn("Application properties template not found for adapter {}: {}",
-          config.name(), e.getMessage());
-    } catch (Exception e) {
-      logger.error("Failed to merge application properties for adapter {}: {}",
-          config.name(), e.getMessage(), e);
-      // Don't fail the entire generation if property merging fails
-      // The adapter code is already generated, properties can be added manually
-    }
-  }
-
-  /**
-   * Prepares template context for processing application properties template.
-   *
-   * @param config      input adapter configuration
-   * @param projectPath path to the project root
-   * @return template context map
-   */
-  private Map<String, Object> prepareApplicationPropertiesContext(InputAdapterConfig config, Path projectPath) {
-    Map<String, Object> context = new HashMap<>();
-    context.put("adapterName", config.name());
-    context.put("adapterType", config.type().toLowerCase());
-    context.put("packageName", config.packageName());
-    context.put("useCaseName", config.useCaseName());
-
-    // Add project name if available (useful for application names, etc.)
-    try {
-      var projectConfig = configurationPort.readConfiguration(projectPath).orElse(null);
-      if (projectConfig != null) {
-        context.put("projectName", projectConfig.name());
-        context.put("basePackage", projectConfig.basePackage());
-      }
-    } catch (Exception e) {
-      logger.debug("Could not read project configuration for template context: {}", e.getMessage());
-    }
-
-    return context;
-  }
-
-  /**
-   * Adds dependencies to the build file if the adapter has dependencies.
-   * Dependencies are added with implementation scope in Gradle.
-   *
-   * @param projectPath path to the project root
-   * @param config      adapter configuration
-   */
-  private void addDependenciesIfNeeded(Path projectPath, InputAdapterConfig config) {
-    try {
-      // 1. Load adapter metadata to check if it has dependencies
-      AdapterMetadata metadata = adapterDiscovery
-          .findAdapter(config.type(), AdapterDirection.INPUT, config.framework(), config.paradigm())
-          .orElse(null);
-
-      if (metadata == null || metadata.getDependencies().isEmpty()) {
-        logger.debug("Adapter {} does not have dependencies, skipping", config.name());
-        return;
-      }
-
-      logger.info("Adding dependencies for adapter: {}", config.name());
-
-      // 2. Determine the build file path
-      Path buildFilePath = projectPath.resolve("build.gradle.kts");
-
-      if (!fileSystemPort.exists(buildFilePath)) {
-        logger.warn("Build file not found at {}, skipping dependency addition", buildFilePath);
-        return;
-      }
-
-      // 3. Read the current build file content
-      String buildFileContent = fileSystemPort.readFile(buildFilePath);
-
-      // 4. Add each dependency
-      String updatedContent = buildFileContent;
-      for (String dep : metadata.getDependencies()) {
-        updatedContent = addDependencyToBuildFile(updatedContent, dep);
-      }
-
-      // 5. Write the updated build file if changes were made
-      if (!updatedContent.equals(buildFileContent)) {
-        fileSystemPort.writeFile(GeneratedFile.create(buildFilePath, updatedContent));
-        logger.info("Successfully added {} dependencies for adapter: {}",
-            metadata.getDependencies().size(), config.name());
-      } else {
-        logger.debug("No new dependencies to add for adapter: {}", config.name());
-      }
-
-    } catch (Exception e) {
-      logger.error("Failed to add dependencies for adapter {}: {}",
-          config.name(), e.getMessage(), e);
-      // Don't fail the entire generation if dependency addition fails
-    }
-  }
-
-  /**
-   * Adds a dependency to the build file content.
-   * Uses implementation scope for Gradle.
-   *
-   * @param buildFileContent current build file content
-   * @param dependency       dependency coordinate string (group:artifact:version)
-   * @return updated build file content
-   */
-  private String addDependencyToBuildFile(String buildFileContent, String dependency) {
-    // Parse dependency coordinate
-    String[] parts = dependency.split(":");
-    if (parts.length < 3) {
-      logger.warn("Invalid dependency format: {}. Expected group:artifact:version", dependency);
-      return buildFileContent;
-    }
-
-    String group = parts[0];
-    String artifact = parts[1];
-    String version = parts[2];
-
-    // Format: implementation("group:artifact:version")
-    String dependencyStatement = String.format("    implementation(\"%s:%s:%s\")",
-        group, artifact, version);
-
-    // Check if dependency is already present
-    if (buildFileContent.contains(dependencyStatement)) {
-      logger.debug("Dependency already present: {}", dependency);
-      return buildFileContent;
-    }
-
-    // Find the dependencies block and add the dependency
-    if (buildFileContent.contains("dependencies {")) {
-      // Look for existing implementation dependencies section or add at the beginning
-      if (buildFileContent.contains("implementation(")) {
-        // Add after the last implementation
-        int lastImpl = buildFileContent.lastIndexOf("implementation(");
-        int endOfLine = buildFileContent.indexOf('\n', lastImpl);
-        if (endOfLine != -1) {
-          return buildFileContent.substring(0, endOfLine + 1) +
-              dependencyStatement + "\n" +
-              buildFileContent.substring(endOfLine + 1);
-        }
-      }
-
-      // If no implementation found, add after "dependencies {"
-      int dependenciesStart = buildFileContent.indexOf("dependencies {");
-      int lineEnd = buildFileContent.indexOf('\n', dependenciesStart);
-      if (lineEnd != -1) {
-        return buildFileContent.substring(0, lineEnd + 1) +
-            dependencyStatement + "\n" +
-            buildFileContent.substring(lineEnd + 1);
-      }
-    }
-
-    logger.warn("Could not find dependencies block in build file, dependency not added: {}",
-        dependency);
-    return buildFileContent;
-  }
-
-  /**
-   * Adds build plugins and configuration to build.gradle.kts if the adapter has
-   * them.
-   * Plugins are added to the plugins {} block, and configuration is appended to
-   * the end.
-   *
-   * @param projectPath       path to the project root
-   * @param config            adapter configuration
-   * @param structureMetadata structure metadata for variable replacement
-   */
-  private void addBuildPluginsAndConfigurationIfNeeded(
-      Path projectPath,
-      InputAdapterConfig config,
-      com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata) {
-
-    try {
-      // 1. Load adapter metadata to check if it has buildPlugins or
-      // buildConfiguration
-      AdapterMetadata metadata = adapterDiscovery
-          .findAdapter(config.type(), AdapterDirection.INPUT, config.framework(), config.paradigm())
-          .orElse(null);
-
-      if (metadata == null) {
-        logger.debug("Adapter metadata not found for {}, skipping build configuration", config.name());
-        return;
-      }
-
-      if (!metadata.hasBuildPlugins() && !metadata.hasBuildConfiguration()) {
-        logger.debug("Adapter {} does not have build plugins or configuration, skipping", config.name());
-        return;
-      }
-
-      logger.info("Processing build plugins and configuration for adapter: {}", config.name());
-
-      // 2. Determine the build file path
-      Path buildFilePath = projectPath.resolve("build.gradle.kts");
-
-      if (!fileSystemPort.exists(buildFilePath)) {
-        logger.warn("Build file not found at {}, skipping build configuration", buildFilePath);
-        return;
-      }
-
-      // 3. Read the current build file content
-      String buildFileContent = fileSystemPort.readFile(buildFilePath);
-
-      // 4. Add plugins if present
-      if (metadata.hasBuildPlugins()) {
-        buildFileContent = buildFileMerger.addPlugins(buildFileContent, metadata.getBuildPlugins());
-      }
-
-      // 5. Process and add build configuration if present
-      if (metadata.hasBuildConfiguration()) {
-        String processedConfig = buildConfigurationProcessor.process(
-            metadata.getBuildConfiguration(),
-            structureMetadata,
-            config);
-
-        buildFileContent = buildFileMerger.addBuildConfiguration(buildFileContent, processedConfig);
-      }
-
-      // 6. Write the updated build file
-      fileSystemPort.writeFile(GeneratedFile.create(buildFilePath, buildFileContent));
-
-      logger.info("Successfully added build plugins and configuration for adapter: {}", config.name());
-
-    } catch (Exception e) {
-      logger.error("Failed to add build plugins and configuration for adapter {}: {}",
-          config.name(), e.getMessage(), e);
-      // Don't fail the entire generation if build configuration fails
-    }
-  }
-
-  /**
-   * Generates configuration classes if the adapter has configurationClasses
-   * defined.
-   * 
-   * @param projectPath path to the project root
-   * @param config      input adapter configuration
-   * @return list of generated configuration class files
-   */
-  private List<GeneratedFile> generateConfigurationClassesIfNeeded(Path projectPath, InputAdapterConfig config) {
-    List<GeneratedFile> configFiles = new java.util.ArrayList<>();
-
-    try {
-      // 1. Load adapter metadata to check if it has configuration classes
-      AdapterMetadata metadata = adapterDiscovery
-          .findAdapter(config.type(), AdapterDirection.INPUT, config.framework(), config.paradigm())
-          .orElse(null);
-
-      if (metadata == null || !metadata.hasConfigurationClasses()) {
-        logger.debug("Adapter {} does not have configuration classes, skipping generation",
-            config.name());
-        return configFiles;
-      }
-
-      logger.info("Generating configuration classes for adapter: {}", config.name());
-
-      // 2. Read project configuration to get base package
-      var projectConfig = configurationPort.readConfiguration(projectPath).orElse(null);
-      if (projectConfig == null) {
-        logger.warn("Could not read project configuration, skipping configuration class generation");
-        return configFiles;
-      }
-
-      String basePackage = projectConfig.basePackage();
-
-      // 3. Prepare template context
-      Map<String, Object> templateContext = prepareConfigurationClassContext(config, projectConfig);
-
-      // 4. Process each configuration class
-      for (AdapterMetadata.ConfigurationClass configClass : metadata.configurationClasses()) {
-        try {
-          // Build template path:
-          // frameworks/{framework}/{paradigm}/adapters/entry-points/{type}/{templatePath}
-          String configTemplatePath = String.format("frameworks/%s/%s/adapters/entry-points/%s/%s",
-              config.framework(), config.paradigm(), config.type(), configClass.templatePath());
-
-          // Process the template
-          String processedContent = templateRepository.processTemplate(configTemplatePath, templateContext);
-
-          // Resolve package path for the configuration class
-          String fullPackage = basePackage + "." + configClass.packagePath();
-          String packagePath = fullPackage.replace('.', '/');
-
-          // Build file path: src/main/java/{basePackage}/{packagePath}/{ClassName}.java
-          Path configFilePath = projectPath
-              .resolve("src/main/java")
-              .resolve(packagePath)
-              .resolve(configClass.name() + ".java");
-
-          // Create GeneratedFile
-          GeneratedFile configFile = GeneratedFile.javaSource(configFilePath, processedContent);
-          configFiles.add(configFile);
-
-          // Write file to disk immediately
-          fileSystemPort.writeFile(configFile);
-
-          logger.info("Generated configuration class: {} at {}", configClass.name(), configFilePath);
-
-        } catch (TemplateRepository.TemplateNotFoundException e) {
-          logger.warn("Configuration class template not found: {} for adapter {}",
-              configClass.templatePath(), config.name());
-        } catch (Exception e) {
-          logger.error("Failed to generate configuration class {} for adapter {}: {}",
-              configClass.name(), config.name(), e.getMessage(), e);
-        }
-      }
-
-      logger.info("Successfully generated {} configuration class(es) for adapter: {}",
-          configFiles.size(), config.name());
-
-    } catch (Exception e) {
-      logger.error("Failed to generate configuration classes for adapter {}: {}",
-          config.name(), e.getMessage(), e);
-      // Don't fail the entire generation if configuration class generation fails
-      // The adapter code is already generated, configuration can be added manually
-    }
-
-    return configFiles;
-  }
-
-  /**
-   * Prepares template context for processing configuration class templates.
-   *
-   * @param config        input adapter configuration
-   * @param projectConfig project configuration
-   * @return template context map
-   */
-  private Map<String, Object> prepareConfigurationClassContext(
-      InputAdapterConfig config,
-      com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
-    Map<String, Object> context = new HashMap<>();
-    context.put("adapterName", config.name());
-    context.put("adapterType", config.type().toLowerCase());
-    context.put("packageName", projectConfig.basePackage());
-    context.put("useCaseName", config.useCaseName());
-    context.put("basePackage", projectConfig.basePackage());
-    context.put("projectName", projectConfig.name());
-    context.put("framework", config.framework());
-    context.put("paradigm", config.paradigm());
-
-    return context;
-  }
 }
