@@ -30,6 +30,7 @@ import com.pragma.archetype.domain.model.structure.StructureMetadata;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
+import com.pragma.archetype.test.StructureMetadataTestHelper;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ConfigurationValidator Tests")
@@ -406,17 +407,9 @@ class ConfigurationValidatorTest {
     @DisplayName("Should fail when architecture type is missing")
     void shouldFailWhenArchitectureTypeIsMissing() {
       // Given
-      StructureMetadata metadata = new StructureMetadata(
+      StructureMetadata metadata = StructureMetadataTestHelper.createMinimal(
           "",
-          Map.of("driven", "infrastructure/adapter/out/{name}"),
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null);
+          Map.of("driven", "infrastructure/adapter/out/{name}"));
 
       // When
       ValidationResult result = validator.validateStructureMetadata(metadata);
@@ -431,17 +424,9 @@ class ConfigurationValidatorTest {
     @DisplayName("Should fail when adapter paths are empty")
     void shouldFailWhenAdapterPathsAreEmpty() {
       // Given
-      StructureMetadata metadata = new StructureMetadata(
+      StructureMetadata metadata = StructureMetadataTestHelper.createMinimal(
           "hexagonal-single",
-          Map.of(),
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null);
+          Map.of());
 
       // When
       ValidationResult result = validator.validateStructureMetadata(metadata);
@@ -456,17 +441,9 @@ class ConfigurationValidatorTest {
     @DisplayName("Should fail when adapter paths missing driven and driving")
     void shouldFailWhenAdapterPathsMissingDrivenAndDriving() {
       // Given
-      StructureMetadata metadata = new StructureMetadata(
+      StructureMetadata metadata = StructureMetadataTestHelper.createMinimal(
           "hexagonal-single",
-          Map.of("other", "some/path"),
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null);
+          Map.of("other", "some/path"));
 
       // When
       ValidationResult result = validator.validateStructureMetadata(metadata);
@@ -481,17 +458,9 @@ class ConfigurationValidatorTest {
     @DisplayName("Should fail when path template missing {name} placeholder")
     void shouldFailWhenPathTemplateMissingNamePlaceholder() {
       // Given
-      StructureMetadata metadata = new StructureMetadata(
+      StructureMetadata metadata = StructureMetadataTestHelper.createMinimal(
           "hexagonal-single",
-          Map.of("driven", "infrastructure/adapter/out"),
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null);
+          Map.of("driven", "infrastructure/adapter/out"));
 
       // When
       ValidationResult result = validator.validateStructureMetadata(metadata);
@@ -506,19 +475,11 @@ class ConfigurationValidatorTest {
     @DisplayName("Should succeed with valid structure metadata")
     void shouldSucceedWithValidStructureMetadata() {
       // Given
-      StructureMetadata metadata = new StructureMetadata(
+      StructureMetadata metadata = StructureMetadataTestHelper.createMinimal(
           "hexagonal-single",
           Map.of(
               "driven", "infrastructure/adapter/out/{name}",
-              "driving", "infrastructure/adapter/in/{name}"),
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null);
+              "driving", "infrastructure/adapter/in/{name}"));
 
       // When
       ValidationResult result = validator.validateStructureMetadata(metadata);
@@ -531,17 +492,9 @@ class ConfigurationValidatorTest {
     @DisplayName("Should succeed with only driven adapter path")
     void shouldSucceedWithOnlyDrivenAdapterPath() {
       // Given
-      StructureMetadata metadata = new StructureMetadata(
+      StructureMetadata metadata = StructureMetadataTestHelper.createMinimal(
           "onion-single",
-          Map.of("driven", "infrastructure/adapter/out/{name}"),
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null);
+          Map.of("driven", "infrastructure/adapter/out/{name}"));
 
       // When
       ValidationResult result = validator.validateStructureMetadata(metadata);

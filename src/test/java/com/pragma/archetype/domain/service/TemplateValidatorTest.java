@@ -23,6 +23,7 @@ import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.model.structure.StructureMetadata;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
+import com.pragma.archetype.test.StructureMetadataTestHelper;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("TemplateValidator Tests")
@@ -457,19 +458,11 @@ class TemplateValidatorTest {
         // Helper methods to create test data
 
         private StructureMetadata createValidStructureMetadata() {
-                return new StructureMetadata(
+                return StructureMetadataTestHelper.createMinimal(
                                 "hexagonal-single",
                                 java.util.Map.of(
                                                 "driven", "infrastructure/adapters/{name}",
-                                                "driving", "infrastructure/entry-points/{name}"),
-                                null,
-                                null,
-                                null,
-                                null,
-                                List.of(),
-                                null,
-                                null,
-                                null);
+                                                "driving", "infrastructure/entry-points/{name}"));
         }
 
         private AdapterMetadata createValidAdapterMetadata(String name) {

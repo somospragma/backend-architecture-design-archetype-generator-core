@@ -8,7 +8,6 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.options.Option;
 
-import com.pragma.archetype.application.generator.InputAdapterGenerator;
 import com.pragma.archetype.application.usecase.GenerateInputAdapterUseCaseImpl;
 import com.pragma.archetype.domain.model.adapter.Endpoint;
 import com.pragma.archetype.domain.model.adapter.EndpointParameter;
@@ -20,6 +19,7 @@ import com.pragma.archetype.domain.port.in.GenerateInputAdapterUseCase;
 import com.pragma.archetype.domain.port.in.GenerateInputAdapterUseCase.GenerationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
+import com.pragma.archetype.domain.port.out.PathResolver;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 import com.pragma.archetype.domain.service.ConfigurationValidator;
 import com.pragma.archetype.domain.service.InputAdapterValidator;
@@ -154,6 +154,9 @@ public class GenerateInputAdapterTask extends BaseCleanArchTask {
 
       // 7. Setup dependencies (reuse instances from validation)
       TemplateRepository templateRepository = createTemplateRepository();
+      PathResolver pathResolver = new com.pragma.archetype.domain.service.PathResolverImpl(templateRepository);
+      com.pragma.archetype.application.generator.ProjectGenerator projectGenerator = new com.pragma.archetype.application.generator.ProjectGenerator(
+          templateRepository, fileSystemPort);
 
       // 8. Setup use case
       com.pragma.archetype.domain.service.PackageValidator packageValidator = new com.pragma.archetype.domain.service.PackageValidator();
@@ -174,13 +177,15 @@ public class GenerateInputAdapterTask extends BaseCleanArchTask {
           contentProvider);
       com.pragma.archetype.infrastructure.adapter.out.template.TemplateAdapterDiscovery adapterDiscovery = new com.pragma.archetype.infrastructure.adapter.out.template.TemplateAdapterDiscovery(
           templateRepository, metadataLoader);
-      InputAdapterGenerator generator = new InputAdapterGenerator(templateRepository, fileSystemPort, adapterDiscovery);
+
+      // Use UnifiedAdapterGenerator instead of InputAdapterGenerator
+      com.pragma.archetype.application.generator.UnifiedAdapterGenerator generator = new com.pragma.archetype.application.generator.UnifiedAdapterGenerator(
+          templateRepository, pathResolver, adapterDiscovery, projectGenerator);
 
       // Cast configurationPort to YamlConfigurationAdapter for YAML operations
       YamlConfigurationAdapter yamlConfigurationAdapter = (YamlConfigurationAdapter) configurationPort;
 
       GenerateInputAdapterUseCase useCase = new GenerateInputAdapterUseCaseImpl(
-          validator,
           generator,
           configurationPort,
           fileSystemPort,

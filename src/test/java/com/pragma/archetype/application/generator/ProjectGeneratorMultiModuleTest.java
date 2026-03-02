@@ -52,6 +52,7 @@ class ProjectGeneratorMultiModuleTest {
     // Setup structure metadata mock for multi-module architectures
     var structureMetadata = new com.pragma.archetype.domain.model.structure.StructureMetadata(
         "hexagonal-multi",
+        "src/main/resources",
         java.util.Map.of(
             "driven", "infrastructure/adapter/out/{name}",
             "driving", "infrastructure/adapter/in/{name}"),
@@ -60,6 +61,7 @@ class ProjectGeneratorMultiModuleTest {
         null,
         null,
         java.util.List.of("domain/model", "domain/port", "application/usecase", "infrastructure/adapter"),
+        null,
         null,
         null,
         null);

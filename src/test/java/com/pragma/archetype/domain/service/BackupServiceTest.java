@@ -1,26 +1,120 @@
 package com.pragma.archetype.domain.service;
 
-import com.pragma.archetype.domain.port.out.FileSystemPort;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import com.pragma.archetype.domain.port.out.FileSystemPort;
 
 /**
  * Unit tests for BackupService.
  */
 class BackupServiceTest {
 
+  /**
+   * Test implementation of FileSystemPort that uses real file system.
+   */
+  private static class TestFileSystemPort implements FileSystemPort {
+
+    @Override
+    public void writeFile(com.pragma.archetype.domain.model.file.GeneratedFile file) {
+      try {
+        Path parent = file.path().getParent();
+        if (parent != null && !Files.exists(parent)) {
+          Files.createDirectories(parent);
+        }
+        Files.writeString(file.path(), file.content());
+      } catch (IOException e) {
+        throw new FileWriteException("Failed to write file: " + file.path(), e);
+      }
+    }
+
+    @Override
+    public void writeFiles(List<com.pragma.archetype.domain.model.file.GeneratedFile> files) {
+      files.forEach(this::writeFile);
+    }
+
+    @Override
+    public void createDirectory(Path path) {
+      try {
+        if (!Files.exists(path)) {
+          Files.createDirectories(path);
+        }
+      } catch (IOException e) {
+        throw new FileWriteException("Failed to create directory: " + path, e);
+      }
+    }
+
+    @Override
+    public boolean exists(Path path) {
+      return Files.exists(path);
+    }
+
+    @Override
+    public boolean directoryExists(Path path) {
+      return Files.exists(path) && Files.isDirectory(path);
+    }
+
+    @Override
+    public boolean isProjectEmpty(Path path) {
+      return false;
+    }
+
+    @Override
+    public List<Path> listFiles(Path path) {
+      try {
+        return Files.list(path).toList();
+      } catch (IOException e) {
+        throw new FileWriteException("Failed to list files: " + path, e);
+      }
+    }
+
+    @Override
+    public String readFile(Path path) {
+      try {
+        return Files.readString(path);
+      } catch (IOException e) {
+        throw new FileWriteException("Failed to read file: " + path, e);
+      }
+    }
+
+    @Override
+    public void appendToFile(Path path, String content) {
+      try {
+        String existing = readFile(path);
+        Files.writeString(path, existing + content);
+      } catch (IOException e) {
+        throw new FileWriteException("Failed to append to file: " + path, e);
+      }
+    }
+
+    @Override
+    public void setExecutable(Path path) {
+      try {
+        path.toFile().setExecutable(true);
+      } catch (Exception e) {
+        throw new FileWriteException("Failed to set executable: " + path, e);
+      }
+    }
+  }
+
   @TempDir
   Path tempDir;
-
   private BackupService backupService;
+
   private TestFileSystemPort fileSystemPort;
 
   @BeforeEach
@@ -191,12 +285,12 @@ class BackupServiceTest {
     assertDoesNotThrow(() -> backupService.deleteBackup(projectPath, backupId));
   }
 
-@Test
+  @Test
   void backupAndRestore_shouldHandleNestedDirectories() throws IOException {
     // Given: Files in nested directories
     Path projectPath = tempDir;
     Path nestedFile = projectPath.resolve("src/main/java/com/example/File.java");
-    
+
     Files.createDirectories(nestedFile.getParent());
     Files.writeString(nestedFile, "nested content");
 
@@ -226,83 +320,5 @@ class BackupServiceTest {
 
     // Then: Backup IDs should be different
     assertNotEquals(backupId1, backupId2);
-  }
-
-  /**
-   * Test implementation of FileSystemPort that uses real file system.
-   */
-  private static class TestFileSystemPort implements FileSystemPort {
-
-    @Override
-    public void writeFile(com.pragma.archetype.domain.model.file.GeneratedFile file) {
-      try {
-        Path parent = file.path().getParent();
-        if (parent != null && !Files.exists(parent)) {
-          Files.createDirectories(parent);
-        }
-        Files.writeString(file.path(), file.content());
-      } catch (IOException e) {
-        throw new FileWriteException("Failed to write file: " + file.path(), e);
-      }
-    }
-
-    @Override
-    public void writeFiles(List<com.pragma.archetype.domain.model.file.GeneratedFile> files) {
-      files.forEach(this::writeFile);
-    }
-
-    @Override
-    public void createDirectory(Path path) {
-      try {
-        if (!Files.exists(path)) {
-          Files.createDirectories(path);
-        }
-      } catch (IOException e) {
-        throw new FileWriteException("Failed to create directory: " + path, e);
-      }
-    }
-
-    @Override
-    public boolean exists(Path path) {
-      return Files.exists(path);
-    }
-
-    @Override
-    public boolean directoryExists(Path path) {
-      return Files.exists(path) && Files.isDirectory(path);
-    }
-
-    @Override
-    public boolean isProjectEmpty(Path path) {
-      return false;
-    }
-
-    @Override
-    public List<Path> listFiles(Path path) {
-      try {
-        return Files.list(path).toList();
-      } catch (IOException e) {
-        throw new FileWriteException("Failed to list files: " + path, e);
-      }
-    }
-
-    @Override
-    public String readFile(Path path) {
-      try {
-        return Files.readString(path);
-      } catch (IOException e) {
-        throw new FileWriteException("Failed to read file: " + path, e);
-      }
-    }
-
-    @Override
-    public void appendToFile(Path path, String content) {
-      try {
-        String existing = readFile(path);
-        Files.writeString(path, existing + content);
-      } catch (IOException e) {
-        throw new FileWriteException("Failed to append to file: " + path, e);
-      }
-    }
   }
 }

@@ -9,7 +9,6 @@ import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.options.Option;
 
-import com.pragma.archetype.application.generator.OutputAdapterGenerator;
 import com.pragma.archetype.application.usecase.GenerateAdapterUseCaseImpl;
 import com.pragma.archetype.domain.model.adapter.AdapterMethod;
 import com.pragma.archetype.domain.model.adapter.MethodParameter;
@@ -154,6 +153,8 @@ public class GenerateOutputAdapterTask extends BaseCleanArchTask {
       YamlConfigurationAdapter yamlConfigurationAdapter = (YamlConfigurationAdapter) configurationPort;
       TemplateRepository templateRepository = createTemplateRepository();
       PathResolver pathResolver = new com.pragma.archetype.domain.service.PathResolverImpl(templateRepository);
+      com.pragma.archetype.application.generator.ProjectGenerator projectGenerator = new com.pragma.archetype.application.generator.ProjectGenerator(
+          templateRepository, fileSystemPort);
 
       // 8. Setup use case
       com.pragma.archetype.domain.service.PackageValidator packageValidator = new com.pragma.archetype.domain.service.PackageValidator();
@@ -174,18 +175,18 @@ public class GenerateOutputAdapterTask extends BaseCleanArchTask {
           contentProvider);
       com.pragma.archetype.infrastructure.adapter.out.template.TemplateAdapterDiscovery adapterDiscovery = new com.pragma.archetype.infrastructure.adapter.out.template.TemplateAdapterDiscovery(
           templateRepository, metadataLoader);
-      OutputAdapterGenerator generator = new OutputAdapterGenerator(templateRepository, fileSystemPort, pathResolver,
-          adapterDiscovery);
-      com.pragma.archetype.domain.service.BackupService backupService = new com.pragma.archetype.domain.service.BackupService(
-          fileSystemPort);
+
+      // Use UnifiedAdapterGenerator instead of OutputAdapterGenerator
+      com.pragma.archetype.application.generator.UnifiedAdapterGenerator generator = new com.pragma.archetype.application.generator.UnifiedAdapterGenerator(
+          templateRepository, pathResolver, adapterDiscovery, projectGenerator);
+
       GenerateAdapterUseCase useCase = new GenerateAdapterUseCaseImpl(
-          validator,
           generator,
           configurationPort,
           fileSystemPort,
+          adapterDiscovery,
           templateRepository,
-          yamlConfigurationAdapter,
-          backupService);
+          yamlConfigurationAdapter);
 
       // 9. Execute use case
       GenerationResult result = useCase.execute(projectPath, config);

@@ -68,6 +68,7 @@ class ProjectGeneratorTest {
     // Setup structure metadata mock
     var structureMetadata = new com.pragma.archetype.domain.model.structure.StructureMetadata(
         "hexagonal-single",
+        "src/main/resources",
         java.util.Map.of(
             "driven", "infrastructure/adapter/out/{name}",
             "driving", "infrastructure/adapter/in/{name}"),
@@ -76,6 +77,7 @@ class ProjectGeneratorTest {
         null,
         null,
         java.util.List.of("domain/model", "domain/port", "application/usecase", "infrastructure/adapter"),
+        null,
         null,
         null,
         null);
