@@ -35,7 +35,9 @@ public class StructureMetadataTestHelper {
         null, // moduleMetadata
         null, // entityModule
         null, // useCaseModule
-        null // staticFiles
+        null, // staticFiles
+        null, // sourceDirectory
+        null // testDirectory
     );
   }
 
@@ -58,7 +60,9 @@ public class StructureMetadataTestHelper {
         null, // moduleMetadata
         null, // entityModule
         null, // useCaseModule
-        null // staticFiles
+        null, // staticFiles
+        null, // sourceDirectory
+        null // testDirectory
     );
   }
 
@@ -81,7 +85,9 @@ public class StructureMetadataTestHelper {
         null, // moduleMetadata
         null, // entityModule
         null, // useCaseModule
-        null // staticFiles
+        null, // staticFiles
+        null, // sourceDirectory
+        null // testDirectory
     );
   }
 
@@ -104,7 +110,9 @@ public class StructureMetadataTestHelper {
         moduleMetadata,
         null, // entityModule
         null, // useCaseModule
-        null // staticFiles
+        null, // staticFiles
+        null, // sourceDirectory
+        null // testDirectory
     );
   }
 
@@ -127,7 +135,9 @@ public class StructureMetadataTestHelper {
         null, // moduleMetadata
         null, // entityModule
         null, // useCaseModule
-        null // staticFiles
+        null, // staticFiles
+        null, // sourceDirectory
+        null // testDirectory
     );
   }
 
@@ -158,7 +168,9 @@ public class StructureMetadataTestHelper {
         moduleMetadata,
         entityModule,
         useCaseModule,
-        null // staticFiles
+        null, // staticFiles
+        null, // sourceDirectory
+        null // testDirectory
     );
   }
 }

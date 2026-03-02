@@ -138,10 +138,18 @@ public class GenerateUseCaseTask extends DefaultTask {
       // 6. Setup dependencies (reuse instances from validation)
       TemplateRepository templateRepository = createTemplateRepository();
 
+      // Load structure metadata for the project architecture
+      var projectConfigOpt = configurationPort.readConfiguration(projectPath);
+      if (projectConfigOpt.isEmpty()) {
+        throw new IllegalStateException("Could not read project configuration");
+      }
+      com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
+          .loadStructureMetadata(projectConfigOpt.get().architecture());
+
       // 7. Setup use case
       com.pragma.archetype.domain.service.PackageValidator packageValidator = new com.pragma.archetype.domain.service.PackageValidator();
       UseCaseValidator validator = new UseCaseValidator(fileSystemPort, configurationPort, packageValidator);
-      UseCaseGenerator generator = new UseCaseGenerator(templateRepository, fileSystemPort);
+      UseCaseGenerator generator = new UseCaseGenerator(templateRepository, structureMetadata);
       GenerateUseCaseUseCase useCase = new GenerateUseCaseUseCaseImpl(
           validator,
           generator,

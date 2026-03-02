@@ -14,6 +14,7 @@ import com.pragma.archetype.domain.model.adapter.AdapterDirection;
 import com.pragma.archetype.domain.model.adapter.AdapterIndex;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
 import com.pragma.archetype.domain.model.adapter.TemplateFile;
+import com.pragma.archetype.domain.model.template.TemplateRepositoryPaths;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -222,15 +223,17 @@ public class TemplateAdapterDiscovery implements AdapterDiscoveryPort {
   // Private helper methods
 
   private String buildIndexPath(String framework, String paradigm, AdapterDirection direction) {
-    String adapterDir = direction == AdapterDirection.INPUT ? "entry-points" : "driven-adapters";
-    return String.format("frameworks/%s/%s/adapters/%s/index.json",
+    String adapterDir = TemplateRepositoryPaths.AdapterDirectories.getDirectoryName(
+        direction == AdapterDirection.INPUT);
+    return String.format(TemplateRepositoryPaths.Patterns.ADAPTER_INDEX,
         framework, paradigm, adapterDir);
   }
 
   private String buildMetadataPath(String framework, String paradigm,
       AdapterDirection direction, String adapterName) {
-    String adapterDir = direction == AdapterDirection.INPUT ? "entry-points" : "driven-adapters";
-    return String.format("frameworks/%s/%s/adapters/%s/%s/metadata.yml",
+    String adapterDir = TemplateRepositoryPaths.AdapterDirectories.getDirectoryName(
+        direction == AdapterDirection.INPUT);
+    return String.format(TemplateRepositoryPaths.Patterns.ADAPTER_METADATA,
         framework, paradigm, adapterDir, adapterName);
   }
 
@@ -245,8 +248,9 @@ public class TemplateAdapterDiscovery implements AdapterDiscoveryPort {
 
   private List<TemplateFile> discoverTemplates(String framework, String paradigm,
       AdapterDirection direction, String adapterName) {
-    String adapterDir = direction == AdapterDirection.INPUT ? "entry-points" : "driven-adapters";
-    String templateDir = String.format("frameworks/%s/%s/adapters/%s/%s",
+    String adapterDir = TemplateRepositoryPaths.AdapterDirectories.getDirectoryName(
+        direction == AdapterDirection.INPUT);
+    String templateDir = String.format(TemplateRepositoryPaths.Patterns.ADAPTER_TEMPLATE_DIR,
         framework, paradigm, adapterDir, adapterName);
 
     // Load metadata to get the suffix

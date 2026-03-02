@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import com.pragma.archetype.domain.model.adapter.AdapterDirection;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
+import com.pragma.archetype.domain.model.structure.StructureMetadata;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
@@ -93,9 +94,13 @@ public class AdapterConfigurationService {
                 return;
             }
 
+            // Load structure metadata to get adapter directory names
+            StructureMetadata structureMetadata = templateRepository
+                    .loadStructureMetadata(projectConfig.architecture());
+
             String framework = projectConfig.framework().name().toLowerCase();
             String paradigm = projectConfig.paradigm().name().toLowerCase();
-            String adapterTypeCategory = determineAdapterTypeCategory(config.direction());
+            String adapterTypeCategory = determineAdapterTypeCategory(config.direction(), structureMetadata);
             String adapterTypeLower = config.type().toLowerCase();
 
             // Prepare template context with adapter information
@@ -174,10 +179,14 @@ public class AdapterConfigurationService {
                 return configFiles;
             }
 
+            // Load structure metadata to get source directory
+            StructureMetadata structureMetadata = templateRepository
+                    .loadStructureMetadata(projectConfig.architecture());
+
             String basePackage = projectConfig.basePackage();
             String framework = projectConfig.framework().name().toLowerCase();
             String paradigm = projectConfig.paradigm().name().toLowerCase();
-            String adapterTypeCategory = determineAdapterTypeCategory(config.direction());
+            String adapterTypeCategory = determineAdapterTypeCategory(config.direction(), structureMetadata);
             String adapterTypeLower = config.type().toLowerCase();
 
             // Prepare template context
@@ -200,11 +209,11 @@ public class AdapterConfigurationService {
                     String fullPackage = basePackage + "." + configClass.packagePath();
                     String packagePath = fullPackage.replace('.', '/');
 
-                    // Build file path:
-                    // src/main/java/{basePackage}/{packagePath}/{AdapterName}{ClassName}.java
+                    // Build file path using dynamic source directory from metadata
+                    String sourceDir = structureMetadata.getSourceDirectory();
                     String fileName = config.name() + configClass.name() + ".java";
                     Path configFilePath = projectPath
-                            .resolve("src/main/java")
+                            .resolve(sourceDir)
                             .resolve(packagePath)
                             .resolve(fileName);
 
@@ -609,13 +618,15 @@ public class AdapterConfigurationService {
 
     /**
      * Determines the adapter type category for framework-aware template loading.
-     * Maps adapter direction to their category: "driven-adapters" or
-     * "entry-points".
+     * Uses structure metadata to get the actual directory name configured for the
+     * architecture.
      * 
-     * @param direction adapter direction
-     * @return adapter type category string
+     * @param direction         adapter direction
+     * @param structureMetadata structure metadata
+     * @return adapter type category string from structure metadata
      */
-    private String determineAdapterTypeCategory(AdapterDirection direction) {
-        return direction == AdapterDirection.INPUT ? "entry-points" : "driven-adapters";
+    private String determineAdapterTypeCategory(AdapterDirection direction, StructureMetadata structureMetadata) {
+        String adapterType = direction == AdapterDirection.INPUT ? "driving" : "driven";
+        return structureMetadata.getAdapterDirName(adapterType);
     }
 }

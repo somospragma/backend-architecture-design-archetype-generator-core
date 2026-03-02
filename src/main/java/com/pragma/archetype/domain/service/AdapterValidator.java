@@ -10,6 +10,7 @@ import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
+import com.pragma.archetype.domain.port.out.TemplateRepository;
 
 /**
  * Validates adapter generation requests.
@@ -20,12 +21,14 @@ public class AdapterValidator {
   private final FileSystemPort fileSystemPort;
   private final ConfigurationPort configurationPort;
   private final PackageValidator packageValidator;
+  private final TemplateRepository templateRepository;
 
   public AdapterValidator(FileSystemPort fileSystemPort, ConfigurationPort configurationPort,
-      PackageValidator packageValidator) {
+      PackageValidator packageValidator, TemplateRepository templateRepository) {
     this.fileSystemPort = fileSystemPort;
     this.configurationPort = configurationPort;
     this.packageValidator = packageValidator;
+    this.templateRepository = templateRepository;
   }
 
   /**
@@ -127,10 +130,25 @@ public class AdapterValidator {
     // Convert package name to file path
     String packagePath = config.packageName().replace('.', '/');
 
+    // Get source directory from project configuration
+    String sourceDirectory = "src/main/java"; // Default fallback
+    var projectConfigOpt = configurationPort.readConfiguration(projectPath);
+    if (projectConfigOpt.isPresent()) {
+      try {
+        // Load StructureMetadata to get dynamic source directory
+        com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
+            .loadStructureMetadata(projectConfigOpt.get().architecture());
+        sourceDirectory = structureMetadata.getSourceDirectory();
+      } catch (Exception e) {
+        // Fallback to default if metadata cannot be loaded
+        sourceDirectory = "src/main/java";
+      }
+    }
+
     // Build the adapter file path:
-    // src/main/java/{packagePath}/{AdapterName}Adapter.java
+    // {sourceDirectory}/{packagePath}/{AdapterName}Adapter.java
     return projectPath
-        .resolve("src/main/java")
+        .resolve(sourceDirectory)
         .resolve(packagePath)
         .resolve(config.name() + "Adapter.java");
   }

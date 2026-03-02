@@ -19,7 +19,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
-import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
@@ -34,6 +33,9 @@ class AdapterValidatorTest {
   @Mock
   private ConfigurationPort configurationPort;
 
+  @Mock
+  private com.pragma.archetype.domain.port.out.TemplateRepository templateRepository;
+
   private AdapterValidator validator;
   private Path projectPath;
   private OutputAdapterConfig validConfig;
@@ -41,7 +43,7 @@ class AdapterValidatorTest {
   @BeforeEach
   void setUp() {
     PackageValidator packageValidator = new PackageValidator();
-    validator = new AdapterValidator(fileSystemPort, configurationPort, packageValidator);
+    validator = new AdapterValidator(fileSystemPort, configurationPort, packageValidator, templateRepository);
     projectPath = Paths.get("/test/project");
 
     validConfig = OutputAdapterConfig.builder()

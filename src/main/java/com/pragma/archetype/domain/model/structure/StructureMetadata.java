@@ -22,7 +22,13 @@ public record StructureMetadata(
     java.util.List<ModuleMetadata> moduleMetadata,
     String entityModule,
     String useCaseModule,
-    java.util.List<StaticFile> staticFiles) {
+    java.util.List<StaticFile> staticFiles,
+    String sourceDirectory,
+    String testDirectory) {
+
+  private static final String DEFAULT_SOURCE_DIR = "src/main/java";
+  private static final String DEFAULT_TEST_DIR = "src/test/java";
+  private static final String DEFAULT_RESOURCES_PATH = "src/main/resources";
 
   public StructureMetadata {
     Objects.requireNonNull(architectureType, "Architecture type cannot be null");
@@ -271,6 +277,32 @@ public record StructureMetadata(
   public String getResourcesPath() {
     return resourcesPath != null && !resourcesPath.isBlank()
         ? resourcesPath
-        : "src/main/resources";
+        : DEFAULT_RESOURCES_PATH;
+  }
+
+  /**
+   * Gets the source directory for this architecture.
+   * Returns the configured directory from structure.yml or defaults to
+   * "src/main/java".
+   * 
+   * @return The source directory relative to project root
+   */
+  public String getSourceDirectory() {
+    return sourceDirectory != null && !sourceDirectory.isBlank()
+        ? sourceDirectory
+        : DEFAULT_SOURCE_DIR;
+  }
+
+  /**
+   * Gets the test directory for this architecture.
+   * Returns the configured directory from structure.yml or defaults to
+   * "src/test/java".
+   * 
+   * @return The test directory relative to project root
+   */
+  public String getTestDirectory() {
+    return testDirectory != null && !testDirectory.isBlank()
+        ? testDirectory
+        : DEFAULT_TEST_DIR;
   }
 }

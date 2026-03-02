@@ -320,11 +320,17 @@ public class AdapterMetadataLoader {
 
     List<Map<String, Object>> templatesList = (List<Map<String, Object>>) templates;
     return templatesList.stream()
-        .map(templateMap -> TemplateMapping.builder()
-            .source((String) templateMap.get("source"))
-            .target((String) templateMap.get("target"))
-            .outputDir((String) templateMap.getOrDefault("outputDir", "src/main/java"))
-            .build())
+        .map(templateMap -> {
+          // Get outputDir from template or use null to let TemplateMapping use its
+          // default
+          String outputDir = (String) templateMap.get("outputDir");
+
+          return TemplateMapping.builder()
+              .source((String) templateMap.get("source"))
+              .target((String) templateMap.get("target"))
+              .outputDir(outputDir) // Will use TemplateMapping's default if null
+              .build();
+        })
         .toList();
   }
 

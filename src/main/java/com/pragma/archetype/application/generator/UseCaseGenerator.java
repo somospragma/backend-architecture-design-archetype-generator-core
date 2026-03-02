@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.pragma.archetype.domain.model.file.GeneratedFile;
+import com.pragma.archetype.domain.model.structure.StructureMetadata;
 import com.pragma.archetype.domain.model.usecase.UseCaseConfig;
-import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 
 /**
@@ -18,11 +18,11 @@ import com.pragma.archetype.domain.port.out.TemplateRepository;
 public class UseCaseGenerator {
 
   private final TemplateRepository templateRepository;
-  private final FileSystemPort fileSystemPort;
+  private final StructureMetadata structureMetadata;
 
-  public UseCaseGenerator(TemplateRepository templateRepository, FileSystemPort fileSystemPort) {
+  public UseCaseGenerator(TemplateRepository templateRepository, StructureMetadata structureMetadata) {
     this.templateRepository = templateRepository;
-    this.fileSystemPort = fileSystemPort;
+    this.structureMetadata = structureMetadata;
   }
 
   /**
@@ -60,7 +60,7 @@ public class UseCaseGenerator {
     // Calculate file path: domain/port/in/{UseCaseName}UseCase.java
     String packagePath = config.packageName().replace('.', '/');
     Path filePath = projectPath
-        .resolve("src/main/java")
+        .resolve(structureMetadata.getSourceDirectory())
         .resolve(packagePath)
         .resolve(config.name() + "UseCase.java");
 
@@ -86,7 +86,7 @@ public class UseCaseGenerator {
     // Calculate file path: application/usecase/{UseCaseName}UseCaseImpl.java
     String packagePath = implPackage.replace('.', '/');
     Path filePath = projectPath
-        .resolve("src/main/java")
+        .resolve(structureMetadata.getSourceDirectory())
         .resolve(packagePath)
         .resolve(config.name() + "UseCaseImpl.java");
 

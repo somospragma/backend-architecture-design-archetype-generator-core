@@ -18,6 +18,7 @@ import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.file.FileType;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.structure.StructureMetadata;
+import com.pragma.archetype.domain.model.template.TemplateRepositoryPaths;
 import com.pragma.archetype.domain.port.out.PathResolver;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 
@@ -75,11 +76,8 @@ public class UnifiedAdapterGenerator {
 
   private static final String VARIABLE_FRAMEWORK = "framework";
   private static final String VARIABLE_PARADIGM = "paradigm";
-  private static final String ADAPTER_DIR_INPUT = "entry-points";
-  private static final String ADAPTER_DIR_OUTPUT = "driven-adapters";
   private static final String DEFAULT_SUFFIX = "Adapter";
   private static final String BASE_PACKAGE_KEY = "basePackage";
-  private static final String SRC_MAIN_JAVA = "src/main/java";
   private static final String PATH_SEPARATOR = "/";
 
   private final TemplateRepository templateRepository;
@@ -146,15 +144,18 @@ public class UnifiedAdapterGenerator {
     generatedFiles.add(buildFile);
 
     // 2. Generate main adapter file in the module
-    GeneratedFile mainFile = generateMainFileInModule(projectPath, config, direction, modulePath, projectConfig);
+    GeneratedFile mainFile = generateMainFileInModule(projectPath, config, direction, modulePath, projectConfig,
+        structureMetadata);
     generatedFiles.add(mainFile);
 
     // 3. Generate entity mapper if needed (for data store adapters)
     if (needsEntityMapper(config, direction)) {
-      GeneratedFile mapperFile = generateMapperInModule(projectPath, config, modulePath, projectConfig);
+      GeneratedFile mapperFile = generateMapperInModule(projectPath, config, modulePath, projectConfig,
+          structureMetadata);
       generatedFiles.add(mapperFile);
 
-      GeneratedFile entityFile = generateDataEntityInModule(projectPath, config, direction, modulePath, projectConfig);
+      GeneratedFile entityFile = generateDataEntityInModule(projectPath, config, direction, modulePath, projectConfig,
+          structureMetadata);
       generatedFiles.add(entityFile);
     }
 
@@ -193,15 +194,16 @@ public class UnifiedAdapterGenerator {
     Map<String, Object> data = prepareTemplateData(config, direction, projectConfig);
 
     // Generate main adapter file
-    GeneratedFile mainFile = generateMainFile(projectPath, config, direction, data, projectConfig);
+    GeneratedFile mainFile = generateMainFile(projectPath, config, direction, data, projectConfig, structureMetadata);
     generatedFiles.add(mainFile);
 
     // Generate entity mapper if needed
     if (needsEntityMapper(config, direction)) {
-      GeneratedFile mapperFile = generateMapper(projectPath, config, direction, data, projectConfig);
+      GeneratedFile mapperFile = generateMapper(projectPath, config, direction, data, projectConfig, structureMetadata);
       generatedFiles.add(mapperFile);
 
-      GeneratedFile entityFile = generateDataEntity(projectPath, config, direction, data, projectConfig);
+      GeneratedFile entityFile = generateDataEntity(projectPath, config, direction, data, projectConfig,
+          structureMetadata);
       generatedFiles.add(entityFile);
     }
 
@@ -224,7 +226,8 @@ public class UnifiedAdapterGenerator {
       AdapterConfig config,
       AdapterDirection direction,
       Map<String, Object> data,
-      ProjectConfig projectConfig) {
+      ProjectConfig projectConfig,
+      StructureMetadata structureMetadata) {
 
     // Get metadata
     AdapterMetadata metadata = getAdapterMetadata(config, direction);
@@ -240,7 +243,7 @@ public class UnifiedAdapterGenerator {
 
     // Resolve file path
     Path filePath = resolveAdapterFilePath(
-        projectPath, config, direction, projectConfig, config.getName() + suffix + ".java");
+        projectPath, config, direction, projectConfig, config.getName() + suffix + ".java", structureMetadata);
 
     return GeneratedFile.javaSource(filePath, content);
   }
@@ -253,7 +256,8 @@ public class UnifiedAdapterGenerator {
       AdapterConfig config,
       AdapterDirection direction,
       Map<String, Object> data,
-      ProjectConfig projectConfig) {
+      ProjectConfig projectConfig,
+      StructureMetadata structureMetadata) {
 
     // Get mapper template
     String templatePath = getMapperTemplatePath(config, direction);
@@ -263,7 +267,8 @@ public class UnifiedAdapterGenerator {
 
     // Resolve file path with mapper subdirectory
     String fileName = config.getEntityName() + "Mapper.java";
-    Path filePath = resolveAdapterFilePath(projectPath, config, direction, projectConfig, "mapper/" + fileName);
+    Path filePath = resolveAdapterFilePath(projectPath, config, direction, projectConfig, "mapper/" + fileName,
+        structureMetadata);
 
     return GeneratedFile.javaSource(filePath, content);
   }
@@ -276,7 +281,8 @@ public class UnifiedAdapterGenerator {
       AdapterConfig config,
       AdapterDirection direction,
       Map<String, Object> data,
-      ProjectConfig projectConfig) {
+      ProjectConfig projectConfig,
+      StructureMetadata structureMetadata) {
 
     // Get metadata
     AdapterMetadata metadata = getAdapterMetadata(config, direction);
@@ -289,7 +295,8 @@ public class UnifiedAdapterGenerator {
 
     // Resolve file path with entity subdirectory
     String fileName = config.getEntityName() + "Data.java";
-    Path filePath = resolveAdapterFilePath(projectPath, config, direction, projectConfig, "entity/" + fileName);
+    Path filePath = resolveAdapterFilePath(projectPath, config, direction, projectConfig, "entity/" + fileName,
+        structureMetadata);
 
     return GeneratedFile.javaSource(filePath, content);
   }
@@ -383,7 +390,8 @@ public class UnifiedAdapterGenerator {
       AdapterConfig config,
       AdapterDirection direction,
       String modulePath,
-      ProjectConfig projectConfig) {
+      ProjectConfig projectConfig,
+      StructureMetadata structureMetadata) {
 
     Map<String, Object> data = prepareTemplateData(config, direction, projectConfig);
     AdapterMetadata metadata = getAdapterMetadata(config, direction);
@@ -394,7 +402,7 @@ public class UnifiedAdapterGenerator {
     String packagePath = config.getPackageName().replace('.', '/');
     Path filePath = projectPath
         .resolve(modulePath)
-        .resolve(SRC_MAIN_JAVA)
+        .resolve(structureMetadata.getSourceDirectory())
         .resolve(packagePath)
         .resolve(config.getName() + suffix + ".java");
 
@@ -405,7 +413,8 @@ public class UnifiedAdapterGenerator {
       Path projectPath,
       AdapterConfig config,
       String modulePath,
-      ProjectConfig projectConfig) {
+      ProjectConfig projectConfig,
+      StructureMetadata structureMetadata) {
 
     Map<String, Object> data = prepareTemplateData(config, AdapterDirection.OUTPUT, projectConfig);
     String templatePath = getMapperTemplatePath(config, AdapterDirection.OUTPUT);
@@ -415,7 +424,7 @@ public class UnifiedAdapterGenerator {
     String packagePath = mapperPackage.replace('.', '/');
     Path filePath = projectPath
         .resolve(modulePath)
-        .resolve(SRC_MAIN_JAVA)
+        .resolve(structureMetadata.getSourceDirectory())
         .resolve(packagePath)
         .resolve(config.getEntityName() + "Mapper.java");
 
@@ -429,7 +438,8 @@ public class UnifiedAdapterGenerator {
       AdapterConfig config,
       AdapterDirection direction,
       String modulePath,
-      ProjectConfig projectConfig) {
+      ProjectConfig projectConfig,
+      StructureMetadata structureMetadata) {
 
     Map<String, Object> data = prepareTemplateData(config, direction, projectConfig);
     AdapterMetadata metadata = getAdapterMetadata(config, direction);
@@ -440,7 +450,7 @@ public class UnifiedAdapterGenerator {
     String packagePath = entityPackage.replace('.', '/');
     Path filePath = projectPath
         .resolve(modulePath)
-        .resolve(SRC_MAIN_JAVA)
+        .resolve(structureMetadata.getSourceDirectory())
         .resolve(packagePath)
         .resolve(config.getEntityName() + "Data.java");
 
@@ -484,10 +494,13 @@ public class UnifiedAdapterGenerator {
   }
 
   /**
-   * Resolves the adapter directory based on direction.
+   * Resolves the adapter directory based on direction for template paths.
+   * This returns the directory name in the template repository structure,
+   * NOT the directory in the generated project.
    */
   private String resolveAdapterDirectory(AdapterDirection direction) {
-    return direction == AdapterDirection.INPUT ? ADAPTER_DIR_INPUT : ADAPTER_DIR_OUTPUT;
+    return TemplateRepositoryPaths.AdapterDirectories.getDirectoryName(
+        direction == AdapterDirection.INPUT);
   }
 
   /**
@@ -501,7 +514,7 @@ public class UnifiedAdapterGenerator {
             "No main template found for adapter: " + config.getType()));
 
     String adapterDir = resolveAdapterDirectory(direction);
-    return String.format("frameworks/%s/%s/adapters/%s/%s/%s",
+    return String.format(TemplateRepositoryPaths.Patterns.ADAPTER_TEMPLATE_DIR + "/%s",
         config.getFramework(), config.getParadigm(), adapterDir, config.getType(), mainTemplate.getName());
   }
 
@@ -510,8 +523,8 @@ public class UnifiedAdapterGenerator {
    */
   private String getMapperTemplatePath(AdapterConfig config, AdapterDirection direction) {
     String adapterDir = resolveAdapterDirectory(direction);
-    return String.format("frameworks/%s/%s/adapters/%s/generic/Mapper.java.ftl",
-        config.getFramework(), config.getParadigm(), adapterDir);
+    return String.format(TemplateRepositoryPaths.Patterns.GENERIC_ADAPTER_TEMPLATE,
+        config.getFramework(), config.getParadigm(), adapterDir, "Mapper.java.ftl");
   }
 
   /**
@@ -525,7 +538,7 @@ public class UnifiedAdapterGenerator {
             "No entity template found for adapter: " + config.getType()));
 
     String adapterDir = resolveAdapterDirectory(direction);
-    return String.format("frameworks/%s/%s/adapters/%s/%s/%s",
+    return String.format(TemplateRepositoryPaths.Patterns.ADAPTER_TEMPLATE_DIR + "/%s",
         config.getFramework(), config.getParadigm(), adapterDir, config.getType(), entityTemplate.getName());
   }
 
@@ -557,7 +570,10 @@ public class UnifiedAdapterGenerator {
       AdapterConfig config,
       AdapterDirection direction,
       ProjectConfig projectConfig,
-      String fileName) {
+      String fileName,
+      StructureMetadata structureMetadata) {
+
+    String sourceDir = structureMetadata.getSourceDirectory();
 
     if (projectConfig != null) {
       // Use PathResolver for dynamic path resolution
@@ -573,7 +589,7 @@ public class UnifiedAdapterGenerator {
 
       String basePackagePath = projectConfig.basePackage().replace('.', PATH_SEPARATOR.charAt(0));
       return projectPath
-          .resolve(SRC_MAIN_JAVA)
+          .resolve(sourceDir)
           .resolve(basePackagePath)
           .resolve(adapterBasePath)
           .resolve(fileName);
@@ -581,7 +597,7 @@ public class UnifiedAdapterGenerator {
       // Fallback to package-based path
       String packagePath = config.getPackageName().replace('.', PATH_SEPARATOR.charAt(0));
       return projectPath
-          .resolve(SRC_MAIN_JAVA)
+          .resolve(sourceDir)
           .resolve(packagePath)
           .resolve(fileName);
     }

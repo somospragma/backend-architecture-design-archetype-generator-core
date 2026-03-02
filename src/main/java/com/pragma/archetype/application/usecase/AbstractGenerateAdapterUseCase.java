@@ -16,6 +16,7 @@ import com.pragma.archetype.domain.model.adapter.AdapterDirection;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.structure.StructureMetadata;
+import com.pragma.archetype.domain.model.template.TemplateRepositoryPaths;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateInputAdapterUseCase.GenerationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
@@ -75,8 +76,8 @@ public abstract class AbstractGenerateAdapterUseCase {
   private static final Logger logger = LoggerFactory.getLogger(AbstractGenerateAdapterUseCase.class);
 
   // Validation patterns
-  private static final Pattern JAVA_CLASS_NAME_PATTERN = Pattern.compile("^[A-Z][a-zA-Z0-9_]*$");
-  private static final Pattern JAVA_PACKAGE_NAME_PATTERN = Pattern.compile("^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$");
+  private static final Pattern JAVA_CLASS_NAME_PATTERN = Pattern.compile("^[A-Z]\\w*$");
+  private static final Pattern JAVA_PACKAGE_NAME_PATTERN = Pattern.compile("^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)?$");
   private static final Pattern KOTLIN_DSL_PATTERN = Pattern.compile("(?s).*\\{.*\\}.*");
 
   protected final UnifiedAdapterGenerator generator;
@@ -136,7 +137,7 @@ public abstract class AbstractGenerateAdapterUseCase {
 
       // STEP 4: Validate all templates (28 validations -
       // validation-before-modification)
-      ValidationResult templateValidation = validateAllTemplates(config, projectConfig);
+      ValidationResult templateValidation = validateAllTemplates(config);
       if (!templateValidation.valid()) {
         logger.error("Template validation failed. Displaying all errors before generation:");
         templateValidation.errors().forEach(error -> logger.error("  - {}", error));
@@ -144,10 +145,10 @@ public abstract class AbstractGenerateAdapterUseCase {
       }
 
       // STEP 5: Identify files to backup
-      List<Path> filesToBackup = identifyFilesToBackup(projectPath, config, projectConfig);
+      List<Path> filesToBackup = identifyFilesToBackup(projectPath, config);
 
-      // STEP 6: Create backup (TODO: implement BackupService)
-      // String backupId = backupService.createBackup(projectPath, filesToBackup);
+      // STEP 6: Create backup
+      // TODO: implement BackupService
       logger.info("Files to backup: {}", filesToBackup.size());
 
       // STEP 7: Generate adapter files
@@ -185,10 +186,9 @@ public abstract class AbstractGenerateAdapterUseCase {
       adapterConfigurationService.addTestDependenciesIfNeeded(projectPath, adapterConfig, metadata);
 
       // STEP 16: Check dependency conflicts (informational only)
-      checkDependencyConflicts(projectPath, config, projectConfig);
+      checkDependencyConflicts(config);
 
-      // STEP 17: Delete backup on success (TODO: implement)
-      // backupService.deleteBackup(projectPath, backupId);
+      // TODO: Delete backup on success
 
       logger.info("Successfully generated {} adapter: {}", getDirection(), config.getName());
       return GenerationResult.success(generatedFiles);
@@ -241,13 +241,10 @@ public abstract class AbstractGenerateAdapterUseCase {
    * <li>21-28: Advanced metadata validation (NEW)</li>
    * </ul>
    * 
-   * @param config        adapter configuration
-   * @param projectConfig project configuration
+   * @param config adapter configuration
    * @return validation result with all errors collected
    */
-  private ValidationResult validateAllTemplates(
-      UnifiedAdapterGenerator.AdapterConfig config,
-      com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
+  private ValidationResult validateAllTemplates(UnifiedAdapterGenerator.AdapterConfig config) {
 
     var errors = new ArrayList<String>();
 
@@ -297,42 +294,75 @@ public abstract class AbstractGenerateAdapterUseCase {
 
     // 3-4. Entity and Mapper templates exist (if needsMapper)
     if (metadata.isNeedsMapper()) {
-      boolean hasEntityTemplate = metadata.getDiscoveredTemplates().stream()
-          .anyMatch(t -> t.getName().contains("Entity"));
-      if (!hasEntityTemplate) {
-        errors.add("Entity template not found for adapter: " + config.getType());
-      }
-
-      // Mapper template is generic, always available
+      validateMapperTemplates(config, metadata, errors);
     }
 
     // 5. Application properties template exists (if specified)
+    validateApplicationPropertiesTemplate(metadata, errors);
+
+    // 6. Configuration class templates exist (if specified)
+    validateConfigurationClassTemplates(config, metadata, errors);
+
+    // 7. Module build template exists (if adaptersAsModules) - skip for now
+  }
+
+  /**
+   * Validates mapper-related templates.
+   */
+  private void validateMapperTemplates(
+      UnifiedAdapterGenerator.AdapterConfig config,
+      AdapterMetadata metadata,
+      List<String> errors) {
+    boolean hasEntityTemplate = metadata.getDiscoveredTemplates().stream()
+        .anyMatch(t -> t.getName().contains("Entity"));
+    if (!hasEntityTemplate) {
+      errors.add("Entity template not found for adapter: " + config.getType());
+    }
+    // Mapper template is generic, always available
+  }
+
+  /**
+   * Validates application properties template.
+   */
+  private void validateApplicationPropertiesTemplate(AdapterMetadata metadata, List<String> errors) {
     if (metadata.getApplicationPropertiesTemplate() != null) {
-      String adapterDir = getDirection() == AdapterDirection.INPUT ? "entry-points" : "driven-adapters";
-      String templatePath = String.format("frameworks/%s/%s/adapters/%s/%s/%s",
-          config.getFramework(), config.getParadigm(), adapterDir, config.getType(),
+      String adapterDir = TemplateRepositoryPaths.AdapterDirectories.getDirectoryName(
+          getDirection() == AdapterDirection.INPUT);
+      String templatePath = String.format(TemplateRepositoryPaths.Patterns.ADAPTER_TEMPLATE_DIR + "/%s",
+          metadata.getName(), metadata.getName(), adapterDir, metadata.getName(),
           metadata.getApplicationPropertiesTemplate());
 
       if (!templateRepository.templateExists(templatePath)) {
         errors.add("Application properties template not found: " + templatePath);
       }
     }
+  }
 
-    // 6. Configuration class templates exist (if specified)
-    if (metadata.getConfigurationClasses() != null && !metadata.getConfigurationClasses().isEmpty()) {
-      String adapterDir = getDirection() == AdapterDirection.INPUT ? "entry-points" : "driven-adapters";
-      for (var configClass : metadata.getConfigurationClasses()) {
-        String templatePath = String.format("frameworks/%s/%s/adapters/%s/%s/%s",
-            config.getFramework(), config.getParadigm(), adapterDir, config.getType(),
-            configClass.templatePath());
+  /**
+   * Validates configuration class templates.
+   */
+  private void validateConfigurationClassTemplates(
+      UnifiedAdapterGenerator.AdapterConfig config,
+      AdapterMetadata metadata,
+      List<String> errors) {
 
-        if (!templateRepository.templateExists(templatePath)) {
-          errors.add("Configuration class template not found: " + templatePath);
-        }
-      }
+    var configClasses = metadata.getConfigurationClasses();
+    if (configClasses == null || configClasses.isEmpty()) {
+      return;
     }
 
-    // 7. Module build template exists (if adaptersAsModules) - skip for now
+    String adapterDir = TemplateRepositoryPaths.AdapterDirectories.getDirectoryName(
+        getDirection() == AdapterDirection.INPUT);
+
+    for (var configClass : configClasses) {
+      String templatePath = String.format(TemplateRepositoryPaths.Patterns.ADAPTER_TEMPLATE_DIR + "/%s",
+          config.getFramework(), config.getParadigm(), adapterDir, config.getType(),
+          configClass.templatePath());
+
+      if (!templateRepository.templateExists(templatePath)) {
+        errors.add("Configuration class template not found: " + templatePath);
+      }
+    }
   }
 
   /**
@@ -352,42 +382,77 @@ public abstract class AbstractGenerateAdapterUseCase {
     // These are handled by the model itself
 
     // 16. Each dependency must have: group, artifact, version
-    // Note: dependencies is now List<String> with format "group:artifact:version"
+    validateDependencies(metadata, errors);
+
+    // 17. Each configurationClass must have: name, packagePath, templatePath
+    validateConfigurationClasses(metadata, errors);
+
+    // 18. Each additionalResource must have: name, templatePath
+    validateAdditionalResources(metadata, errors);
+
+    // 19. Each buildPlugin must have: id, version
+    validateBuildPlugins(metadata, errors);
+
+    // 20. Templates referenced must exist (checked in validateTemplateExistence)
+  }
+
+  /**
+   * Validates dependency format.
+   */
+  private void validateDependencies(AdapterMetadata metadata, List<String> errors) {
     if (metadata.getDependencies() != null && !metadata.getDependencies().isEmpty()) {
       for (String dep : metadata.getDependencies()) {
         String[] parts = dep.split(":");
         if (parts.length < 3) {
           errors.add("Dependency has invalid format (expected group:artifact:version): " + dep);
         } else {
-          if (parts[0].isBlank()) {
-            errors.add("Dependency missing group: " + dep);
-          }
-          if (parts[1].isBlank()) {
-            errors.add("Dependency missing artifact: " + dep);
-          }
-          if (parts[2].isBlank()) {
-            errors.add("Dependency missing version: " + dep);
-          }
+          validateDependencyParts(dep, parts, errors);
         }
       }
     }
+  }
 
-    // 17. Each configurationClass must have: name, packagePath, templatePath
-    if (metadata.getConfigurationClasses() != null && !metadata.getConfigurationClasses().isEmpty()) {
-      for (var configClass : metadata.getConfigurationClasses()) {
-        if (configClass.name() == null || configClass.name().isBlank()) {
-          errors.add("Configuration class missing name");
-        }
-        if (configClass.packagePath() == null || configClass.packagePath().isBlank()) {
-          errors.add("Configuration class missing packagePath");
-        }
-        if (configClass.templatePath() == null || configClass.templatePath().isBlank()) {
-          errors.add("Configuration class missing templatePath");
-        }
-      }
+  /**
+   * Validates individual dependency parts.
+   */
+  private void validateDependencyParts(String dep, String[] parts, List<String> errors) {
+    if (parts[0].isBlank()) {
+      errors.add("Dependency missing group: " + dep);
+    }
+    if (parts[1].isBlank()) {
+      errors.add("Dependency missing artifact: " + dep);
+    }
+    if (parts[2].isBlank()) {
+      errors.add("Dependency missing version: " + dep);
+    }
+  }
+
+  /**
+   * Validates configuration classes metadata.
+   */
+  private void validateConfigurationClasses(AdapterMetadata metadata, List<String> errors) {
+    var configClasses = metadata.getConfigurationClasses();
+    if (configClasses == null || configClasses.isEmpty()) {
+      return;
     }
 
-    // 18. Each additionalResource must have: name, templatePath
+    for (var configClass : configClasses) {
+      if (configClass.name() == null || configClass.name().isBlank()) {
+        errors.add("Configuration class missing name");
+      }
+      if (configClass.packagePath() == null || configClass.packagePath().isBlank()) {
+        errors.add("Configuration class missing packagePath");
+      }
+      if (configClass.templatePath() == null || configClass.templatePath().isBlank()) {
+        errors.add("Configuration class missing templatePath");
+      }
+    }
+  }
+
+  /**
+   * Validates additional resources metadata.
+   */
+  private void validateAdditionalResources(AdapterMetadata metadata, List<String> errors) {
     if (metadata.getAdditionalResources() != null) {
       for (var resource : metadata.getAdditionalResources()) {
         if (resource.name() == null || resource.name().isBlank()) {
@@ -398,8 +463,12 @@ public abstract class AbstractGenerateAdapterUseCase {
         }
       }
     }
+  }
 
-    // 19. Each buildPlugin must have: id, version
+  /**
+   * Validates build plugins metadata.
+   */
+  private void validateBuildPlugins(AdapterMetadata metadata, List<String> errors) {
     if (metadata.getBuildPlugins() != null) {
       for (var plugin : metadata.getBuildPlugins()) {
         if (plugin.id() == null || plugin.id().isBlank()) {
@@ -410,8 +479,6 @@ public abstract class AbstractGenerateAdapterUseCase {
         }
       }
     }
-
-    // 20. Templates referenced must exist (checked in validateTemplateExistence)
   }
 
   /**
@@ -427,13 +494,39 @@ public abstract class AbstractGenerateAdapterUseCase {
     // (Already checked in validateTemplateExistence)
 
     // 23. buildConfiguration debe ser válido Kotlin DSL si se especifica
-    if (metadata.getBuildConfiguration() != null && !metadata.getBuildConfiguration().isBlank()) {
-      if (!isValidKotlinDsl(metadata.getBuildConfiguration())) {
-        errors.add("Build configuration contains invalid Kotlin DSL syntax");
-      }
-    }
+    validateBuildConfiguration(metadata, errors);
 
     // 24. additionalResources.targetPath debe ser válido
+    validateAdditionalResourcesTargetPath(metadata, errors);
+
+    // 25. dependencies no deben tener duplicados
+    validateNoDuplicateDependencies(metadata, errors);
+
+    // 26. testDependencies no deben tener duplicados
+    validateNoTestDependencyDuplicates(metadata, errors);
+
+    // 27. configurationClasses.name debe ser válido como nombre de clase Java
+    validateConfigurationClassNames(metadata, errors);
+
+    // 28. configurationClasses.packagePath debe ser válido como paquete Java
+    validateConfigurationClassPackages(metadata, errors);
+  }
+
+  /**
+   * Validates build configuration syntax.
+   */
+  private void validateBuildConfiguration(AdapterMetadata metadata, List<String> errors) {
+    if (metadata.getBuildConfiguration() != null
+        && !metadata.getBuildConfiguration().isBlank()
+        && !isValidKotlinDsl(metadata.getBuildConfiguration())) {
+      errors.add("Build configuration contains invalid Kotlin DSL syntax");
+    }
+  }
+
+  /**
+   * Validates additional resources target paths.
+   */
+  private void validateAdditionalResourcesTargetPath(AdapterMetadata metadata, List<String> errors) {
     if (metadata.getAdditionalResources() != null) {
       for (var resource : metadata.getAdditionalResources()) {
         if (resource.targetPath() == null || resource.targetPath().isBlank()) {
@@ -441,12 +534,15 @@ public abstract class AbstractGenerateAdapterUseCase {
         }
       }
     }
+  }
 
-    // 25. dependencies no deben tener duplicados
+  /**
+   * Validates no duplicate dependencies.
+   */
+  private void validateNoDuplicateDependencies(AdapterMetadata metadata, List<String> errors) {
     if (metadata.getDependencies() != null && !metadata.getDependencies().isEmpty()) {
       Set<String> seen = new HashSet<>();
       for (String dep : metadata.getDependencies()) {
-        // Extract group:artifact from "group:artifact:version"
         String[] parts = dep.split(":");
         if (parts.length >= 2) {
           String key = parts[0] + ":" + parts[1];
@@ -456,35 +552,54 @@ public abstract class AbstractGenerateAdapterUseCase {
         }
       }
     }
+  }
 
-    // 26. testDependencies no deben tener duplicados
-    // Note: testDependencies is deprecated, using runtimeDependencies field
-    // directly
-    if (metadata.getTestDependencies() != null && !metadata.getTestDependencies().isEmpty()) {
-      Set<String> seen = new HashSet<>();
-      for (var dep : metadata.getTestDependencies()) {
-        String key = dep.group() + ":" + dep.artifact();
-        if (!seen.add(key)) {
-          errors.add("Duplicate test dependency found: " + key);
-        }
-      }
+  /**
+   * Validates no duplicate test dependencies.
+   */
+  private void validateNoTestDependencyDuplicates(AdapterMetadata metadata, List<String> errors) {
+    var testDeps = metadata.getTestDependencies();
+    if (testDeps == null || testDeps.isEmpty()) {
+      return;
     }
 
-    // 27. configurationClasses.name debe ser válido como nombre de clase Java
-    if (metadata.getConfigurationClasses() != null && !metadata.getConfigurationClasses().isEmpty()) {
-      for (var configClass : metadata.getConfigurationClasses()) {
-        if (!isValidJavaClassName(configClass.name())) {
-          errors.add("Invalid Java class name: " + configClass.name());
-        }
+    Set<String> seen = new HashSet<>();
+    for (var dep : testDeps) {
+      String key = dep.group() + ":" + dep.artifact();
+      if (!seen.add(key)) {
+        errors.add("Duplicate test dependency found: " + key);
       }
     }
+  }
 
-    // 28. configurationClasses.packagePath debe ser válido como paquete Java
-    if (metadata.getConfigurationClasses() != null && !metadata.getConfigurationClasses().isEmpty()) {
-      for (var configClass : metadata.getConfigurationClasses()) {
-        if (!isValidJavaPackageName(configClass.packagePath())) {
-          errors.add("Invalid Java package name: " + configClass.packagePath());
-        }
+  /**
+   * Validates configuration class names.
+   */
+  private void validateConfigurationClassNames(AdapterMetadata metadata, List<String> errors) {
+    var configClasses = metadata.getConfigurationClasses();
+    if (configClasses == null || configClasses.isEmpty()) {
+      return;
+    }
+
+    for (var configClass : configClasses) {
+      if (!isValidJavaClassName(configClass.name())) {
+        errors.add("Invalid Java class name: " + configClass.name());
+      }
+    }
+  }
+
+  /**
+   * Validates configuration class package names.
+   */
+  private void validateConfigurationClassPackages(AdapterMetadata metadata, List<String> errors) {
+    var configClasses = metadata.getConfigurationClasses();
+    if (configClasses == null || configClasses.isEmpty()) {
+      return;
+    }
+
+    for (var configClass : configClasses) {
+      if (!isValidJavaPackageName(configClass.packagePath())) {
+        errors.add("Invalid Java package name: " + configClass.packagePath());
       }
     }
   }
@@ -494,8 +609,7 @@ public abstract class AbstractGenerateAdapterUseCase {
    */
   private List<Path> identifyFilesToBackup(
       Path projectPath,
-      UnifiedAdapterGenerator.AdapterConfig config,
-      com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
+      UnifiedAdapterGenerator.AdapterConfig config) {
 
     var filesToBackup = new ArrayList<Path>();
 
@@ -511,11 +625,7 @@ public abstract class AbstractGenerateAdapterUseCase {
       }
 
       // Backup build.gradle.kts if adapter has dependencies or testDependencies
-      boolean hasDependencies = metadata.getDependencies() != null && !metadata.getDependencies().isEmpty();
-      boolean hasTestDeps = metadata.getTestDependencies() != null && !metadata.getTestDependencies().isEmpty();
-      boolean hasPlugins = metadata.getBuildPlugins() != null && !metadata.getBuildPlugins().isEmpty();
-
-      if (hasDependencies || hasTestDeps || hasPlugins) {
+      if (shouldBackupBuildFile(metadata)) {
         Path buildFilePath = projectPath.resolve("build.gradle.kts");
         if (fileSystemPort.exists(buildFilePath)) {
           filesToBackup.add(buildFilePath);
@@ -530,13 +640,22 @@ public abstract class AbstractGenerateAdapterUseCase {
   }
 
   /**
+   * Determines if build file should be backed up.
+   */
+  private boolean shouldBackupBuildFile(AdapterMetadata metadata) {
+    boolean hasDependencies = metadata.getDependencies() != null && !metadata.getDependencies().isEmpty();
+    var testDeps = metadata.getTestDependencies();
+    boolean hasTestDeps = testDeps != null && !testDeps.isEmpty();
+    boolean hasPlugins = metadata.getBuildPlugins() != null && !metadata.getBuildPlugins().isEmpty();
+
+    return hasDependencies || hasTestDeps || hasPlugins;
+  }
+
+  /**
    * Checks for dependency conflicts (informational only, doesn't block
    * generation).
    */
-  private void checkDependencyConflicts(
-      Path projectPath,
-      UnifiedAdapterGenerator.AdapterConfig config,
-      com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
+  private void checkDependencyConflicts(UnifiedAdapterGenerator.AdapterConfig config) {
 
     try {
       AdapterMetadata metadata = loadAdapterMetadataWithFallback(config);

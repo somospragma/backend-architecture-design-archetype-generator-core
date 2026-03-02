@@ -16,10 +16,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.adapter.AdapterMethod;
-import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.adapter.MethodParameter;
+import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.model.project.Framework;
@@ -40,12 +39,15 @@ class AdapterValidatorBranchTest {
   @Mock
   private PackageValidator packageValidator;
 
+  @Mock
+  private com.pragma.archetype.domain.port.out.TemplateRepository templateRepository;
+
   private AdapterValidator validator;
   private Path projectPath;
 
   @BeforeEach
   void setUp() {
-    validator = new AdapterValidator(fileSystemPort, configurationPort, packageValidator);
+    validator = new AdapterValidator(fileSystemPort, configurationPort, packageValidator, templateRepository);
     projectPath = Path.of("/test/project");
 
     // Mock packageValidator to return success by default (lenient to avoid

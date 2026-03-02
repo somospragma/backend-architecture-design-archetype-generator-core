@@ -17,11 +17,8 @@ import lombok.Value;
 public class AdapterMetadata {
   /**
    * Represents a dependency (Maven/Gradle artifact).
-   * 
-   * @deprecated Kept for backward compatibility. Use String dependencies in new
-   *             code.
+   * Used for dependencies that need scope information (test, compile, runtime).
    */
-  @Deprecated
   public record Dependency(
       String group,
       String artifact,
@@ -64,10 +61,8 @@ public class AdapterMetadata {
 
   /**
    * Represents a configuration class to generate.
-   * 
-   * @deprecated Kept for backward compatibility.
+   * Contains metadata for generating Spring/framework configuration classes.
    */
-  @Deprecated
   public record ConfigurationClass(
       String name,
       String packagePath,
@@ -213,11 +208,8 @@ public class AdapterMetadata {
 
   /**
    * List of test dependencies required by this adapter.
-   * 
-   * @deprecated Use String dependencies for new code. Kept for backward
-   *             compatibility.
+   * Uses Dependency record to maintain scope information.
    */
-  @Deprecated
   @Builder.Default
   List<Dependency> testDependencies = Collections.emptyList();
 
@@ -251,10 +243,8 @@ public class AdapterMetadata {
 
   /**
    * Configuration classes to generate.
-   * 
-   * @deprecated Kept for backward compatibility.
+   * List of Spring/framework configuration classes with their template paths.
    */
-  @Deprecated
   @Builder.Default
   List<ConfigurationClass> configurationClasses = Collections.emptyList();
 
@@ -323,9 +313,8 @@ public class AdapterMetadata {
   /**
    * Checks if this adapter has configuration classes.
    * 
-   * @deprecated Kept for backward compatibility.
+   * @return true if configurationClasses is not empty
    */
-  @Deprecated
   public boolean hasConfigurationClasses() {
     return !configurationClasses.isEmpty();
   }
@@ -333,9 +322,8 @@ public class AdapterMetadata {
   /**
    * Checks if this adapter has test dependencies.
    * 
-   * @deprecated Kept for backward compatibility.
+   * @return true if testDependencies is not empty
    */
-  @Deprecated
   public boolean hasTestDependencies() {
     return !testDependencies.isEmpty();
   }
@@ -403,24 +391,18 @@ public class AdapterMetadata {
 
   /**
    * Gets the list of test dependencies.
-   * Explicit getter for backward compatibility with legacy code.
    * 
-   * @return List of test dependencies
-   * @deprecated Use the Lombok-generated getter instead
+   * @return List of test dependencies with scope information
    */
-  @Deprecated
   public List<Dependency> testDependencies() {
     return testDependencies;
   }
 
   /**
    * Gets the list of configuration classes.
-   * Explicit getter for backward compatibility with legacy code.
    * 
-   * @return List of configuration classes
-   * @deprecated Use the Lombok-generated getter instead
+   * @return List of configuration classes to generate
    */
-  @Deprecated
   public List<ConfigurationClass> configurationClasses() {
     return configurationClasses;
   }

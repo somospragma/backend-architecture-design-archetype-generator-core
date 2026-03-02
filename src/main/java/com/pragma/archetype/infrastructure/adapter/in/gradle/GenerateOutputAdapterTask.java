@@ -158,7 +158,8 @@ public class GenerateOutputAdapterTask extends BaseCleanArchTask {
 
       // 8. Setup use case
       com.pragma.archetype.domain.service.PackageValidator packageValidator = new com.pragma.archetype.domain.service.PackageValidator();
-      AdapterValidator validator = new AdapterValidator(fileSystemPort, configurationPort, packageValidator);
+      AdapterValidator validator = new AdapterValidator(fileSystemPort, configurationPort, packageValidator,
+          templateRepository);
       // Create content provider that delegates to template repository
       com.pragma.archetype.infrastructure.adapter.out.template.TemplateContentProvider contentProvider = new com.pragma.archetype.infrastructure.adapter.out.template.TemplateContentProvider() {
         @Override

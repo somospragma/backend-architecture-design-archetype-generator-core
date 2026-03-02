@@ -73,6 +73,8 @@ public class StructureMetadataLoader {
       String useCaseModule = extractUseCaseModule(data);
       java.util.List<StaticFile> staticFiles = extractStaticFiles(data);
       String resourcesPath = extractResourcesPath(data);
+      String sourceDirectory = extractSourceDirectory(data);
+      String testDirectory = extractTestDirectory(data);
 
       // Create and validate the metadata
       StructureMetadata metadata = new StructureMetadata(
@@ -87,7 +89,9 @@ public class StructureMetadataLoader {
           moduleMetadata,
           entityModule,
           useCaseModule,
-          staticFiles);
+          staticFiles,
+          sourceDirectory,
+          testDirectory);
 
       ValidationResult validation = metadata.validate();
       if (!validation.valid()) {
@@ -411,5 +415,21 @@ public class StructureMetadataLoader {
               .build();
         })
         .collect(java.util.stream.Collectors.toList());
+  }
+
+  /**
+   * Extracts source directory from structure.yml.
+   * Returns null if not specified (will use default).
+   */
+  private String extractSourceDirectory(Map<String, Object> data) {
+    return (String) data.get("sourceDirectory");
+  }
+
+  /**
+   * Extracts test directory from structure.yml.
+   * Returns null if not specified (will use default).
+   */
+  private String extractTestDirectory(Map<String, Object> data) {
+    return (String) data.get("testDirectory");
   }
 }

@@ -64,6 +64,8 @@ class ProjectGeneratorMultiModuleTest {
         null,
         null,
         null,
+        null,
+        null,
         null);
 
     lenient().when(templateRepository.loadStructureMetadata(any())).thenReturn(structureMetadata);

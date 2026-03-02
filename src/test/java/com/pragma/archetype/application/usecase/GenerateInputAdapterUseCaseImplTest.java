@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.nio.file.Path;
@@ -26,7 +27,7 @@ import com.pragma.archetype.domain.model.adapter.InputAdapterConfig;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.structure.StructureMetadata;
-import com.pragma.archetype.domain.port.in.GenerateInputAdapterUseCase.GenerationResult;
+import com.pragma.archetype.domain.port.in.GenerateInputAdapteResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
@@ -57,7 +58,7 @@ class GenerateInputAdapterUseCaseImplTest {
     private ProjectConfig projectConfig;
 
     @Mock
-    private StructureMetadata structureMetadata;
+te StructureMetadata structureMetadata;
 
     @Mock
     private AdapterMetadata adapterMetadata;
@@ -74,16 +75,31 @@ class GenerateInputAdapterUseCaseImplTest {
                 templateRepository,
                 yamlConfigurationAdapter);
 
-        // Setup common mocks
-        when(configurationPort.readConfiguration(any())).thenReturn(Optional.of(projectConfig));
-        when(templateRepository.loadStructureMetadata(any())).thenReturn(structureMetadata);
-        when(adapterDiscoveryPort.findAdapter(any(), any(), any(), any())).thenReturn(Optional.of(adapterMetadata));
-        when(adapterMetadata.getName()).thenReturn("rest");
-        when(adapterMetadata.getDirection()).thenReturn(AdapterDirection.INPUT);
-        when(adapterMetadata.getDiscoveredTemplates()).thenReturn(List.of());
-        when(adapterMetadata.getDependencies()).thenReturn(List.of());
-        when(adapterMetadata.getApplicationPropertiesTemplate()).thenReturn(null);
-        when(fileSystemPort.exists(any())).thenReturn(false);
+        // Setup common mocks (lenient for optional usage in some tests)
+        lenient().when(configurationPort.readConfiguration(any())).thenReturn(Optional.of(projectConfig));
+        lenient().when(templateRepository.loadStructureMetadata(any())).thenReturn(structureMetadata);
+        lenient().when(adapterDiscoveryPort.findAdapter(any(), any(), any(), any()))
+                .thenReturn(Optional.of(adapterMetadata));
+        lenient().when(adapterMetadata.getName()).thenReturn("rest");
+        lenient().when(adapterMetadata.getDirection()).thenReturn(AdapterDirection.INPUT);
+
+        // Mock discovered templates with a main template
+        var mainTemplate = com.pragma.archetype.domain.model.adapter.TemplateFile.builder()
+                .name("RestController")
+                .type("main")
+                .destination("{name}Controller.java")
+                .build();
+        lenient().when(adapterMetadata.getDiscoveredTemplates()).thenReturn(List.of(mainTemplate));
+
+        lenient().when(adapterMetadata.getDependencies()).thenReturn(List.of());
+        lenient().when(adapterMetadata.getApplicationPropertiesTemplate()).thenReturn(null);
+        lenient().when(adapterMetadata.getConfigurationClasses()).thenReturn(List.of());
+        lenient().when(adapterMetadata.getTestDependencies()).thenReturn(List.of());
+        lenient().when(adapterMetadata.getAdditionalResources()).thenReturn(List.of());
+        lenient().when(adapterMetadata.getBuildPlugins()).thenReturn(List.of());
+        lenient().when(adapterMetadata.getBuildConfiguration()).thenReturn(null);
+        lenient().when(adapterMetadata.getSuffix()).thenReturn(null);
+        l).thenReturn(false);
     }
 
     @Test
@@ -109,7 +125,7 @@ class GenerateInputAdapterUseCaseImplTest {
                 Path.of("src/main/java/com/test/infrastructure/rest/UserController.java"),
                 "public class UserController {}");
 
-        when(generator.generate(any(), any(), any(), any(), any())).thenReturn(List.of(file));
+n(List.of(file));
 
         // When
         GenerationResult result = useCase.execute(Path.of("/test"), config);
@@ -139,7 +155,7 @@ class GenerateInputAdapterUseCaseImplTest {
 
         // Then
         assertFalse(result.success());
-        assertTrue(result.errors().stream().anyMatch(e -> e.contains("Failed to generate adapter")));
+        a)));
     }
 
     @Test
@@ -169,6 +185,6 @@ class GenerateInputAdapterUseCaseImplTest {
 
         // Then
         assertFalse(result.success());
-        assertTrue(result.errors().stream().anyMatch(e -> e.contains("Failed to generate adapter")));
+        aertTrue(result.errors().stream().anyMatch(e -> e.contains("Failed to generate adapter")));
     }
 }

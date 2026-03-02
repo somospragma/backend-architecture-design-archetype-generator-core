@@ -110,8 +110,12 @@ public class EntityGenerator {
 
     // For single module architectures
     if (!projectConfig.architecture().isMultiModule()) {
+      // Load StructureMetadata to get source directory
+      com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
+          .loadStructureMetadata(projectConfig.architecture());
+
       return projectPath
-          .resolve("src/main/java")
+          .resolve(structureMetadata.getSourceDirectory())
           .resolve(packagePath)
           .resolve(entityConfig.name() + ".java");
     }
@@ -133,7 +137,7 @@ public class EntityGenerator {
       if (modelPackage == null) {
         // Fallback to default package path
         return modulePath
-            .resolve("src/main/java")
+            .resolve(structureMetadata.getSourceDirectory())
             .resolve(packagePath)
             .resolve(entityConfig.name() + ".java");
       }
@@ -141,7 +145,7 @@ public class EntityGenerator {
       // Use model package from module metadata
       String modelPackagePath = modelPackage.replace('.', '/');
       return modulePath
-          .resolve("src/main/java")
+          .resolve(structureMetadata.getSourceDirectory())
           .resolve(modelPackagePath)
           .resolve(entityConfig.name() + ".java");
 

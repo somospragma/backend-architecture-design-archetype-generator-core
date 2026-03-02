@@ -312,9 +312,13 @@ public class ProjectGenerator {
                                 frameworkPath + "/Application.java.ftl",
                                 context);
 
+                // Load structure metadata to get source directory
+                StructureMetadata structureMetadata = templateRepository
+                                .loadStructureMetadata(config.architecture());
+
                 String applicationClassName = toPascalCase(config.name()) + "Application.java";
                 Path mainClassPath = projectPath
-                                .resolve("src/main/java")
+                                .resolve(structureMetadata.getSourceDirectory())
                                 .resolve(config.basePackage().replace('.', '/'))
                                 .resolve(applicationClassName);
 
@@ -326,9 +330,6 @@ public class ProjectGenerator {
 
                 // Generate BeanConfiguration class (Spring dependency injection config)
                 try {
-                        StructureMetadata structureMetadata = templateRepository
-                                        .loadStructureMetadata(config.architecture());
-
                         // Resolve template path dynamically
                         Map<String, String> variables = Map.of("architecture", config.architecture().getValue());
                         String templatePath = structureMetadata.resolveTemplatePath("config", variables);
@@ -338,7 +339,7 @@ public class ProjectGenerator {
                                         context);
 
                         Path configPath = projectPath
-                                        .resolve("src/main/java")
+                                        .resolve(structureMetadata.getSourceDirectory())
                                         .resolve(config.basePackage().replace('.', '/'))
                                         .resolve("infrastructure/config")
                                         .resolve("BeanConfiguration.java");
@@ -358,7 +359,7 @@ public class ProjectGenerator {
                                         context);
 
                         Path configPath = projectPath
-                                        .resolve("src/main/java")
+                                        .resolve(structureMetadata.getSourceDirectory())
                                         .resolve(config.basePackage().replace('.', '/'))
                                         .resolve("infrastructure/config")
                                         .resolve("BeanConfiguration.java");
@@ -395,7 +396,7 @@ public class ProjectGenerator {
                                         .loadStructureMetadata(config.architecture());
 
                         Path basePath = projectPath
-                                        .resolve("src/main/java")
+                                        .resolve(structureMetadata.getSourceDirectory())
                                         .resolve(config.basePackage().replace('.', '/'));
 
                         // Create directories from structure metadata packages
@@ -500,6 +501,10 @@ public class ProjectGenerator {
                 List<GeneratedFile> files = new ArrayList<>();
                 Path domainPath = projectPath.resolve("domain");
 
+                // Load structure metadata to get source directory
+                StructureMetadata structureMetadata = templateRepository
+                                .loadStructureMetadata(config.architecture());
+
                 // Generate domain/build.gradle.kts
                 String buildGradleContent = templateRepository.processTemplate(
                                 architecturePath + "/modules/domain/build.gradle.kts.ftl",
@@ -510,7 +515,7 @@ public class ProjectGenerator {
 
                 // Create domain package structure
                 Path domainSrcPath = domainPath
-                                .resolve("src/main/java")
+                                .resolve(structureMetadata.getSourceDirectory())
                                 .resolve(config.basePackage().replace('.', '/'))
                                 .resolve("domain");
 
@@ -538,6 +543,10 @@ public class ProjectGenerator {
                 List<GeneratedFile> files = new ArrayList<>();
                 Path applicationPath = projectPath.resolve("application");
 
+                // Load structure metadata to get source directory
+                StructureMetadata structureMetadata = templateRepository
+                                .loadStructureMetadata(config.architecture());
+
                 // Generate application/build.gradle.kts
                 String buildGradleContent = templateRepository.processTemplate(
                                 architecturePath + "/modules/application/build.gradle.kts.ftl",
@@ -548,7 +557,7 @@ public class ProjectGenerator {
 
                 // Create application package structure
                 Path applicationSrcPath = applicationPath
-                                .resolve("src/main/java")
+                                .resolve(structureMetadata.getSourceDirectory())
                                 .resolve(config.basePackage().replace('.', '/'))
                                 .resolve("application");
 
@@ -572,6 +581,10 @@ public class ProjectGenerator {
                 List<GeneratedFile> files = new ArrayList<>();
                 Path infrastructurePath = projectPath.resolve("infrastructure");
 
+                // Load structure metadata to get source directory and adapter paths
+                StructureMetadata structureMetadata = templateRepository
+                                .loadStructureMetadata(config.architecture());
+
                 // Generate infrastructure/build.gradle.kts
                 String buildGradleContent = templateRepository.processTemplate(
                                 architecturePath + "/modules/infrastructure/build.gradle.kts.ftl",
@@ -582,17 +595,21 @@ public class ProjectGenerator {
 
                 // Create infrastructure package structure
                 Path infrastructureSrcPath = infrastructurePath
-                                .resolve("src/main/java")
+                                .resolve(structureMetadata.getSourceDirectory())
                                 .resolve(config.basePackage().replace('.', '/'))
                                 .resolve("infrastructure");
 
-                fileSystemPort.createDirectory(infrastructureSrcPath.resolve("entry-points/rest"));
-                fileSystemPort.createDirectory(infrastructureSrcPath.resolve("driven-adapters"));
+                // Get adapter directory names from structure metadata
+                String inputAdapterDir = structureMetadata.getAdapterDirName("driving");
+                String outputAdapterDir = structureMetadata.getAdapterDirName("driven");
+
+                fileSystemPort.createDirectory(infrastructureSrcPath.resolve(inputAdapterDir + "/rest"));
+                fileSystemPort.createDirectory(infrastructureSrcPath.resolve(outputAdapterDir));
                 fileSystemPort.createDirectory(infrastructureSrcPath.resolve("config"));
 
                 // Add .gitkeep files
-                files.add(GeneratedFile.create(infrastructureSrcPath.resolve("entry-points/rest/.gitkeep"), ""));
-                files.add(GeneratedFile.create(infrastructureSrcPath.resolve("driven-adapters/.gitkeep"), ""));
+                files.add(GeneratedFile.create(infrastructureSrcPath.resolve(inputAdapterDir + "/rest/.gitkeep"), ""));
+                files.add(GeneratedFile.create(infrastructureSrcPath.resolve(outputAdapterDir + "/.gitkeep"), ""));
 
                 // Generate application.yml
                 String frameworkPath = "frameworks/" + config.framework().name().toLowerCase() + "/"
@@ -678,6 +695,10 @@ public class ProjectGenerator {
                 List<GeneratedFile> files = new ArrayList<>();
                 Path modulePath = projectPath.resolve("domain/model");
 
+                // Load structure metadata to get source directory
+                StructureMetadata structureMetadata = templateRepository
+                                .loadStructureMetadata(config.architecture());
+
                 // Generate build.gradle.kts
                 String buildGradleContent = templateRepository.processTemplate(
                                 architecturePath + "/modules/domain-model/build.gradle.kts.ftl",
@@ -688,7 +709,7 @@ public class ProjectGenerator {
 
                 // Create package structure
                 Path srcPath = modulePath
-                                .resolve("src/main/java")
+                                .resolve(structureMetadata.getSourceDirectory())
                                 .resolve(config.basePackage().replace('.', '/'))
                                 .resolve("domain/model");
 
@@ -707,6 +728,10 @@ public class ProjectGenerator {
                 List<GeneratedFile> files = new ArrayList<>();
                 Path modulePath = projectPath.resolve("domain/ports");
 
+                // Load structure metadata to get source directory
+                StructureMetadata structureMetadata = templateRepository
+                                .loadStructureMetadata(config.architecture());
+
                 // Generate build.gradle.kts
                 String buildGradleContent = templateRepository.processTemplate(
                                 architecturePath + "/modules/domain-ports/build.gradle.kts.ftl",
@@ -717,7 +742,7 @@ public class ProjectGenerator {
 
                 // Create package structure
                 Path srcPath = modulePath
-                                .resolve("src/main/java")
+                                .resolve(structureMetadata.getSourceDirectory())
                                 .resolve(config.basePackage().replace('.', '/'))
                                 .resolve("domain/port");
 
@@ -738,6 +763,10 @@ public class ProjectGenerator {
                 List<GeneratedFile> files = new ArrayList<>();
                 Path modulePath = projectPath.resolve("domain/usecase");
 
+                // Load structure metadata to get source directory
+                StructureMetadata structureMetadata = templateRepository
+                                .loadStructureMetadata(config.architecture());
+
                 // Generate build.gradle.kts
                 String buildGradleContent = templateRepository.processTemplate(
                                 architecturePath + "/modules/domain-usecase/build.gradle.kts.ftl",
@@ -748,7 +777,7 @@ public class ProjectGenerator {
 
                 // Create package structure
                 Path srcPath = modulePath
-                                .resolve("src/main/java")
+                                .resolve(structureMetadata.getSourceDirectory())
                                 .resolve(config.basePackage().replace('.', '/'))
                                 .resolve("domain/usecase");
 
@@ -767,6 +796,10 @@ public class ProjectGenerator {
                 List<GeneratedFile> files = new ArrayList<>();
                 Path modulePath = projectPath.resolve("application/app-service");
 
+                // Load structure metadata to get source directory
+                StructureMetadata structureMetadata = templateRepository
+                                .loadStructureMetadata(config.architecture());
+
                 // Generate build.gradle.kts
                 String buildGradleContent = templateRepository.processTemplate(
                                 architecturePath + "/modules/app-service/build.gradle.kts.ftl",
@@ -777,7 +810,7 @@ public class ProjectGenerator {
 
                 // Create package structure
                 Path srcPath = modulePath
-                                .resolve("src/main/java")
+                                .resolve(structureMetadata.getSourceDirectory())
                                 .resolve(config.basePackage().replace('.', '/'))
                                 .resolve("config");
 

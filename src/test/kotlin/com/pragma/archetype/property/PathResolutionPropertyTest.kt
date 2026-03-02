@@ -41,7 +41,9 @@ class PathResolutionPropertyTest : PropertyTestBase() {
                 null, // moduleMetadata
                 null, // entityModule
                 null, // useCaseModule
-                emptyList() // staticFiles
+                emptyList(), // staticFiles
+                "src/main/java", // sourceDirectory
+                "src/test/java" // testDirectory
             )
             `when`(loadStructureMetadata(arch)).thenReturn(metadata)
         }
