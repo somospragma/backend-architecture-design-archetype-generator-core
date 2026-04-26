@@ -1,0 +1,15 @@
+${AnsiColor.MAGENTA}
+  _____                                  
+ |  __ \                                 
+ | |__) | __ __ _  __ _ _ __ ___   __ _ 
+ |  ___/ '__/ _` |/ _` | '_ ` _ \ / _` |
+ | |   | | | (_| | (_| | | | | | | (_| |
+ |_|   |_|  \__,_|\__, |_| |_| |_|\__,_|
+                   __/ |                 
+                  |___/                  
+${AnsiColor.DEFAULT}
+${AnsiColor.BRIGHT_MAGENTA}Mejoramos la vida de la gente transformando empresas${AnsiColor.DEFAULT}
+
+${AnsiColor.CYAN}${application.title}${AnsiColor.DEFAULT} ${AnsiColor.BRIGHT_BLACK}${application.version}${AnsiColor.DEFAULT}
+${AnsiColor.BRIGHT_BLACK}Powered by Pragma SA${AnsiColor.DEFAULT}
+${AnsiColor.BRIGHT_BLACK}Spring Boot ${spring-boot.version}${AnsiColor.DEFAULT}

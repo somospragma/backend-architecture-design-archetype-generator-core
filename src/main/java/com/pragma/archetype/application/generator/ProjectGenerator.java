@@ -204,6 +204,7 @@ public class ProjectGenerator {
                 // Package path variables for config and domain packages
                 context.put("configPackagePath",
                                 config.basePackage().replace('.', '/') + "/infrastructure/config");
+                context.put("configPackage", config.basePackage() + ".infrastructure.config");
                 context.put("useCasesPackage", config.basePackage() + ".domain.usecases");
                 context.put("portsPackage", config.basePackage() + ".domain.ports");
 

@@ -92,41 +92,14 @@ public class ValidateStructureTask extends DefaultTask {
 
   /**
    * Creates template repository.
-   * Reads configuration from .cleanarch.yml or uses auto-detection.
-   * Falls back to embedded templates if available.
+   * Delegates to TemplateRepositoryFactory for centralized resolution logic.
    */
   private FreemarkerTemplateRepository createTemplateRepository(Path projectPath) {
-    YamlConfigurationAdapter configAdapter = new YamlConfigurationAdapter();
-
-    // 1. Check for .cleanarch.yml configuration (highest priority)
-    if (configAdapter.configurationExists(projectPath)) {
-      var templateConfig = configAdapter.readTemplateConfiguration(projectPath);
-
-      if (templateConfig.isLocalMode()) {
-        Path localPath = Path.of(templateConfig.localPath());
-        if (Files.exists(localPath)) {
-          getLogger().lifecycle("✓ Using local templates from .cleanarch.yml: {}", localPath.toAbsolutePath());
-          return new FreemarkerTemplateRepository(localPath);
-        } else {
-          getLogger().error("✗ Template localPath in .cleanarch.yml does not exist: {}", localPath);
-          throw new org.gradle.api.GradleException("Template path not found: " + localPath);
-        }
-      }
+    TemplateRepository repo = TemplateRepositoryFactory.create(projectPath, getLogger());
+    if (repo instanceof FreemarkerTemplateRepository freemarkerRepo) {
+      return freemarkerRepo;
     }
-
-    // 2. Try to auto-detect local templates (for plugin development only)
-    Path autoDetectPath = projectPath
-        .resolve("../../backend-architecture-design-archetype-generator-templates/templates")
-        .normalize();
-
-    if (Files.exists(autoDetectPath)) {
-      getLogger().lifecycle("✓ Auto-detected local templates (development mode): {}", autoDetectPath.toAbsolutePath());
-      return new FreemarkerTemplateRepository(autoDetectPath);
-    }
-
-    // 3. Fall back to embedded templates (in JAR) - production mode
-    getLogger().lifecycle("✓ Using embedded templates from plugin JAR (production mode)");
-    return new FreemarkerTemplateRepository("embedded");
+    throw new org.gradle.api.GradleException("Unexpected template repository type");
   }
 
   /**

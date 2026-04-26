@@ -1,0 +1,3 @@
+project: {name: test-hexagonal-single-imperative, basePackage: com.pragma.test, pluginVersion: 1.3.5-SNAPSHOT,
+  createdAt: '2026-04-26T16:10:16.835301'}
+architecture: {type: hexagonal-single, paradigm: imperative, framework: spring, adaptersAsModules: false}

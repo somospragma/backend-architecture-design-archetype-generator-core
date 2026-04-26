@@ -74,6 +74,12 @@ public class StaticFile {
 
     // Replace {basePackage} with actual package path
     String packagePath = basePackage.replace('.', '/');
-    return destination.replace("{basePackage}", packagePath);
+    String resolved = destination.replace("{basePackage}", packagePath);
+
+    // Replace {configPackagePath} with infrastructure/config package path
+    String configPackagePath = "src/main/java/" + packagePath + "/infrastructure/config";
+    resolved = resolved.replace("{configPackagePath}", configPackagePath);
+
+    return resolved;
   }
 }

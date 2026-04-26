@@ -84,7 +84,7 @@ public class YamlConfigurationAdapter implements ConfigurationPort {
       String content = Files.readString(configFile);
       Map<String, Object> data = yaml.load(content);
 
-      return Optional.of(parseConfiguration(data));
+      return Optional.ofNullable(parseConfiguration(data));
 
     } catch (IOException e) {
       throw new RuntimeException("Failed to read configuration file: " + configFile, e);
@@ -309,7 +309,7 @@ public class YamlConfigurationAdapter implements ConfigurationPort {
     Boolean cache = (Boolean) templatesSection.get("cache");
 
     TemplateMode templateMode = TemplateMode.PRODUCTION;
-    if ("developer".equalsIgnoreCase(mode)) {
+    if ("developer".equalsIgnoreCase(mode) || "local".equalsIgnoreCase(mode)) {
       templateMode = TemplateMode.DEVELOPER;
     }
 
@@ -329,6 +329,11 @@ public class YamlConfigurationAdapter implements ConfigurationPort {
   private ProjectConfig parseConfiguration(Map<String, Object> data) {
     @SuppressWarnings("unchecked")
     Map<String, Object> project = (Map<String, Object>) data.get("project");
+
+    // If no project section exists, the file only has templates config — not initialized
+    if (project == null) {
+      return null;
+    }
 
     String name = (String) project.get("name");
     String basePackage = (String) project.get("basePackage");

@@ -379,18 +379,7 @@ public class GenerateInputAdapterTask extends BaseCleanArchTask {
    * Creates template repository.
    */
   private TemplateRepository createTemplateRepository() {
-    // Try to find templates in project directory first (for development)
     Path projectDir = getProject().getProjectDir().toPath();
-    Path localTemplates = projectDir
-        .resolve("../../backend-architecture-design-archetype-generator-templates/templates").normalize();
-
-    if (java.nio.file.Files.exists(localTemplates)) {
-      getLogger().info("Using local templates from: {}", localTemplates.toAbsolutePath());
-      return new FreemarkerTemplateRepository(localTemplates);
-    }
-
-    // Fall back to embedded templates (in JAR)
-    getLogger().info("Using embedded templates");
-    return new FreemarkerTemplateRepository("embedded");
+    return TemplateRepositoryFactory.create(projectDir, getLogger());
   }
 }

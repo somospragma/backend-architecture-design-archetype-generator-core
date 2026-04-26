@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: test-hexagonal-single-imperative
+    title: TestHexagonalSingleImperative
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
+server:
+  port: 8080
+  shutdown: graceful
+  # Tomcat Configuration
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+    connection-timeout: 20000
+
+# Database configuration (example — uncomment and adjust per adapter)
+# spring.datasource:
+#   url: ${DB_URL}
+#   username: ${DB_USERNAME}
+#   password: ${DB_PASSWORD}
+
+# Logging — structured JSON output for production
+logging:
+  level:
+    root: INFO
+    com.pragma.test: DEBUG
+    org.springframework.web: DEBUG
+  structured:
+    format:
+      console: logfmt
+  pattern:
+    correlation: "[${spring.application.name:},${traceId:-},${spanId:-}] "
+
+# Actuator & Health Probes
+management:
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true

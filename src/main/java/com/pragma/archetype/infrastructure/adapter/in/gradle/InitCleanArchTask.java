@@ -187,43 +187,10 @@ public class InitCleanArchTask extends BaseCleanArchTask {
 
   /**
    * Creates template repository.
-   * Reads configuration from .cleanarch.yml or uses environment variables.
-   * Falls back to local development path if available.
+   * Delegates to TemplateRepositoryFactory for centralized resolution logic.
    */
   private TemplateRepository createTemplateRepository() {
     Path projectDir = getProject().getProjectDir().toPath();
-    YamlConfigurationAdapter configAdapter = new YamlConfigurationAdapter();
-
-    // 1. Check for .cleanarch.yml configuration (highest priority)
-    if (configAdapter.configurationExists(projectDir)) {
-      TemplateConfig templateConfig = configAdapter.readTemplateConfiguration(projectDir);
-
-      if (templateConfig.isLocalMode()) {
-        Path localPath = Path.of(templateConfig.localPath());
-        if (Files.exists(localPath)) {
-          getLogger().lifecycle("✓ Using local templates from .cleanarch.yml: {}", localPath.toAbsolutePath());
-          return new FreemarkerTemplateRepository(localPath);
-        } else {
-          getLogger().error("✗ Template localPath in .cleanarch.yml does not exist: {}", localPath);
-          throw new RuntimeException("Template path not found: " + localPath);
-        }
-      }
-    }
-
-    // 2. Try to auto-detect local templates (for plugin development only)
-    Path autoDetectPath = projectDir
-        .resolve("../../backend-architecture-design-archetype-generator-templates/templates")
-        .normalize();
-
-    if (Files.exists(autoDetectPath)) {
-      getLogger().lifecycle("✓ Auto-detected local templates (development mode): {}", autoDetectPath.toAbsolutePath());
-      getLogger()
-          .lifecycle("  Tip: Configure templates.localPath in .cleanarch.yml for explicit control");
-      return new FreemarkerTemplateRepository(autoDetectPath);
-    }
-
-    // 3. Fall back to embedded templates (in JAR) - production mode
-    getLogger().lifecycle("✓ Using embedded templates from plugin JAR (production mode)");
-    return new FreemarkerTemplateRepository("embedded");
+    return TemplateRepositoryFactory.create(projectDir, getLogger());
   }
 }
