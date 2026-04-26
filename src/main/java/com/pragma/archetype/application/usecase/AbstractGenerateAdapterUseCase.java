@@ -137,7 +137,7 @@ public abstract class AbstractGenerateAdapterUseCase {
 
       // STEP 4: Validate all templates (28 validations -
       // validation-before-modification)
-      ValidationResult templateValidation = validateAllTemplates(config);
+      ValidationResult templateValidation = validateAllTemplates(config, projectConfig);
       if (!templateValidation.valid()) {
         logger.error("Template validation failed. Displaying all errors before generation:");
         templateValidation.errors().forEach(error -> logger.error("  - {}", error));
@@ -241,17 +241,20 @@ public abstract class AbstractGenerateAdapterUseCase {
    * <li>21-28: Advanced metadata validation (NEW)</li>
    * </ul>
    * 
-   * @param config adapter configuration
+   * @param config        adapter configuration
+   * @param projectConfig project configuration from .cleanarch.yml
    * @return validation result with all errors collected
    */
-  private ValidationResult validateAllTemplates(UnifiedAdapterGenerator.AdapterConfig config) {
+  private ValidationResult validateAllTemplates(
+      UnifiedAdapterGenerator.AdapterConfig config,
+      com.pragma.archetype.domain.model.project.ProjectConfiguration projectConfig) {
 
     var errors = new ArrayList<String>();
 
     try {
-      // Load adapter metadata
+      // Load adapter metadata using framework and paradigm from projectConfig
       AdapterMetadata metadata = adapterDiscovery
-          .findAdapter(config.getType(), getDirection(), config.getFramework(), config.getParadigm())
+          .findAdapter(config.getType(), getDirection(), projectConfig.framework(), projectConfig.paradigm())
           .orElse(null);
 
       if (metadata == null) {
@@ -260,7 +263,7 @@ public abstract class AbstractGenerateAdapterUseCase {
       }
 
       // VALIDATIONS 1-7: Template Existence
-      validateTemplateExistence(config, metadata, errors);
+      validateTemplateExistence(config, metadata, projectConfig, errors);
 
       // VALIDATIONS 8-20: Basic Metadata
       validateBasicMetadata(metadata, errors);
@@ -281,6 +284,7 @@ public abstract class AbstractGenerateAdapterUseCase {
   private void validateTemplateExistence(
       UnifiedAdapterGenerator.AdapterConfig config,
       AdapterMetadata metadata,
+      com.pragma.archetype.domain.model.project.ProjectConfiguration projectConfig,
       List<String> errors) {
 
     // 1. Adapter metadata exists (already checked)
@@ -298,7 +302,7 @@ public abstract class AbstractGenerateAdapterUseCase {
     }
 
     // 5. Application properties template exists (if specified)
-    validateApplicationPropertiesTemplate(metadata, errors);
+    validateApplicationPropertiesTemplate(config, metadata, projectConfig, errors);
 
     // 6. Configuration class templates exist (if specified)
     validateConfigurationClassTemplates(config, metadata, errors);
@@ -324,12 +328,16 @@ public abstract class AbstractGenerateAdapterUseCase {
   /**
    * Validates application properties template.
    */
-  private void validateApplicationPropertiesTemplate(AdapterMetadata metadata, List<String> errors) {
+  private void validateApplicationPropertiesTemplate(
+      UnifiedAdapterGenerator.AdapterConfig config,
+      AdapterMetadata metadata,
+      com.pragma.archetype.domain.model.project.ProjectConfiguration projectConfig,
+      List<String> errors) {
     if (metadata.getApplicationPropertiesTemplate() != null) {
       String adapterDir = TemplateRepositoryPaths.AdapterDirectories.getDirectoryName(
           getDirection() == AdapterDirection.INPUT);
       String templatePath = String.format(TemplateRepositoryPaths.Patterns.ADAPTER_TEMPLATE_DIR + "/%s",
-          metadata.getName(), metadata.getName(), adapterDir, metadata.getName(),
+          projectConfig.framework(), projectConfig.paradigm(), adapterDir, config.getType(),
           metadata.getApplicationPropertiesTemplate());
 
       if (!templateRepository.templateExists(templatePath)) {
