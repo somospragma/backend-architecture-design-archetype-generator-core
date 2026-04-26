@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.nio.file.Path;
@@ -61,28 +62,30 @@ class UnifiedAdapterGeneratorTest {
         adapterDiscovery,
         projectGenerator);
 
-    // Setup common mocks
-    when(adapterMetadata.getName()).thenReturn("rest");
-    when(adapterMetadata.getDirection()).thenReturn(AdapterDirection.INPUT);
-    when(adapterMetadata.getSuffix()).thenReturn("Controller");
-    when(adapterMetadata.isNeedsMapper()).thenReturn(false);
-    when(adapterMetadata.hasAdditionalResources()).thenReturn(false);
-    when(adapterMetadata.getDiscoveredTemplates()).thenReturn(List.of(
+    // Setup common mocks (lenient to avoid UnnecessaryStubbingException in tests that don't use all)
+    lenient().when(adapterMetadata.getName()).thenReturn("rest");
+    lenient().when(adapterMetadata.getDirection()).thenReturn(AdapterDirection.INPUT);
+    lenient().when(adapterMetadata.getSuffix()).thenReturn("Controller");
+    lenient().when(adapterMetadata.isNeedsMapper()).thenReturn(false);
+    lenient().when(adapterMetadata.hasAdditionalResources()).thenReturn(false);
+    lenient().when(adapterMetadata.getDiscoveredTemplates()).thenReturn(List.of(
         TemplateFile.builder()
             .name("RestController.java.ftl")
             .type("main")
             .destination("{name}Controller.java")
             .build()));
 
-    when(structureMetadata.getResourcesPath()).thenReturn("src/main/resources");
-    when(structureMetadata.getAdapterBaseDirectory(anyString())).thenReturn("infrastructure/entry-points");
+    lenient().when(structureMetadata.getResourcesPath()).thenReturn("src/main/resources");
+    lenient().when(structureMetadata.getSourceDirectory()).thenReturn("src/main/java");
+    lenient().when(structureMetadata.getAdapterBaseDirectory(anyString())).thenReturn("infrastructure/entry-points");
 
-    when(projectConfig.adaptersAsModules()).thenReturn(false);
-    when(projectConfig.basePackage()).thenReturn("com.test");
-    when(projectConfig.name()).thenReturn("test-project");
+    lenient().when(projectConfig.adaptersAsModules()).thenReturn(false);
+    lenient().when(projectConfig.basePackage()).thenReturn("com.test");
+    lenient().when(projectConfig.name()).thenReturn("test-project");
+    lenient().when(projectConfig.architecture()).thenReturn(com.pragma.archetype.domain.model.project.ArchitectureType.HEXAGONAL_SINGLE);
 
-    when(templateRepository.processTemplate(anyString(), anyMap())).thenReturn("public class TestController {}");
-    when(pathResolver.resolveAdapterPath(any(), anyString(), anyString(), anyMap()))
+    lenient().when(templateRepository.processTemplate(anyString(), anyMap())).thenReturn("public class TestController {}");
+    lenient().when(pathResolver.resolveAdapterPath(any(), anyString(), anyString(), anyMap()))
         .thenReturn(Path.of("infrastructure/adapter/in/rest"));
   }
 
@@ -111,8 +114,8 @@ class UnifiedAdapterGeneratorTest {
   void shouldGenerateOutputAdapterInPlace() {
     // Given
     var config = createTestConfig("UserRepository", "postgresql", AdapterDirection.OUTPUT);
-    when(adapterMetadata.getDirection()).thenReturn(AdapterDirection.OUTPUT);
-    when(adapterMetadata.getSuffix()).thenReturn("Repository");
+    lenient().when(adapterMetadata.getDirection()).thenReturn(AdapterDirection.OUTPUT);
+    lenient().when(adapterMetadata.getSuffix()).thenReturn("Adapter");
     when(adapterDiscovery.adapterExists(anyString(), any(), anyString(), anyString())).thenReturn(true);
     when(adapterDiscovery.findAdapter(anyString(), any(), anyString(), anyString()))
         .thenReturn(Optional.of(adapterMetadata));
@@ -153,14 +156,14 @@ class UnifiedAdapterGeneratorTest {
   void shouldGenerateAdapterWithMapperWhenNeeded() {
     // Given
     var config = createTestConfig("UserRepository", "postgresql", AdapterDirection.OUTPUT);
-    when(adapterMetadata.getDirection()).thenReturn(AdapterDirection.OUTPUT);
-    when(adapterMetadata.getSuffix()).thenReturn("Repository");
-    when(adapterMetadata.isNeedsMapper()).thenReturn(true);
-    when(adapterMetadata.getDiscoveredTemplates()).thenReturn(List.of(
+    lenient().when(adapterMetadata.getDirection()).thenReturn(AdapterDirection.OUTPUT);
+    lenient().when(adapterMetadata.getSuffix()).thenReturn("Adapter");
+    lenient().when(adapterMetadata.isNeedsMapper()).thenReturn(true);
+    lenient().when(adapterMetadata.getDiscoveredTemplates()).thenReturn(List.of(
         TemplateFile.builder()
             .name("Repository.java.ftl")
             .type("main")
-            .destination("{name}Repository.java")
+            .destination("{name}Adapter.java")
             .build(),
         TemplateFile.builder()
             .name("UserDataEntity.java.ftl")

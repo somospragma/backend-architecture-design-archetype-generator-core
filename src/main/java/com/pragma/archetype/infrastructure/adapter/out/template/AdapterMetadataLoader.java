@@ -374,6 +374,18 @@ public class AdapterMetadataLoader {
       throw new IllegalArgumentException("Field 'dependencies' must be a list or map with 'gradle' key");
     }
 
+    // Check if list contains strings (new format) or maps (legacy format)
+    List<?> rawList = (List<?>) depsObj;
+    if (rawList.isEmpty()) {
+      return List.of();
+    }
+
+    // If first element is a String, these are string-format dependencies
+    // Return empty list for legacy Dependency format — string deps are handled by extractDependencyStrings
+    if (rawList.get(0) instanceof String) {
+      return List.of();
+    }
+
     List<Map<String, Object>> depsList = (List<Map<String, Object>>) depsObj;
     return parseDependencyList(depsList, "compile", false);
   }

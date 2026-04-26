@@ -68,6 +68,10 @@ public class ProjectGenerator {
         /**
          * Updates settings.gradle.kts to include a new module.
          * Reads the file, adds the include statement if not present, and writes back.
+         * For multi-module architectures, generates flat module names with projectDir
+         * mappings:
+         * include("rest-api")
+         * project(":rest-api").projectDir = file("infrastructure/entry-points/rest-api")
          *
          * @param projectPath the project root path
          * @param modulePath  the module path (e.g.,
@@ -81,15 +85,26 @@ public class ProjectGenerator {
                 }
 
                 String content = fileSystemPort.readFile(settingsFile);
-                String includeStatement = "include(\"" + modulePath + "\")";
 
-                // Check if already included
-                if (content.contains(includeStatement)) {
+                // Extract the leaf module name (last segment after ':')
+                String[] segments = modulePath.split(":");
+                String leafModuleName = segments[segments.length - 1];
+
+                // Build the flat include statement
+                String includeStatement = "include(\"" + leafModuleName + "\")";
+
+                // Check if already included (check both flat and nested formats)
+                if (content.contains(includeStatement) || content.contains("include(\"" + modulePath + "\")")) {
                         return; // Already included
                 }
 
-                // Add the include statement at the end
-                String newContent = content.trim() + "\n" + includeStatement + "\n";
+                // Build the projectDir mapping using the full directory path
+                String directoryPath = modulePath.replace(':', '/');
+                String projectDirMapping = "project(\":" + leafModuleName + "\").projectDir = file(\"" + directoryPath
+                                + "\")";
+
+                // Add the include statement and projectDir mapping at the end
+                String newContent = content.trim() + "\n" + includeStatement + "\n" + projectDirMapping + "\n";
                 fileSystemPort.writeFile(GeneratedFile.create(settingsFile, newContent));
         }
 
@@ -176,8 +191,21 @@ public class ProjectGenerator {
                 // Dependency versions
                 context.put("groupId", config.basePackage());
                 context.put("version", "0.0.1-SNAPSHOT");
-                context.put("springBootVersion", "3.2.1");
-                context.put("mapstructVersion", "1.5.5.Final");
+                context.put("springBootVersion", "4.0.3");
+                context.put("gradleVersion", "9.0");
+                context.put("mapstructVersion", "1.6.3");
+                context.put("lombokVersion", "1.18.36");
+                context.put("archunitVersion", "1.3.0");
+
+                // Quality tool thresholds
+                context.put("jacocoMinCoverage", "0.85");
+                context.put("pitMinMutationKill", "20");
+
+                // Package path variables for config and domain packages
+                context.put("configPackagePath",
+                                config.basePackage().replace('.', '/') + "/infrastructure/config");
+                context.put("useCasesPackage", config.basePackage() + ".domain.usecases");
+                context.put("portsPackage", config.basePackage() + ".domain.ports");
 
                 // Add adapter package variables from structure.yml
                 try {

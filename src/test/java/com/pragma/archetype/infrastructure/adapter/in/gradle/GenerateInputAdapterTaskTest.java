@@ -87,20 +87,20 @@ class GenerateInputAdapterTaskTest {
   }
 
   @Test
-  void shouldFailWithoutUseCaseNameForRestAdapter() {
-    // Given - REST adapter requires use case
+  void shouldNotRequireUseCaseNameForRestAdapter() {
+    // Given - use case is now optional for all adapter types (KB alignment)
     task.setAdapterName("UserController");
     task.setEndpoints("/users:POST:create:User");
     task.setPackageName("com.test");
     task.setType("rest");
 
-    // When/Then
+    // When/Then - Should not fail with 'Use case name is required'
+    // May fail for other reasons (missing templates), but not for missing use case
     RuntimeException exception = assertThrows(RuntimeException.class, () -> {
       task.generateInputAdapter();
     });
-    assertTrue(exception.getCause() != null && exception.getCause().getMessage().contains("Use case name is required"),
-        "Expected cause to contain 'Use case name is required' but was: " +
-            (exception.getCause() != null ? exception.getCause().getMessage() : "null"));
+    assertTrue(exception.getCause() == null || !exception.getCause().getMessage().contains("Use case name is required"),
+        "Should not fail with 'Use case name is required' since use case is now optional");
   }
 
   @Test

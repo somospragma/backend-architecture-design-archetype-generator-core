@@ -79,9 +79,9 @@ class AdapterMetadataLoaderTest {
     assertEquals("mongodb-adapter", metadata.getName());
     assertEquals(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT, metadata.getDirection());
     assertEquals("MongoDB database adapter", metadata.getDescription());
-    assertEquals(1, metadata.dependencies().size());
+    assertEquals(1, metadata.getRuntimeDependencies().size());
 
-    Dependency dep = metadata.dependencies().get(0);
+    Dependency dep = metadata.getRuntimeDependencies().get(0);
     assertEquals("org.springframework.boot", dep.group());
     assertEquals("spring-boot-starter-data-mongodb-reactive", dep.artifact());
     assertEquals("3.2.0", dep.version());
@@ -223,7 +223,7 @@ class AdapterMetadataLoaderTest {
     assertNotNull(metadata);
     assertEquals("mongodb-adapter", metadata.getName());
     assertEquals(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT, metadata.getDirection());
-    assertEquals(1, metadata.dependencies().size());
+    assertEquals(1, metadata.getRuntimeDependencies().size());
     assertEquals(1, metadata.getTestDependencies().size());
     assertTrue(metadata.hasApplicationProperties());
     assertTrue(metadata.hasConfigurationClasses());
@@ -343,7 +343,7 @@ class AdapterMetadataLoaderTest {
         suffix: Controller
         templates:
           - source: Controller.java.ftl
-            target: {entityName}Controller.java
+            target: "{entityName}Controller.java"
             outputDir: src/main/java
         """;
     String metadataPath = "frameworks/spring/imperative/adapters/entry-points/test-adapter/metadata.yml";
@@ -371,7 +371,7 @@ class AdapterMetadataLoaderTest {
         applicationPropertiesTemplate: application-test.yml.ftl
         templates:
           - source: Controller.java.ftl
-            target: {entityName}Controller.java
+            target: "{entityName}Controller.java"
             outputDir: src/main/java
         """;
     String metadataPath = "frameworks/spring/imperative/adapters/entry-points/test-adapter/metadata.yml";
@@ -402,7 +402,7 @@ class AdapterMetadataLoaderTest {
           - org.springframework.boot:spring-boot-starter-web
         templates:
           - source: Controller.java.ftl
-            target: {entityName}Controller.java
+            target: "{entityName}Controller.java"
             outputDir: src/main/java
         """;
     String metadataPath = "frameworks/spring/imperative/adapters/entry-points/test-adapter/metadata.yml";
@@ -415,9 +415,9 @@ class AdapterMetadataLoaderTest {
 
     // Then
     assertNotNull(metadata);
-    assertNotNull(metadata.dependencies());
-    assertEquals(1, metadata.dependencies().size());
-    assertEquals("org.springframework.boot:spring-boot-starter-web", metadata.dependencies().get(0));
+    assertNotNull(metadata.getDependencies());
+    assertEquals(1, metadata.getDependencies().size());
+    assertEquals("org.springframework.boot:spring-boot-starter-web", metadata.getDependencies().get(0));
   }
 
   @Test
@@ -431,7 +431,7 @@ class AdapterMetadataLoaderTest {
         description: Test adapter for unit testing
         templates:
           - source: Controller.java.ftl
-            target: {entityName}Controller.java
+            target: "{entityName}Controller.java"
             outputDir: src/main/java
         """;
     String metadataPath = "frameworks/spring/imperative/adapters/entry-points/test-adapter/metadata.yml";

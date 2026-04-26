@@ -105,17 +105,12 @@ class GenerateInputAdapterTaskDeepTest {
     // Given
     String endpointsStr = "";
 
-    // When/Then - empty string should throw exception (wrapped in
-    // InvocationTargetException)
-    try {
-      invokeParseEndpoints(endpointsStr);
-      fail("Expected IllegalArgumentException to be thrown");
-    } catch (Exception e) {
-      // Reflection wraps the exception in InvocationTargetException
-      assertTrue(e.getCause() instanceof IllegalArgumentException ||
-          e instanceof IllegalArgumentException,
-          "Expected IllegalArgumentException but got: " + e.getClass());
-    }
+    // When - empty string now returns empty list (endpoints are optional for some adapter types)
+    List<Endpoint> endpoints = invokeParseEndpoints(endpointsStr);
+
+    // Then
+    assertNotNull(endpoints);
+    assertEquals(0, endpoints.size());
   }
 
   @Test

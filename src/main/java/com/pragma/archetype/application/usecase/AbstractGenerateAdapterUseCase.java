@@ -247,14 +247,14 @@ public abstract class AbstractGenerateAdapterUseCase {
    */
   private ValidationResult validateAllTemplates(
       UnifiedAdapterGenerator.AdapterConfig config,
-      com.pragma.archetype.domain.model.project.ProjectConfiguration projectConfig) {
+      com.pragma.archetype.domain.model.config.ProjectConfig projectConfig) {
 
     var errors = new ArrayList<String>();
 
     try {
       // Load adapter metadata using framework and paradigm from projectConfig
       AdapterMetadata metadata = adapterDiscovery
-          .findAdapter(config.getType(), getDirection(), projectConfig.framework(), projectConfig.paradigm())
+          .findAdapter(config.getType(), getDirection(), projectConfig.framework().getValue(), projectConfig.paradigm().getValue())
           .orElse(null);
 
       if (metadata == null) {
@@ -284,7 +284,7 @@ public abstract class AbstractGenerateAdapterUseCase {
   private void validateTemplateExistence(
       UnifiedAdapterGenerator.AdapterConfig config,
       AdapterMetadata metadata,
-      com.pragma.archetype.domain.model.project.ProjectConfiguration projectConfig,
+      com.pragma.archetype.domain.model.config.ProjectConfig projectConfig,
       List<String> errors) {
 
     // 1. Adapter metadata exists (already checked)
@@ -331,13 +331,13 @@ public abstract class AbstractGenerateAdapterUseCase {
   private void validateApplicationPropertiesTemplate(
       UnifiedAdapterGenerator.AdapterConfig config,
       AdapterMetadata metadata,
-      com.pragma.archetype.domain.model.project.ProjectConfiguration projectConfig,
+      com.pragma.archetype.domain.model.config.ProjectConfig projectConfig,
       List<String> errors) {
     if (metadata.getApplicationPropertiesTemplate() != null) {
       String adapterDir = TemplateRepositoryPaths.AdapterDirectories.getDirectoryName(
           getDirection() == AdapterDirection.INPUT);
       String templatePath = String.format(TemplateRepositoryPaths.Patterns.ADAPTER_TEMPLATE_DIR + "/%s",
-          projectConfig.framework(), projectConfig.paradigm(), adapterDir, config.getType(),
+          projectConfig.framework().getValue(), projectConfig.paradigm().getValue(), adapterDir, config.getType(),
           metadata.getApplicationPropertiesTemplate());
 
       if (!templateRepository.templateExists(templatePath)) {

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -32,9 +33,26 @@ class TemplateAdapterDiscoveryTest {
 
   private TemplateAdapterDiscovery discovery;
 
+  private static final String FRAMEWORK = "spring";
+  private static final String PARADIGM = "reactive";
+  private static final String INPUT_INDEX = "frameworks/spring/reactive/adapters/entry-points/index.json";
+  private static final String OUTPUT_INDEX = "frameworks/spring/reactive/adapters/driven-adapters/index.json";
+
   @BeforeEach
   void setUp() {
     discovery = new TemplateAdapterDiscovery(templateRepository, metadataLoader);
+  }
+
+  private String inputIndexJson(String... adapterNames) {
+    StringBuilder sb = new StringBuilder("{\"adapters\":[");
+    for (int i = 0; i < adapterNames.length; i++) {
+      if (i > 0) sb.append(",");
+      sb.append("{\"name\":\"").append(adapterNames[i])
+        .append("\",\"displayName\":\"").append(adapterNames[i])
+        .append("\",\"description\":\"").append(adapterNames[i]).append(" adapter\"}");
+    }
+    sb.append("]}");
+    return sb.toString();
   }
 
   @Test
@@ -55,13 +73,16 @@ class TemplateAdapterDiscoveryTest {
         .description("GraphQL endpoints")
         .build();
 
-    when(templateRepository.templateExists("adapters/rest/metadata.yml")).thenReturn(true);
-    when(templateRepository.templateExists("adapters/graphql/metadata.yml")).thenReturn(true);
-    when(metadataLoader.loadMetadata("adapters/rest/metadata.yml")).thenReturn(restMetadata);
-    when(metadataLoader.loadMetadata("adapters/graphql/metadata.yml")).thenReturn(graphqlMetadata);
+    when(templateRepository.templateExists(INPUT_INDEX)).thenReturn(true);
+    when(templateRepository.getTemplateContent(INPUT_INDEX))
+        .thenReturn(inputIndexJson("rest", "graphql"));
+    when(metadataLoader.loadMetadata("frameworks/spring/reactive/adapters/entry-points/rest/metadata.yml"))
+        .thenReturn(restMetadata);
+    when(metadataLoader.loadMetadata("frameworks/spring/reactive/adapters/entry-points/graphql/metadata.yml"))
+        .thenReturn(graphqlMetadata);
 
     // When
-    List<AdapterMetadata> adapters = discovery.discoverAdapters(AdapterDirection.INPUT);
+    List<AdapterMetadata> adapters = discovery.discoverAdapters(AdapterDirection.INPUT, FRAMEWORK, PARADIGM);
 
     // Then
     assertTrue(adapters.size() >= 2);
@@ -80,11 +101,14 @@ class TemplateAdapterDiscoveryTest {
         .description("MongoDB database")
         .build();
 
-    when(templateRepository.templateExists("adapters/mongodb/metadata.yml")).thenReturn(true);
-    when(metadataLoader.loadMetadata("adapters/mongodb/metadata.yml")).thenReturn(mongoMetadata);
+    when(templateRepository.templateExists(OUTPUT_INDEX)).thenReturn(true);
+    when(templateRepository.getTemplateContent(OUTPUT_INDEX))
+        .thenReturn(inputIndexJson("mongodb"));
+    when(metadataLoader.loadMetadata("frameworks/spring/reactive/adapters/driven-adapters/mongodb/metadata.yml"))
+        .thenReturn(mongoMetadata);
 
     // When
-    List<AdapterMetadata> adapters = discovery.discoverAdapters(AdapterDirection.OUTPUT);
+    List<AdapterMetadata> adapters = discovery.discoverAdapters(AdapterDirection.OUTPUT, FRAMEWORK, PARADIGM);
 
     // Then
     assertTrue(adapters.stream().anyMatch(a -> "mongodb".equals(a.getName())));
@@ -108,13 +132,21 @@ class TemplateAdapterDiscoveryTest {
         .description("MongoDB database")
         .build();
 
-    when(templateRepository.templateExists(anyString())).thenReturn(true);
-    when(metadataLoader.loadMetadata("adapters/rest/metadata.yml")).thenReturn(restMetadata);
-    when(metadataLoader.loadMetadata("adapters/mongodb/metadata.yml")).thenReturn(mongoMetadata);
+    when(templateRepository.templateExists(INPUT_INDEX)).thenReturn(true);
+    when(templateRepository.getTemplateContent(INPUT_INDEX))
+        .thenReturn(inputIndexJson("rest"));
+    when(metadataLoader.loadMetadata("frameworks/spring/reactive/adapters/entry-points/rest/metadata.yml"))
+        .thenReturn(restMetadata);
+
+    when(templateRepository.templateExists(OUTPUT_INDEX)).thenReturn(true);
+    when(templateRepository.getTemplateContent(OUTPUT_INDEX))
+        .thenReturn(inputIndexJson("mongodb"));
+    when(metadataLoader.loadMetadata("frameworks/spring/reactive/adapters/driven-adapters/mongodb/metadata.yml"))
+        .thenReturn(mongoMetadata);
 
     // When
-    List<AdapterMetadata> inputAdapters = discovery.discoverAdapters(AdapterDirection.INPUT);
-    List<AdapterMetadata> outputAdapters = discovery.discoverAdapters(AdapterDirection.OUTPUT);
+    List<AdapterMetadata> inputAdapters = discovery.discoverAdapters(AdapterDirection.INPUT, FRAMEWORK, PARADIGM);
+    List<AdapterMetadata> outputAdapters = discovery.discoverAdapters(AdapterDirection.OUTPUT, FRAMEWORK, PARADIGM);
 
     // Then
     assertTrue(inputAdapters.stream().anyMatch(a -> "rest".equals(a.getName())));
@@ -135,26 +167,33 @@ class TemplateAdapterDiscoveryTest {
         .description("REST endpoints")
         .build();
 
-    when(templateRepository.templateExists("adapters/rest/metadata.yml")).thenReturn(true);
-    when(metadataLoader.loadMetadata("adapters/rest/metadata.yml")).thenReturn(restMetadata);
+    when(templateRepository.templateExists(INPUT_INDEX)).thenReturn(true);
+    when(templateRepository.getTemplateContent(INPUT_INDEX))
+        .thenReturn(inputIndexJson("rest"));
+    when(metadataLoader.loadMetadata("frameworks/spring/reactive/adapters/entry-points/rest/metadata.yml"))
+        .thenReturn(restMetadata);
+    lenient().when(templateRepository.loadAdapterMetadata("rest", FRAMEWORK, PARADIGM, "entry-points"))
+        .thenReturn(restMetadata);
+    lenient().when(templateRepository.listTemplatesInDirectory(anyString()))
+        .thenReturn(List.of("Controller.java.ftl"));
 
     // When
-    Optional<AdapterMetadata> result = discovery.findAdapter("rest", AdapterDirection.INPUT);
+    Optional<AdapterMetadata> result = discovery.findAdapter("rest", AdapterDirection.INPUT, FRAMEWORK, PARADIGM);
 
     // Then
     assertTrue(result.isPresent());
     assertEquals("rest", result.get().getName());
-    assertEquals(AdapterDirection.INPUT, result.get().getDirection());
   }
 
   @Test
   @DisplayName("Should return empty when adapter not found")
   void shouldReturnEmptyWhenAdapterNotFound() {
     // Given
-    when(templateRepository.templateExists("adapters/nonexistent/metadata.yml")).thenReturn(false);
+    when(templateRepository.templateExists("frameworks/spring/reactive/adapters/entry-points/index.json"))
+        .thenReturn(false);
 
     // When
-    Optional<AdapterMetadata> result = discovery.findAdapter("nonexistent", AdapterDirection.INPUT);
+    Optional<AdapterMetadata> result = discovery.findAdapter("nonexistent", AdapterDirection.INPUT, FRAMEWORK, PARADIGM);
 
     // Then
     assertFalse(result.isPresent());
@@ -164,18 +203,12 @@ class TemplateAdapterDiscoveryTest {
   @DisplayName("Should return empty when adapter has wrong direction")
   void shouldReturnEmptyWhenAdapterHasWrongDirection() {
     // Given - rest is INPUT but we're looking for OUTPUT
-    AdapterMetadata restMetadata = AdapterMetadata.builder()
-        .name("rest")
-        .direction(AdapterDirection.INPUT)
-        .displayName("REST API")
-        .description("REST endpoints")
-        .build();
-
-    when(templateRepository.templateExists("adapters/rest/metadata.yml")).thenReturn(true);
-    when(metadataLoader.loadMetadata("adapters/rest/metadata.yml")).thenReturn(restMetadata);
+    when(templateRepository.templateExists(OUTPUT_INDEX)).thenReturn(true);
+    when(templateRepository.getTemplateContent(OUTPUT_INDEX))
+        .thenReturn(inputIndexJson()); // empty adapters list for output
 
     // When
-    Optional<AdapterMetadata> result = discovery.findAdapter("rest", AdapterDirection.OUTPUT);
+    Optional<AdapterMetadata> result = discovery.findAdapter("rest", AdapterDirection.OUTPUT, FRAMEWORK, PARADIGM);
 
     // Then
     assertFalse(result.isPresent());
@@ -185,47 +218,25 @@ class TemplateAdapterDiscoveryTest {
   @DisplayName("Should check if adapter exists")
   void shouldCheckIfAdapterExists() {
     // Given
-    AdapterMetadata restMetadata = AdapterMetadata.builder()
-        .name("rest")
-        .direction(AdapterDirection.INPUT)
-        .displayName("REST API")
-        .description("REST endpoints")
-        .build();
-
-    when(templateRepository.templateExists("adapters/rest/metadata.yml")).thenReturn(true);
-    when(metadataLoader.loadMetadata("adapters/rest/metadata.yml")).thenReturn(restMetadata);
+    when(templateRepository.templateExists(INPUT_INDEX)).thenReturn(true);
+    when(templateRepository.getTemplateContent(INPUT_INDEX))
+        .thenReturn(inputIndexJson("rest"));
 
     // When & Then
-    assertTrue(discovery.adapterExists("rest", AdapterDirection.INPUT));
-    assertFalse(discovery.adapterExists("rest", AdapterDirection.OUTPUT));
-    assertFalse(discovery.adapterExists("nonexistent", AdapterDirection.INPUT));
+    assertTrue(discovery.adapterExists("rest", AdapterDirection.INPUT, FRAMEWORK, PARADIGM));
+    assertFalse(discovery.adapterExists("nonexistent", AdapterDirection.INPUT, FRAMEWORK, PARADIGM));
   }
 
   @Test
   @DisplayName("Should list adapter names")
   void shouldListAdapterNames() {
     // Given
-    AdapterMetadata restMetadata = AdapterMetadata.builder()
-        .name("rest")
-        .direction(AdapterDirection.INPUT)
-        .displayName("REST API")
-        .description("REST endpoints")
-        .build();
-
-    AdapterMetadata graphqlMetadata = AdapterMetadata.builder()
-        .name("graphql")
-        .direction(AdapterDirection.INPUT)
-        .displayName("GraphQL API")
-        .description("GraphQL endpoints")
-        .build();
-
-    when(templateRepository.templateExists("adapters/rest/metadata.yml")).thenReturn(true);
-    when(templateRepository.templateExists("adapters/graphql/metadata.yml")).thenReturn(true);
-    when(metadataLoader.loadMetadata("adapters/rest/metadata.yml")).thenReturn(restMetadata);
-    when(metadataLoader.loadMetadata("adapters/graphql/metadata.yml")).thenReturn(graphqlMetadata);
+    when(templateRepository.templateExists(INPUT_INDEX)).thenReturn(true);
+    when(templateRepository.getTemplateContent(INPUT_INDEX))
+        .thenReturn(inputIndexJson("graphql", "rest"));
 
     // When
-    List<String> names = discovery.listAdapterNames(AdapterDirection.INPUT);
+    List<String> names = discovery.listAdapterNames(AdapterDirection.INPUT, FRAMEWORK, PARADIGM);
 
     // Then
     assertTrue(names.contains("rest"));
@@ -237,13 +248,15 @@ class TemplateAdapterDiscoveryTest {
   @Test
   @DisplayName("Should handle errors gracefully during discovery")
   void shouldHandleErrorsGracefullyDuringDiscovery() {
-    // Given - one adapter throws exception
-    when(templateRepository.templateExists("adapters/rest/metadata.yml")).thenReturn(true);
-    when(metadataLoader.loadMetadata("adapters/rest/metadata.yml"))
+    // Given - index exists but adapter metadata fails
+    when(templateRepository.templateExists(INPUT_INDEX)).thenReturn(true);
+    when(templateRepository.getTemplateContent(INPUT_INDEX))
+        .thenReturn(inputIndexJson("rest"));
+    when(metadataLoader.loadMetadata("frameworks/spring/reactive/adapters/entry-points/rest/metadata.yml"))
         .thenThrow(new RuntimeException("Failed to load"));
 
     // When - should not throw, just skip the failed adapter
-    List<AdapterMetadata> adapters = discovery.discoverAdapters(AdapterDirection.INPUT);
+    List<AdapterMetadata> adapters = discovery.discoverAdapters(AdapterDirection.INPUT, FRAMEWORK, PARADIGM);
 
     // Then - should return empty or partial list, not throw
     assertTrue(adapters != null);

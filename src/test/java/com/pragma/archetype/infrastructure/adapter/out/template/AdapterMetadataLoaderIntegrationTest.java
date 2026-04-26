@@ -80,8 +80,8 @@ class AdapterMetadataLoaderIntegrationTest {
     assertEquals("MongoDB database adapter using Spring Data Reactive", metadata.getDescription());
 
     // Verify dependencies
-    assertEquals(1, metadata.dependencies().size());
-    assertEquals("org.springframework.boot", metadata.dependencies().get(0).group());
+    assertEquals(1, metadata.getRuntimeDependencies().size());
+    assertEquals("org.springframework.boot", metadata.getRuntimeDependencies().get(0).group());
 
     // Verify test dependencies
     assertTrue(metadata.hasTestDependencies());

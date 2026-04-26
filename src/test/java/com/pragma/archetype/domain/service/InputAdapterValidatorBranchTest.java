@@ -235,8 +235,8 @@ class InputAdapterValidatorBranchTest {
   }
 
   @Test
-  void shouldFailWhenUseCaseNameIsNull() {
-    // Given
+  void shouldPassWhenUseCaseNameIsNull() {
+    // Given - use case is now optional for all adapter types (KB alignment)
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
     when(packageValidator.validatePackageName(any())).thenReturn(ValidationResult.success());
     InputAdapterConfig config = InputAdapterConfig.builder()
@@ -244,15 +244,20 @@ class InputAdapterValidatorBranchTest {
         .useCaseName(null)
         .type("rest")
         .packageName("com.test.infrastructure.entrypoints.rest")
-        .endpoints(List.of())
+        .endpoints(List.of(
+                new Endpoint(
+                        "/users",
+                        HttpMethod.POST,
+                        "create",
+                        "User",
+                        List.of())))
         .build();
 
     // When
     ValidationResult result = validator.validate(projectPath, config);
 
-    // Then
-    assertFalse(result.valid());
-    assertTrue(result.errors().stream().anyMatch(e -> e.contains("Use case name is required")));
+    // Then - use case is optional, so validation should pass (no error about use case)
+    assertFalse(result.errors().stream().anyMatch(e -> e.contains("Use case name is required")));
   }
 
   @Test

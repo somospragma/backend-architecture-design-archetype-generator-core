@@ -168,7 +168,7 @@ class StructureMetadataTest {
                                 Map.of("driven", "path/{name}"),
                                 modules);
 
-                var moduleNames = metadata.moduleMetadata();
+                var moduleNames = metadata.getModules();
                 assertEquals(2, moduleNames.size());
                 assertTrue(moduleNames.contains("domain"));
                 assertTrue(moduleNames.contains("application"));

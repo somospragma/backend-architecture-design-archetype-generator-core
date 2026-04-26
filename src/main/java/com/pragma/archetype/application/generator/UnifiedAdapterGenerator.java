@@ -14,6 +14,7 @@ import com.pragma.archetype.domain.model.adapter.AdapterMethod;
 import com.pragma.archetype.domain.model.adapter.Endpoint;
 import com.pragma.archetype.domain.model.adapter.EndpointParameter;
 import com.pragma.archetype.domain.model.adapter.MethodParameter;
+import com.pragma.archetype.domain.model.adapter.TemplateFile;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.file.FileType;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
@@ -193,9 +194,10 @@ public class UnifiedAdapterGenerator {
     // Prepare template data
     Map<String, Object> data = prepareTemplateData(config, direction, projectConfig);
 
-    // Generate main adapter file
-    GeneratedFile mainFile = generateMainFile(projectPath, config, direction, data, projectConfig, structureMetadata);
-    generatedFiles.add(mainFile);
+    // Generate all adapter files (main + secondary templates)
+    List<GeneratedFile> adapterFiles = generateAllTemplateFiles(
+        projectPath, config, direction, data, projectConfig, structureMetadata);
+    generatedFiles.addAll(adapterFiles);
 
     // Generate entity mapper if needed
     if (needsEntityMapper(config, direction)) {
@@ -216,6 +218,71 @@ public class UnifiedAdapterGenerator {
     }
 
     return generatedFiles;
+  }
+
+  /**
+   * Generates files for all discovered templates (main + secondary).
+   * This supports multi-template adapters like reactive REST (Router + Handler).
+   */
+  private List<GeneratedFile> generateAllTemplateFiles(
+      Path projectPath,
+      AdapterConfig config,
+      AdapterDirection direction,
+      Map<String, Object> data,
+      ProjectConfig projectConfig,
+      StructureMetadata structureMetadata) {
+
+    var files = new ArrayList<GeneratedFile>();
+
+    // Get metadata
+    AdapterMetadata metadata = getAdapterMetadata(config, direction);
+
+    // Get the adapter suffix from metadata
+    String suffix = getAdapterSuffix(metadata);
+
+    // Iterate over all discovered templates (main + secondary)
+    for (TemplateFile templateFile : metadata.getDiscoveredTemplates()) {
+      // Skip non-main/non-secondary templates (e.g., test, config, entity)
+      String templateType = templateFile.getType();
+      if (!"main".equals(templateType) && !"secondary".equals(templateType)) {
+        continue;
+      }
+
+      // Build template path
+      String adapterDir = resolveAdapterDirectory(direction);
+      String templatePath = String.format(TemplateRepositoryPaths.Patterns.ADAPTER_TEMPLATE_DIR + "/%s",
+          config.getFramework(), config.getParadigm(), adapterDir, config.getType(), templateFile.getName());
+
+      // Process template
+      String content = templateRepository.processTemplate(templatePath, data);
+
+      // Determine file name based on template destination or convention
+      String fileName;
+      if (templateFile.getDestination() != null && !templateFile.getDestination().isBlank()) {
+        fileName = templateFile.getDestination().replace("{name}", config.getName());
+      } else if ("main".equals(templateType)) {
+        fileName = config.getName() + suffix + ".java";
+      } else {
+        // For secondary templates, derive name from template file name
+        // e.g., Router.java.ftl -> {name}Router.java
+        String baseName = templateFile.getName().replace(".ftl", "");
+        fileName = config.getName() + baseName;
+      }
+
+      // Resolve file path
+      Path filePath = resolveAdapterFilePath(
+          projectPath, config, direction, projectConfig, fileName, structureMetadata);
+
+      files.add(GeneratedFile.javaSource(filePath, content));
+    }
+
+    // Fallback: if no templates were processed (backward compatibility), generate main file only
+    if (files.isEmpty()) {
+      GeneratedFile mainFile = generateMainFile(projectPath, config, direction, data, projectConfig, structureMetadata);
+      files.add(mainFile);
+    }
+
+    return files;
   }
 
   /**
@@ -634,7 +701,15 @@ public class UnifiedAdapterGenerator {
     if (projectConfig != null) {
       data.put(BASE_PACKAGE_KEY, projectConfig.basePackage());
       data.put("projectName", projectConfig.name());
-      data.put("architecture", projectConfig.architecture().name().toLowerCase());
+      if (projectConfig.architecture() != null) {
+        data.put("architecture", projectConfig.architecture().name().toLowerCase());
+      }
+
+      // Package path variables for templates that reference config and domain packages
+      data.put("configPackagePath",
+          projectConfig.basePackage().replace('.', '/') + "/infrastructure/config");
+      data.put("useCasesPackage", projectConfig.basePackage() + ".domain.usecases");
+      data.put("portsPackage", projectConfig.basePackage() + ".domain.ports");
     }
 
     return data;
