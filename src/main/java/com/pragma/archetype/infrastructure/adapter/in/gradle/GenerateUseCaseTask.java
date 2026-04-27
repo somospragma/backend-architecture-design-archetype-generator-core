@@ -207,8 +207,8 @@ public class GenerateUseCaseTask extends DefaultTask {
       ProjectConfig projectConfig = configurationPort.readConfiguration(projectPath)
           .orElseThrow(() -> new IllegalArgumentException(".cleanarch.yml not found"));
 
-      // For hexagonal-single, use cases go in domain.port.in
-      return projectConfig.basePackage() + ".domain.port.in";
+      // Use cases port goes in domain.ports (KB-aligned flat package)
+      return projectConfig.basePackage() + ".domain.ports";
     } catch (Exception e) {
       throw new IllegalArgumentException(
           "Could not auto-detect package name. Please provide --packageName or ensure .cleanarch.yml exists", e);

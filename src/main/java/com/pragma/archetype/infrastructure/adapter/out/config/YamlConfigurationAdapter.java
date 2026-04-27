@@ -97,6 +97,20 @@ public class YamlConfigurationAdapter implements ConfigurationPort {
 
     try {
       Map<String, Object> data = toYamlMap(config);
+
+      // Preserve existing 'templates' section if present
+      if (Files.exists(configFile)) {
+        try {
+          String existingContent = Files.readString(configFile);
+          Map<String, Object> existingData = yaml.load(existingContent);
+          if (existingData != null && existingData.containsKey("templates")) {
+            data.put("templates", existingData.get("templates"));
+          }
+        } catch (Exception e) {
+          // If we can't read existing file, just overwrite
+        }
+      }
+
       String yamlContent = yaml.dump(data);
 
       // Atomic write: write to temporary file first, then rename

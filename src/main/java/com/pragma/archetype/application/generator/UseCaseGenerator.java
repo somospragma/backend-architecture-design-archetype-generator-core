@@ -57,21 +57,21 @@ public class UseCaseGenerator {
     // Process template with new structure
     String content = templateRepository.processTemplate(templatePath, data);
 
-    // Calculate file path: domain/port/in/{UseCaseName}UseCase.java
+    // Calculate file path: domain/ports/I{UseCaseName}UseCase.java
     String packagePath = config.packageName().replace('.', '/');
     Path filePath = projectPath
         .resolve(structureMetadata.getSourceDirectory())
         .resolve(packagePath)
-        .resolve(config.name() + "UseCase.java");
+        .resolve("I" + config.name() + "UseCase.java");
 
     return GeneratedFile.javaSource(filePath, content);
   }
 
   private GeneratedFile generateImplementation(Path projectPath, UseCaseConfig config, Map<String, Object> data) {
-    // Calculate implementation package
-    // Replace domain.port.in with application.usecase
+    // Calculate implementation package: domain.ports → domain.usecases
     String implPackage = config.packageName()
-        .replace("domain.port.in", "application.usecase");
+        .replace("domain.ports", "domain.usecases")
+        .replace("domain.port.in", "domain.usecases");
 
     // Update data with implementation package
     data.put("implPackage", implPackage);
@@ -83,12 +83,12 @@ public class UseCaseGenerator {
     // Process template with new structure
     String content = templateRepository.processTemplate(templatePath, data);
 
-    // Calculate file path: application/usecase/{UseCaseName}UseCaseImpl.java
+    // Calculate file path: domain/usecases/{UseCaseName}UseCase.java (no Impl suffix)
     String packagePath = implPackage.replace('.', '/');
     Path filePath = projectPath
         .resolve(structureMetadata.getSourceDirectory())
         .resolve(packagePath)
-        .resolve(config.name() + "UseCaseImpl.java");
+        .resolve(config.name() + "UseCase.java");
 
     return GeneratedFile.javaSource(filePath, content);
   }

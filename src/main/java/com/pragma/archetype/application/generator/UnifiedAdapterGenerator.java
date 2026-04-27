@@ -259,14 +259,24 @@ public class UnifiedAdapterGenerator {
       // Determine file name based on template destination or convention
       String fileName;
       if (templateFile.getDestination() != null && !templateFile.getDestination().isBlank()) {
-        fileName = templateFile.getDestination().replace("{name}", config.getName());
+        String dest = templateFile.getDestination();
+        // If destination contains {name} placeholder, replace it
+        if (dest.contains("{name}")) {
+          fileName = dest.replace("{name}", config.getName());
+        } else if ("main".equals(templateType)) {
+          // Only prefix the main template file with the adapter name
+          String baseName = dest.replace(".java", "");
+          fileName = config.getName() + baseName + ".java";
+        } else {
+          // Secondary templates keep their original name
+          fileName = dest;
+        }
       } else if ("main".equals(templateType)) {
         fileName = config.getName() + suffix + ".java";
       } else {
-        // For secondary templates, derive name from template file name
-        // e.g., Router.java.ftl -> {name}Router.java
+        // For secondary templates, keep original name
         String baseName = templateFile.getName().replace(".ftl", "");
-        fileName = config.getName() + baseName;
+        fileName = baseName;
       }
 
       // Resolve file path
@@ -648,17 +658,26 @@ public class UnifiedAdapterGenerator {
       context.put(BASE_PACKAGE_KEY, projectConfig.basePackage());
 
       String adapterType = direction == AdapterDirection.INPUT ? "driving" : "driven";
+      // Directory name = user-provided name + technology type
+      // e.g., --name=Account --type=postgresql → "account-postgresql"
+      String adapterDirName = config.getName().toLowerCase() + "-" + config.getType().toLowerCase();
       Path adapterBasePath = pathResolver.resolveAdapterPath(
           projectConfig.architecture(),
           adapterType,
-          config.getName().toLowerCase(),
+          adapterDirName,
           context);
+
+      // Convert adapter path to Java-compatible directory (remove hyphens)
+      // e.g., "infrastructure/driven-adapters/account" → "infrastructure/drivenadapters/account"
+      String adapterPathStr = adapterBasePath.toString();
+      String javaCompatiblePath = structureMetadata.pathToPackageName(adapterPathStr)
+          .replace('.', PATH_SEPARATOR.charAt(0));
 
       String basePackagePath = projectConfig.basePackage().replace('.', PATH_SEPARATOR.charAt(0));
       return projectPath
           .resolve(sourceDir)
           .resolve(basePackagePath)
-          .resolve(adapterBasePath)
+          .resolve(javaCompatiblePath)
           .resolve(fileName);
     } else {
       // Fallback to package-based path

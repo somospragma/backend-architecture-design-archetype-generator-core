@@ -251,10 +251,11 @@ public class GenerateOutputAdapterTask extends BaseCleanArchTask {
       // Transform path to package name using structure metadata
       String adapterPackageSuffix = structureMetadata.pathToPackageName(adapterBasePath);
 
-      // Construct full package: basePackage + adapterPackageSuffix + adapterType
-      // Sanitize adapter type: remove hyphens for valid Java package names
+      // Construct full package: basePackage + adapterPackageSuffix + name + type
+      // e.g., com.pragma.test.infrastructure.drivenadapters.accountpostgresql
+      String sanitizedName = adapterName.toLowerCase().replace("-", "");
       String sanitizedType = sanitizeAdapterType(adapterType);
-      return projectConfig.basePackage() + "." + adapterPackageSuffix + "." + sanitizedType;
+      return projectConfig.basePackage() + "." + adapterPackageSuffix + "." + sanitizedName + sanitizedType;
     } catch (Exception e) {
       throw new IllegalArgumentException(
           "Could not auto-detect package name. Please provide --packageName or ensure .cleanarch.yml exists", e);

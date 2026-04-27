@@ -241,10 +241,11 @@ public class GenerateInputAdapterTask extends BaseCleanArchTask {
       // Transform path to package name using structure metadata
       String adapterPackageSuffix = structureMetadata.pathToPackageName(adapterBasePath);
 
-      // Construct full package: basePackage + adapterPackageSuffix + adapterType
-      // Sanitize adapter type: remove hyphens for valid Java package names
+      // Construct full package: basePackage + adapterPackageSuffix + name + type
+      // e.g., com.pragma.test.infrastructure.entrypoints.accountrest
+      String sanitizedName = adapterName.toLowerCase().replace("-", "");
       String sanitizedType = sanitizeAdapterType(type);
-      String fullPackage = basePackage + "." + adapterPackageSuffix + "." + sanitizedType;
+      String fullPackage = basePackage + "." + adapterPackageSuffix + "." + sanitizedName + sanitizedType;
 
       getLogger().debug("Inferred package: {}", fullPackage);
 

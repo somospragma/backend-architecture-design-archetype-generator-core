@@ -278,9 +278,15 @@ public class TemplateAdapterDiscovery implements AdapterDiscoveryPort {
 
     logger.debug("Discovered {} template files in {}: {}", templateFileNames.size(), templateDir, templateFileNames);
 
-    // Build TemplateFile list
+    // Build TemplateFile list — only include Java templates
     List<TemplateFile> templates = new ArrayList<>();
     for (String templateName : templateFileNames) {
+      // Skip non-Java templates (application-properties, config files, markdown, etc.)
+      if (!templateName.endsWith(".java.ftl")) {
+        logger.debug("Skipping non-Java template: {}", templateName);
+        continue;
+      }
+
       // Mark as "main" only if it matches the suffix from metadata
       String type = (mainTemplateName != null && templateName.equals(mainTemplateName)) ? "main" : "secondary";
 

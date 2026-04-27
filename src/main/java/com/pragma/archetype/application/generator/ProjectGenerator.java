@@ -357,48 +357,8 @@ public class ProjectGenerator {
                                 mainClassPath,
                                 applicationClassContent));
 
-                // Generate BeanConfiguration class (Spring dependency injection config)
-                try {
-                        // Resolve template path dynamically
-                        Map<String, String> variables = Map.of("architecture", config.architecture().getValue());
-                        String templatePath = structureMetadata.resolveTemplatePath("config", variables);
-
-                        String beanConfigContent = templateRepository.processTemplate(
-                                        templatePath + "/BeanConfiguration.java.ftl",
-                                        context);
-
-                        Path configPath = projectPath
-                                        .resolve(structureMetadata.getSourceDirectory())
-                                        .resolve(config.basePackage().replace('.', '/'))
-                                        .resolve("infrastructure/config")
-                                        .resolve("BeanConfiguration.java");
-
-                        fileSystemPort.createDirectory(configPath.getParent());
-
-                        files.add(GeneratedFile.create(
-                                        configPath,
-                                        beanConfigContent));
-                } catch (Exception e) {
-                        // Fallback to hardcoded path if template path resolution fails
-                        String architecturePath = "architectures/"
-                                        + config.architecture().getValue();
-
-                        String beanConfigContent = templateRepository.processTemplate(
-                                        architecturePath + "/project/BeanConfiguration.java.ftl",
-                                        context);
-
-                        Path configPath = projectPath
-                                        .resolve(structureMetadata.getSourceDirectory())
-                                        .resolve(config.basePackage().replace('.', '/'))
-                                        .resolve("infrastructure/config")
-                                        .resolve("BeanConfiguration.java");
-
-                        fileSystemPort.createDirectory(configPath.getParent());
-
-                        files.add(GeneratedFile.create(
-                                        configPath,
-                                        beanConfigContent));
-                }
+                // Note: UseCasesConfig.java and ErrorType.java are now generated via
+                // staticFiles in structure.yml. BeanConfiguration.java is deprecated.
 
                 return files;
         }
@@ -669,18 +629,8 @@ public class ProjectGenerator {
                                 mainClassPath,
                                 applicationClassContent));
 
-                // Generate BeanConfiguration class
-                String beanConfigContent = templateRepository.processTemplate(
-                                architecturePath + "/project/BeanConfiguration.java.ftl",
-                                context);
-
-                Path configPath = infrastructureSrcPath
-                                .resolve("config")
-                                .resolve("BeanConfiguration.java");
-
-                files.add(GeneratedFile.create(
-                                configPath,
-                                beanConfigContent));
+                // Note: UseCasesConfig.java and ErrorType.java are now generated via
+                // staticFiles in structure.yml. BeanConfiguration.java is deprecated.
 
                 return files;
         }
@@ -872,16 +822,8 @@ public class ProjectGenerator {
                                 mainClassPath,
                                 applicationClassContent));
 
-                // Generate BeanConfiguration class
-                String beanConfigContent = templateRepository.processTemplate(
-                                architecturePath + "/project/BeanConfiguration.java.ftl",
-                                context);
-
-                Path configPath = srcPath.resolve("BeanConfiguration.java");
-
-                files.add(GeneratedFile.create(
-                                configPath,
-                                beanConfigContent));
+                // Note: UseCasesConfig.java and ErrorType.java are now generated via
+                // staticFiles in structure.yml. BeanConfiguration.java is deprecated.
 
                 return files;
         }

@@ -8,8 +8,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
+
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.process.ExecOperations;
 
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
@@ -31,6 +34,11 @@ import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTempla
  * ./gradlew validateStructure
  */
 public class ValidateStructureTask extends DefaultTask {
+
+  @Inject
+  protected ExecOperations getExecOperations() {
+    throw new UnsupportedOperationException();
+  }
 
   @TaskAction
   public void validateStructure() {
@@ -155,7 +163,7 @@ public class ValidateStructureTask extends DefaultTask {
     getLogger().lifecycle("Running architecture tests...");
 
     // Execute test task with filter for architecture tests
-    getProject().exec(execSpec -> {
+    getExecOperations().exec(execSpec -> {
       execSpec.setWorkingDir(getProject().getProjectDir());
 
       // Use gradlew if available, otherwise gradle
