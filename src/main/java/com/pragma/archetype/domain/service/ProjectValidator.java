@@ -130,6 +130,7 @@ public class ProjectValidator {
         ".git",
         "gradle",
         ".gradle",
+        "build",
         ".cleanarch.yml");
 
     List<Path> unexpectedFiles = files.stream()

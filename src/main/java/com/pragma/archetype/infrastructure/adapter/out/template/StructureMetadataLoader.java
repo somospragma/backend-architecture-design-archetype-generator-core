@@ -246,11 +246,13 @@ public class StructureMetadataLoader {
    */
   @SuppressWarnings("unchecked")
   private java.util.List<ModuleMetadata> extractModuleMetadata(Map<String, Object> data) {
-    if (!data.containsKey("modules")) {
+    // Check both "modules" and "moduleMetadata" keys (some architectures use one or the other)
+    String key = data.containsKey("modules") ? "modules" : "moduleMetadata";
+    if (!data.containsKey(key)) {
       return null;
     }
 
-    Object modulesObj = data.get("modules");
+    Object modulesObj = data.get(key);
     if (!(modulesObj instanceof List)) {
       throw new IllegalArgumentException("Field 'modules' must be a list");
     }

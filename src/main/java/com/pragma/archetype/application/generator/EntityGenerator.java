@@ -132,21 +132,10 @@ public class EntityGenerator {
       // Get module path
       Path modulePath = projectPath.resolve(entityModule.getPath());
 
-      // Get model package from entity module
-      String modelPackage = entityModule.getPackage("model");
-      if (modelPackage == null) {
-        // Fallback to default package path
-        return modulePath
-            .resolve(structureMetadata.getSourceDirectory())
-            .resolve(packagePath)
-            .resolve(entityConfig.name() + ".java");
-      }
-
-      // Use model package from module metadata
-      String modelPackagePath = modelPackage.replace('.', '/');
+      // Use the full package path from entityConfig (already resolved with basePackage + model package)
       return modulePath
           .resolve(structureMetadata.getSourceDirectory())
-          .resolve(modelPackagePath)
+          .resolve(packagePath)
           .resolve(entityConfig.name() + ".java");
 
     } catch (IllegalStateException e) {

@@ -212,7 +212,21 @@ public class AdapterConfigurationService {
                     // Build file path using dynamic source directory from metadata
                     String sourceDir = structureMetadata.getSourceDirectory();
                     String fileName = config.name() + configClass.name() + ".java";
-                    Path configFilePath = projectPath
+                    
+                    // For multi-module, resolve to the infrastructure module path
+                    Path basePath = projectPath;
+                    if (structureMetadata.isMultiModule()) {
+                        for (var module : structureMetadata.moduleMetadata()) {
+                            if (module.getPackageTypes().containsKey("drivenAdapters")
+                                    || module.getPackageTypes().containsKey("entryPoints")
+                                    || module.getPackageTypes().containsKey("config")) {
+                                basePath = projectPath.resolve(module.getPath());
+                                break;
+                            }
+                        }
+                    }
+                    
+                    Path configFilePath = basePath
                             .resolve(sourceDir)
                             .resolve(packagePath)
                             .resolve(fileName);
@@ -258,6 +272,40 @@ public class AdapterConfigurationService {
             Path projectPath,
             AdapterConfig config,
             AdapterMetadata metadata) {
+        // Resolve build file path based on architecture
+        Path buildFilePath = resolveBuildFilePath(projectPath, config);
+        addDependenciesToBuildFile(buildFilePath, config, metadata);
+    }
+
+    /**
+     * Resolves the correct build.gradle.kts path based on architecture.
+     * For multi-module, adapters go in the infrastructure module.
+     */
+    private Path resolveBuildFilePath(Path projectPath, AdapterConfig config) {
+        try {
+            var projectConfig = configurationPort.readConfiguration(projectPath).orElse(null);
+            if (projectConfig != null) {
+                var structureMetadata = templateRepository.loadStructureMetadata(projectConfig.architecture());
+                if (structureMetadata.isMultiModule()) {
+                    // For multi-module, find the infrastructure module path
+                    for (var module : structureMetadata.moduleMetadata()) {
+                        if (module.getPackageTypes().containsKey("drivenAdapters")
+                                || module.getPackageTypes().containsKey("entryPoints")) {
+                            return projectPath.resolve(module.getPath()).resolve("build.gradle.kts");
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Could not resolve module build file, using root: {}", e.getMessage());
+        }
+        return projectPath.resolve("build.gradle.kts");
+    }
+
+    private void addDependenciesToBuildFile(
+            Path buildFilePath,
+            AdapterConfig config,
+            AdapterMetadata metadata) {
         try {
             if (metadata.getDependencies().isEmpty()) {
                 logger.debug("Adapter {} does not have dependencies, skipping", config.name());
@@ -266,30 +314,22 @@ public class AdapterConfigurationService {
 
             logger.info("Adding dependencies for adapter: {}", config.name());
 
-            // Determine the build file path
-            Path buildFilePath = projectPath.resolve("build.gradle.kts");
-
             if (!fileSystemPort.exists(buildFilePath)) {
                 logger.warn("Build file not found at {}, skipping dependency addition", buildFilePath);
                 return;
             }
 
-            // Read the current build file content
             String buildFileContent = fileSystemPort.readFile(buildFilePath);
 
-            // Add each dependency
             String updatedContent = buildFileContent;
             for (String dep : metadata.getDependencies()) {
                 updatedContent = addDependencyToBuildFile(updatedContent, dep);
             }
 
-            // Write the updated build file if changes were made
             if (!updatedContent.equals(buildFileContent)) {
                 fileSystemPort.writeFile(GeneratedFile.create(buildFilePath, updatedContent));
                 logger.info("Successfully added {} dependencies for adapter: {}",
                         metadata.getDependencies().size(), config.name());
-            } else {
-                logger.debug("No new dependencies to add for adapter: {}", config.name());
             }
 
         } catch (Exception e) {
@@ -318,32 +358,25 @@ public class AdapterConfigurationService {
 
             logger.info("Adding test dependencies for adapter: {}", config.name());
 
-            // Determine the build file path
-            Path buildFilePath = projectPath.resolve("build.gradle.kts");
+            Path buildFilePath = resolveBuildFilePath(projectPath, config);
 
             if (!fileSystemPort.exists(buildFilePath)) {
                 logger.warn("Build file not found at {}, skipping test dependency addition", buildFilePath);
                 return;
             }
 
-            // Read the current build file content
             String buildFileContent = fileSystemPort.readFile(buildFilePath);
 
-            // Add each test dependency
             String updatedContent = buildFileContent;
             for (AdapterMetadata.Dependency testDep : metadata.getTestDependencies()) {
-                // Convert Dependency to coordinate string
                 String coordinate = testDep.group() + ":" + testDep.artifact() + ":" + testDep.version();
                 updatedContent = addTestDependencyToBuildFile(updatedContent, coordinate);
             }
 
-            // Write the updated build file if changes were made
             if (!updatedContent.equals(buildFileContent)) {
                 fileSystemPort.writeFile(GeneratedFile.create(buildFilePath, updatedContent));
                 logger.info("Successfully added {} test dependencies for adapter: {}",
                         metadata.getTestDependencies().size(), config.name());
-            } else {
-                logger.debug("No new test dependencies to add for adapter: {}", config.name());
             }
 
         } catch (Exception e) {

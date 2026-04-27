@@ -200,14 +200,32 @@ public class GenerateUseCaseTask extends DefaultTask {
       return packageName;
     }
 
-    // Otherwise, read from .cleanarch.yml
+    // Otherwise, read from .cleanarch.yml and structure.yml
     try {
       ConfigurationPort configurationPort = new YamlConfigurationAdapter();
       Path projectPath = getProject().getProjectDir().toPath();
       ProjectConfig projectConfig = configurationPort.readConfiguration(projectPath)
           .orElseThrow(() -> new IllegalArgumentException(".cleanarch.yml not found"));
 
-      // Use cases port goes in domain.ports (KB-aligned flat package)
+      // Load StructureMetadata to get module-aware package resolution
+      TemplateRepository templateRepository = createTemplateRepository();
+      com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
+          .loadStructureMetadata(projectConfig.architecture());
+
+      // Use the useCaseModule's packageTypes to resolve the ports package
+      try {
+        com.pragma.archetype.domain.model.structure.ModuleMetadata useCaseModule = structureMetadata.getUseCaseModule();
+        if (useCaseModule != null) {
+          String portsPackage = useCaseModule.getPackage("ports");
+          // Convert filesystem path to package notation: "domain/ports" → "domain.ports", "ports" → "ports"
+          String packageSuffix = portsPackage.replace("/", ".").replace("-", "");
+          return projectConfig.basePackage() + "." + packageSuffix;
+        }
+      } catch (IllegalStateException | IllegalArgumentException e) {
+        // Fall through to default
+      }
+
+      // Fallback: use cases port goes in domain.ports
       return projectConfig.basePackage() + ".domain.ports";
     } catch (Exception e) {
       throw new IllegalArgumentException(

@@ -268,6 +268,55 @@ public record StructureMetadata(
   }
 
   /**
+   * Finds the module whose path is a prefix of the given filesystem path.
+   * For example, if the path is "infrastructure/driven-adapters/account"
+   * and there's a module with path "infrastructure", it returns that module.
+   * For single-module architectures (module path "."), returns null.
+   *
+   * @param filesystemPath The filesystem path to match against module paths
+   * @return The matching ModuleMetadata, or null if no multi-module match found
+   */
+  public ModuleMetadata findModuleForPath(String filesystemPath) {
+    if (moduleMetadata == null || filesystemPath == null) {
+      return null;
+    }
+    for (ModuleMetadata module : moduleMetadata) {
+      String modulePath = module.getPath();
+      // Skip root modules (single-module architecture)
+      if (".".equals(modulePath)) {
+        continue;
+      }
+      // Check if the filesystem path starts with this module's path
+      if (filesystemPath.startsWith(modulePath + "/") || filesystemPath.equals(modulePath)) {
+        return module;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Strips the module path prefix from a filesystem path.
+   * For example, "infrastructure/driven-adapters/account" with module path "infrastructure"
+   * returns "driven-adapters/account".
+   *
+   * @param filesystemPath The full filesystem path
+   * @param modulePath     The module path prefix to strip
+   * @return The path without the module prefix
+   */
+  public String stripModulePrefix(String filesystemPath, String modulePath) {
+    if (modulePath == null || ".".equals(modulePath) || filesystemPath == null) {
+      return filesystemPath;
+    }
+    if (filesystemPath.startsWith(modulePath + "/")) {
+      return filesystemPath.substring(modulePath.length() + 1);
+    }
+    if (filesystemPath.equals(modulePath)) {
+      return "";
+    }
+    return filesystemPath;
+  }
+
+  /**
    * Gets the resources path for this architecture.
    * Returns the configured path from structure.yml or defaults to
    * "src/main/resources".

@@ -238,11 +238,19 @@ public class GenerateInputAdapterTask extends BaseCleanArchTask {
       // Get adapter base path for driving adapters (input/entry-points)
       String adapterBasePath = structureMetadata.getAdapterBaseDirectory("driving");
 
+      // For multi-module, strip the module path prefix from the package
+      // e.g., "infrastructure/entry-points" with module "infrastructure" → "entry-points"
+      String packageRelativePath = adapterBasePath;
+      com.pragma.archetype.domain.model.structure.ModuleMetadata owningModule = 
+          structureMetadata.findModuleForPath(adapterBasePath);
+      if (owningModule != null) {
+        packageRelativePath = structureMetadata.stripModulePrefix(adapterBasePath, owningModule.getPath());
+      }
+
       // Transform path to package name using structure metadata
-      String adapterPackageSuffix = structureMetadata.pathToPackageName(adapterBasePath);
+      String adapterPackageSuffix = structureMetadata.pathToPackageName(packageRelativePath);
 
       // Construct full package: basePackage + adapterPackageSuffix + name + type
-      // e.g., com.pragma.test.infrastructure.entrypoints.accountrest
       String sanitizedName = adapterName.toLowerCase().replace("-", "");
       String sanitizedType = sanitizeAdapterType(type);
       String fullPackage = basePackage + "." + adapterPackageSuffix + "." + sanitizedName + sanitizedType;

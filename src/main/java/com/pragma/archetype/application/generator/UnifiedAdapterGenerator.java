@@ -18,6 +18,7 @@ import com.pragma.archetype.domain.model.adapter.TemplateFile;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.file.FileType;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
+import com.pragma.archetype.domain.model.structure.ModuleMetadata;
 import com.pragma.archetype.domain.model.structure.StructureMetadata;
 import com.pragma.archetype.domain.model.template.TemplateRepositoryPaths;
 import com.pragma.archetype.domain.port.out.PathResolver;
@@ -173,8 +174,10 @@ public class UnifiedAdapterGenerator {
     String modulePathForSettings = modulePath.replace('/', ':');
     projectGenerator.addModuleToSettings(projectPath, modulePathForSettings);
 
-    // 6. Add dependency from app-service to this adapter module
-    projectGenerator.addDependencyToModule(projectPath, "application/app-service", ":" + modulePathForSettings);
+    // 6. Add dependency from app-service to this adapter module (use leaf name for flat includes)
+    String[] segments = modulePathForSettings.split(":");
+    String leafModuleName = segments[segments.length - 1];
+    projectGenerator.addDependencyToModule(projectPath, "application/app-service", ":" + leafModuleName);
 
     return generatedFiles;
   }
@@ -263,20 +266,17 @@ public class UnifiedAdapterGenerator {
         // If destination contains {name} placeholder, replace it
         if (dest.contains("{name}")) {
           fileName = dest.replace("{name}", config.getName());
-        } else if ("main".equals(templateType)) {
-          // Only prefix the main template file with the adapter name
+        } else {
+          // Prefix ALL templates (main and secondary) with the adapter name
           String baseName = dest.replace(".java", "");
           fileName = config.getName() + baseName + ".java";
-        } else {
-          // Secondary templates keep their original name
-          fileName = dest;
         }
       } else if ("main".equals(templateType)) {
         fileName = config.getName() + suffix + ".java";
       } else {
-        // For secondary templates, keep original name
-        String baseName = templateFile.getName().replace(".ftl", "");
-        fileName = baseName;
+        // For secondary templates without destination, prefix with adapter name
+        String baseName = templateFile.getName().replace(".ftl", "").replace(".java", "");
+        fileName = config.getName() + baseName + ".java";
       }
 
       // Resolve file path
@@ -339,11 +339,17 @@ public class UnifiedAdapterGenerator {
     // Get mapper template
     String templatePath = getMapperTemplatePath(config, direction);
 
+    // Add mapper-specific package to data
+    var mapperData = new HashMap<>(data);
+    String adapterPackage = (String) data.get("packageName");
+    mapperData.put("packageName", adapterPackage + ".mapper");
+    mapperData.put("entityPackage", adapterPackage + ".entity");
+
     // Process template
-    String content = templateRepository.processTemplate(templatePath, data);
+    String content = templateRepository.processTemplate(templatePath, mapperData);
 
     // Resolve file path with mapper subdirectory
-    String fileName = config.getEntityName() + "Mapper.java";
+    String fileName = config.getEntityName() + "EntityMapper.java";
     Path filePath = resolveAdapterFilePath(projectPath, config, direction, projectConfig, "mapper/" + fileName,
         structureMetadata);
 
@@ -367,11 +373,16 @@ public class UnifiedAdapterGenerator {
     // Get entity template
     String templatePath = getDataEntityTemplatePath(config, direction, metadata);
 
+    // Add entity-specific package to data
+    var entityData = new HashMap<>(data);
+    String adapterPackage = (String) data.get("packageName");
+    entityData.put("packageName", adapterPackage + ".entity");
+
     // Process template
-    String content = templateRepository.processTemplate(templatePath, data);
+    String content = templateRepository.processTemplate(templatePath, entityData);
 
     // Resolve file path with entity subdirectory
-    String fileName = config.getEntityName() + "Data.java";
+    String fileName = config.getEntityName() + "Entity.java";
     Path filePath = resolveAdapterFilePath(projectPath, config, direction, projectConfig, "entity/" + fileName,
         structureMetadata);
 
@@ -494,16 +505,22 @@ public class UnifiedAdapterGenerator {
       StructureMetadata structureMetadata) {
 
     Map<String, Object> data = prepareTemplateData(config, AdapterDirection.OUTPUT, projectConfig);
+    
+    // Add mapper-specific packages
+    String adapterPackage = config.getPackageName();
+    data.put("packageName", adapterPackage + ".mapper");
+    data.put("entityPackage", adapterPackage + ".entity");
+    
     String templatePath = getMapperTemplatePath(config, AdapterDirection.OUTPUT);
     String content = templateRepository.processTemplate(templatePath, data);
 
-    String mapperPackage = config.getPackageName() + ".mapper";
+    String mapperPackage = adapterPackage + ".mapper";
     String packagePath = mapperPackage.replace('.', '/');
     Path filePath = projectPath
         .resolve(modulePath)
         .resolve(structureMetadata.getSourceDirectory())
         .resolve(packagePath)
-        .resolve(config.getEntityName() + "Mapper.java");
+        .resolve(config.getEntityName() + "EntityMapper.java");
 
     return GeneratedFile.javaSource(filePath, content);
   }
@@ -519,17 +536,22 @@ public class UnifiedAdapterGenerator {
       StructureMetadata structureMetadata) {
 
     Map<String, Object> data = prepareTemplateData(config, direction, projectConfig);
+    
+    // Add entity-specific package
+    String adapterPackage = config.getPackageName();
+    data.put("packageName", adapterPackage + ".entity");
+    
     AdapterMetadata metadata = getAdapterMetadata(config, direction);
     String templatePath = getDataEntityTemplatePath(config, direction, metadata);
     String content = templateRepository.processTemplate(templatePath, data);
 
-    String entityPackage = config.getPackageName() + ".entity";
+    String entityPackage = adapterPackage + ".entity";
     String packagePath = entityPackage.replace('.', '/');
     Path filePath = projectPath
         .resolve(modulePath)
         .resolve(structureMetadata.getSourceDirectory())
         .resolve(packagePath)
-        .resolve(config.getEntityName() + "Data.java");
+        .resolve(config.getEntityName() + "Entity.java");
 
     return GeneratedFile.javaSource(filePath, content);
   }
@@ -597,26 +619,49 @@ public class UnifiedAdapterGenerator {
 
   /**
    * Gets the mapper template path.
+   * First tries the adapter-specific Mapper.java.ftl, then falls back to the generic one.
    */
   private String getMapperTemplatePath(AdapterConfig config, AdapterDirection direction) {
     String adapterDir = resolveAdapterDirectory(direction);
+
+    // Try adapter-specific Mapper.java.ftl first
+    String adapterSpecificPath = String.format(TemplateRepositoryPaths.Patterns.ADAPTER_TEMPLATE_DIR + "/%s",
+        config.getFramework(), config.getParadigm(), adapterDir, config.getType(), "Mapper.java.ftl");
+
+    if (templateRepository.templateExists(adapterSpecificPath)) {
+      return adapterSpecificPath;
+    }
+
+    // Fall back to generic Mapper.java.ftl
     return String.format(TemplateRepositoryPaths.Patterns.GENERIC_ADAPTER_TEMPLATE,
         config.getFramework(), config.getParadigm(), adapterDir, "Mapper.java.ftl");
   }
 
   /**
    * Gets the data entity template path.
+   * First tries the adapter-specific Entity.java.ftl, then falls back to the generic one.
    */
   private String getDataEntityTemplatePath(AdapterConfig config, AdapterDirection direction, AdapterMetadata metadata) {
-    var entityTemplate = metadata.getDiscoveredTemplates().stream()
-        .filter(t -> t.getName().contains("Entity"))
-        .findFirst()
-        .orElseThrow(() -> new IllegalStateException(
-            "No entity template found for adapter: " + config.getType()));
-
     String adapterDir = resolveAdapterDirectory(direction);
-    return String.format(TemplateRepositoryPaths.Patterns.ADAPTER_TEMPLATE_DIR + "/%s",
-        config.getFramework(), config.getParadigm(), adapterDir, config.getType(), entityTemplate.getName());
+
+    // Try adapter-specific Entity.java.ftl first
+    String adapterSpecificPath = String.format(TemplateRepositoryPaths.Patterns.ADAPTER_TEMPLATE_DIR + "/%s",
+        config.getFramework(), config.getParadigm(), adapterDir, config.getType(), "Entity.java.ftl");
+
+    if (templateRepository.templateExists(adapterSpecificPath)) {
+      return adapterSpecificPath;
+    }
+
+    // Fall back to generic Entity.java.ftl
+    String genericPath = String.format(TemplateRepositoryPaths.Patterns.GENERIC_ADAPTER_TEMPLATE,
+        config.getFramework(), config.getParadigm(), adapterDir, "Entity.java.ftl");
+
+    if (templateRepository.templateExists(genericPath)) {
+      return genericPath;
+    }
+
+    throw new IllegalStateException(
+        "No entity template found for adapter: " + config.getType());
   }
 
   /**
@@ -641,6 +686,8 @@ public class UnifiedAdapterGenerator {
 
   /**
    * Resolves the full file path for an adapter file.
+   * For multi-module architectures, uses the module path from structure.yml
+   * to prefix the filesystem path (e.g., "infrastructure/src/main/java/...").
    */
   private Path resolveAdapterFilePath(
       Path projectPath,
@@ -667,14 +714,28 @@ public class UnifiedAdapterGenerator {
           adapterDirName,
           context);
 
-      // Convert adapter path to Java-compatible directory (remove hyphens)
-      // e.g., "infrastructure/driven-adapters/account" → "infrastructure/drivenadapters/account"
+      // The adapter path from structure.yml (e.g., "infrastructure/driven-adapters/account-postgresql")
       String adapterPathStr = adapterBasePath.toString();
-      String javaCompatiblePath = structureMetadata.pathToPackageName(adapterPathStr)
+
+      // For multi-module architectures, check if the adapter path starts with a module path
+      // If so, use the module path as a filesystem prefix and strip it from the package path
+      String modulePath = ".";
+      String packageRelativePath = adapterPathStr;
+
+      com.pragma.archetype.domain.model.structure.ModuleMetadata owningModule = 
+          structureMetadata.findModuleForPath(adapterPathStr);
+      if (owningModule != null) {
+        modulePath = owningModule.getPath();
+        packageRelativePath = structureMetadata.stripModulePrefix(adapterPathStr, modulePath);
+      }
+
+      // Convert adapter path to Java-compatible directory (remove hyphens)
+      String javaCompatiblePath = structureMetadata.pathToPackageName(packageRelativePath)
           .replace('.', PATH_SEPARATOR.charAt(0));
 
       String basePackagePath = projectConfig.basePackage().replace('.', PATH_SEPARATOR.charAt(0));
       return projectPath
+          .resolve(modulePath)
           .resolve(sourceDir)
           .resolve(basePackagePath)
           .resolve(javaCompatiblePath)
@@ -727,8 +788,33 @@ public class UnifiedAdapterGenerator {
       // Package path variables for templates that reference config and domain packages
       data.put("configPackagePath",
           projectConfig.basePackage().replace('.', '/') + "/infrastructure/config");
-      data.put("useCasesPackage", projectConfig.basePackage() + ".domain.usecases");
-      data.put("portsPackage", projectConfig.basePackage() + ".domain.ports");
+      
+      // Use structure.yml module metadata for package resolution if available
+      try {
+        StructureMetadata sm = templateRepository.loadStructureMetadata(projectConfig.architecture());
+        ModuleMetadata entityMod = sm.getEntityModule();
+        ModuleMetadata useCaseMod = sm.getUseCaseModule();
+        if (entityMod != null) {
+          String modelPath = entityMod.getPackage("model");
+          data.put("modelPackage", projectConfig.basePackage() + "." + modelPath.replace("/", ".").replace("-", ""));
+        } else {
+          data.put("modelPackage", projectConfig.basePackage() + ".domain.model");
+        }
+        if (useCaseMod != null) {
+          String usecasesPath = useCaseMod.getPackage("usecases");
+          String portsPath = useCaseMod.getPackage("ports");
+          data.put("useCasesPackage", projectConfig.basePackage() + "." + usecasesPath.replace("/", ".").replace("-", ""));
+          data.put("portsPackage", projectConfig.basePackage() + "." + portsPath.replace("/", ".").replace("-", ""));
+        } else {
+          data.put("useCasesPackage", projectConfig.basePackage() + ".domain.usecases");
+          data.put("portsPackage", projectConfig.basePackage() + ".domain.ports");
+        }
+      } catch (Exception e) {
+        // Fallback to hardcoded defaults (single-module style)
+        data.put("modelPackage", projectConfig.basePackage() + ".domain.model");
+        data.put("useCasesPackage", projectConfig.basePackage() + ".domain.usecases");
+        data.put("portsPackage", projectConfig.basePackage() + ".domain.ports");
+      }
     }
 
     return data;

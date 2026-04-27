@@ -178,6 +178,9 @@ public class AdapterMetadataLoader {
       String basePath = metadataPath.substring(0, metadataPath.lastIndexOf("/metadata.yml"));
       validateReferencedTemplates(basePath, applicationPropertiesTemplate, configurationClasses);
 
+      // Extract needsMapper flag
+      boolean needsMapper = Boolean.TRUE.equals(data.get("needsMapper"));
+
       // Create and validate the metadata using builder
       AdapterMetadata metadata = AdapterMetadata.builder()
           .name(name)
@@ -197,6 +200,7 @@ public class AdapterMetadataLoader {
           .testDependencies(testDependencies)
           .legacyApplicationPropertiesTemplate(applicationPropertiesTemplate)
           .configurationClasses(configurationClasses)
+          .needsMapper(needsMapper)
           .build();
 
       ValidationResult validation = metadata.validate();

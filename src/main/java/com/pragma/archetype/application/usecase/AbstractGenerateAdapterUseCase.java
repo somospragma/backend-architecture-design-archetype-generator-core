@@ -317,9 +317,17 @@ public abstract class AbstractGenerateAdapterUseCase {
       UnifiedAdapterGenerator.AdapterConfig config,
       AdapterMetadata metadata,
       List<String> errors) {
-    boolean hasEntityTemplate = metadata.getDiscoveredTemplates().stream()
-        .anyMatch(t -> t.getName().contains("Entity"));
-    if (!hasEntityTemplate) {
+    // Entity.java.ftl is handled by a dedicated generator (not in discoveredTemplates),
+    // so we check if the template file exists directly via the template repository
+    String adapterDir = getDirection() == AdapterDirection.INPUT ? "entry-points" : "driven-adapters";
+    String entityTemplatePath = String.format("frameworks/%s/%s/adapters/%s/%s/Entity.java.ftl",
+        config.getFramework(), config.getParadigm(), adapterDir, config.getType());
+    String genericEntityTemplatePath = String.format("frameworks/%s/%s/adapters/%s/generic/Entity.java.ftl",
+        config.getFramework(), config.getParadigm(), adapterDir);
+
+    boolean entityTemplateExists = templateRepository.templateExists(entityTemplatePath)
+        || templateRepository.templateExists(genericEntityTemplatePath);
+    if (!entityTemplateExists) {
       errors.add("Entity template not found for adapter: " + config.getType());
     }
     // Mapper template is generic, always available

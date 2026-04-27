@@ -9,6 +9,7 @@ import java.util.Map;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
+import com.pragma.archetype.domain.model.structure.ModuleMetadata;
 import com.pragma.archetype.domain.model.structure.StaticFile;
 import com.pragma.archetype.domain.model.structure.StructureMetadata;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
@@ -637,7 +638,7 @@ public class ProjectGenerator {
 
         /**
          * Generates granular multi-module structure.
-         * Creates domain modules (model, ports, usecase) and app-service module.
+         * Reads module definitions from structure.yml and creates each module dynamically.
          * Infrastructure adapters are created dynamically when generating adapters.
          */
         private List<GeneratedFile> generateGranularStructure(
@@ -648,19 +649,85 @@ public class ProjectGenerator {
 
                 List<GeneratedFile> files = new ArrayList<>();
 
-                // Create organizing folders (not Gradle modules)
-                fileSystemPort.createDirectory(projectPath.resolve("domain"));
-                fileSystemPort.createDirectory(projectPath.resolve("application"));
-                fileSystemPort.createDirectory(projectPath.resolve("infrastructure/entry-points"));
-                fileSystemPort.createDirectory(projectPath.resolve("infrastructure/driven-adapters"));
+                // Load structure metadata
+                StructureMetadata structureMetadata = templateRepository
+                                .loadStructureMetadata(config.architecture());
 
-                // Generate domain modules
-                files.addAll(generateGranularDomainModelModule(projectPath, config, context, architecturePath));
-                files.addAll(generateGranularDomainPortsModule(projectPath, config, context, architecturePath));
-                files.addAll(generateGranularDomainUseCaseModule(projectPath, config, context, architecturePath));
+                // Create organizing folders from structure.yml
+                if (structureMetadata.packages() != null) {
+                        for (String pkg : structureMetadata.packages()) {
+                                fileSystemPort.createDirectory(projectPath.resolve(pkg));
+                        }
+                }
 
-                // Generate application module
-                files.addAll(generateGranularAppServiceModule(projectPath, config, context, architecturePath));
+                // Read folders from structure.yml if available
+                // For granular architectures, folders are defined separately from modules
+                try {
+                        // Create standard organizing folders
+                        fileSystemPort.createDirectory(projectPath.resolve("domain"));
+                        fileSystemPort.createDirectory(projectPath.resolve("application"));
+                        fileSystemPort.createDirectory(projectPath.resolve("infrastructure/entry-points"));
+                        fileSystemPort.createDirectory(projectPath.resolve("infrastructure/driven-adapters"));
+                } catch (Exception e) {
+                        // Folders may already exist
+                }
+
+                // Generate each module defined in structure.yml
+                if (structureMetadata.moduleMetadata() != null) {
+                        for (ModuleMetadata module : structureMetadata.moduleMetadata()) {
+                                files.addAll(generateModuleFromMetadata(
+                                        projectPath, config, context, architecturePath, module, structureMetadata));
+                        }
+                }
+
+                return files;
+        }
+
+        /**
+         * Generates a single module based on its ModuleMetadata from structure.yml.
+         */
+        private List<GeneratedFile> generateModuleFromMetadata(
+                        Path projectPath,
+                        ProjectConfig config,
+                        Map<String, Object> context,
+                        String architecturePath,
+                        ModuleMetadata module,
+                        StructureMetadata structureMetadata) {
+
+                List<GeneratedFile> files = new ArrayList<>();
+                Path modulePath = projectPath.resolve(module.getPath());
+
+                // Try to find a module-specific build.gradle.kts template
+                // Convention: modules/{module-name}/build.gradle.kts.ftl
+                // Fallback: modules/domain-{module-name}/build.gradle.kts.ftl (legacy)
+                String buildTemplatePath = null;
+                String[] templateCandidates = {
+                        architecturePath + "/modules/" + module.getName() + "/build.gradle.kts.ftl",
+                        architecturePath + "/modules/domain-" + module.getName() + "/build.gradle.kts.ftl"
+                };
+
+                for (String candidate : templateCandidates) {
+                        if (templateRepository.templateExists(candidate)) {
+                                buildTemplatePath = candidate;
+                                break;
+                        }
+                }
+
+                if (buildTemplatePath != null) {
+                        String buildGradleContent = templateRepository.processTemplate(buildTemplatePath, context);
+                        files.add(GeneratedFile.create(
+                                        modulePath.resolve("build.gradle.kts"),
+                                        buildGradleContent));
+                }
+
+                // Create source directory structure
+                String sourceDir = structureMetadata.getSourceDirectory();
+                Path srcPath = modulePath
+                                .resolve(sourceDir)
+                                .resolve(config.basePackage().replace('.', '/'));
+
+                fileSystemPort.createDirectory(srcPath);
+                files.add(GeneratedFile.create(srcPath.resolve(".gitkeep"), ""));
 
                 return files;
         }
@@ -740,7 +807,7 @@ public class ProjectGenerator {
                         String architecturePath) {
 
                 List<GeneratedFile> files = new ArrayList<>();
-                Path modulePath = projectPath.resolve("domain/usecase");
+                Path modulePath = projectPath.resolve("domain/usecases");
 
                 // Load structure metadata to get source directory
                 StructureMetadata structureMetadata = templateRepository
@@ -757,8 +824,7 @@ public class ProjectGenerator {
                 // Create package structure
                 Path srcPath = modulePath
                                 .resolve(structureMetadata.getSourceDirectory())
-                                .resolve(config.basePackage().replace('.', '/'))
-                                .resolve("domain/usecase");
+                                .resolve(config.basePackage().replace('.', '/'));
 
                 fileSystemPort.createDirectory(srcPath);
                 files.add(GeneratedFile.create(srcPath.resolve(".gitkeep"), ""));

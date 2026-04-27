@@ -278,12 +278,34 @@ public class TemplateAdapterDiscovery implements AdapterDiscoveryPort {
 
     logger.debug("Discovered {} template files in {}: {}", templateFileNames.size(), templateDir, templateFileNames);
 
+    // Templates that are handled by dedicated generators and should not be discovered as secondary
+    java.util.Set<String> dedicatedGeneratorTemplates = new java.util.HashSet<>(java.util.Set.of(
+        "Entity.java.ftl",
+        "Mapper.java.ftl",
+        "Test.java.ftl"
+    ));
+
+    // Also skip templates that are handled by configurationClasses in metadata
+    if (metadata != null && metadata.hasConfigurationClasses()) {
+      for (var configClass : metadata.getConfigurationClasses()) {
+        if (configClass.templatePath() != null) {
+          dedicatedGeneratorTemplates.add(configClass.templatePath());
+        }
+      }
+    }
+
     // Build TemplateFile list — only include Java templates
     List<TemplateFile> templates = new ArrayList<>();
     for (String templateName : templateFileNames) {
       // Skip non-Java templates (application-properties, config files, markdown, etc.)
       if (!templateName.endsWith(".java.ftl")) {
         logger.debug("Skipping non-Java template: {}", templateName);
+        continue;
+      }
+
+      // Skip templates handled by dedicated generators (generateDataEntity, generateMapper)
+      if (dedicatedGeneratorTemplates.contains(templateName)) {
+        logger.debug("Skipping template handled by dedicated generator: {}", templateName);
         continue;
       }
 

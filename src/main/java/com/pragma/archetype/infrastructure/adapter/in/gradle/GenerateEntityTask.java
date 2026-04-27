@@ -193,14 +193,32 @@ public class GenerateEntityTask extends DefaultTask {
       return packageName;
     }
 
-    // Otherwise, read from .cleanarch.yml
+    // Otherwise, read from .cleanarch.yml and structure.yml
     try {
       ConfigurationPort configurationPort = new YamlConfigurationAdapter();
       Path projectPath = getProject().getProjectDir().toPath();
       ProjectConfig projectConfig = configurationPort.readConfiguration(projectPath)
           .orElseThrow(() -> new IllegalArgumentException(".cleanarch.yml not found"));
 
-      // For hexagonal-single, entities go in domain.model
+      // Load StructureMetadata to get module-aware package resolution
+      TemplateRepository templateRepository = createTemplateRepository();
+      com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
+          .loadStructureMetadata(projectConfig.architecture());
+
+      // Use the entityModule's packageTypes to resolve the model package
+      try {
+        com.pragma.archetype.domain.model.structure.ModuleMetadata entityModule = structureMetadata.getEntityModule();
+        if (entityModule != null) {
+          String modelPackage = entityModule.getPackage("model");
+          // Convert filesystem path to package notation: "domain/model" → "domain.model", "model" → "model"
+          String packageSuffix = modelPackage.replace("/", ".").replace("-", "");
+          return projectConfig.basePackage() + "." + packageSuffix;
+        }
+      } catch (IllegalStateException | IllegalArgumentException e) {
+        // Fall through to default
+      }
+
+      // Fallback: entities go in domain.model
       return projectConfig.basePackage() + ".domain.model";
     } catch (Exception e) {
       throw new IllegalArgumentException(

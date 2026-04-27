@@ -57,9 +57,14 @@ public class UseCaseGenerator {
     // Process template with new structure
     String content = templateRepository.processTemplate(templatePath, data);
 
-    // Calculate file path: domain/ports/I{UseCaseName}UseCase.java
+    // Calculate file path using module metadata for multi-module support
     String packagePath = config.packageName().replace('.', '/');
+    
+    // Resolve module path prefix for multi-module architectures
+    String modulePath = resolveModulePath("ports");
+    
     Path filePath = projectPath
+        .resolve(modulePath)
         .resolve(structureMetadata.getSourceDirectory())
         .resolve(packagePath)
         .resolve("I" + config.name() + "UseCase.java");
@@ -68,10 +73,18 @@ public class UseCaseGenerator {
   }
 
   private GeneratedFile generateImplementation(Path projectPath, UseCaseConfig config, Map<String, Object> data) {
-    // Calculate implementation package: domain.ports → domain.usecases
+    // Calculate implementation package: replace ports with usecases in the package name
     String implPackage = config.packageName()
         .replace("domain.ports", "domain.usecases")
         .replace("domain.port.in", "domain.usecases");
+    
+    // For multi-module, the package won't contain "domain." prefix, so handle "ports" → "usecases" directly
+    if (!implPackage.equals(config.packageName())) {
+      // Already replaced successfully
+    } else {
+      // Multi-module case: package might be like "com.pragma.ports" → "com.pragma.usecases"
+      implPackage = config.packageName().replace(".ports", ".usecases");
+    }
 
     // Update data with implementation package
     data.put("implPackage", implPackage);
@@ -83,14 +96,36 @@ public class UseCaseGenerator {
     // Process template with new structure
     String content = templateRepository.processTemplate(templatePath, data);
 
-    // Calculate file path: domain/usecases/{UseCaseName}UseCase.java (no Impl suffix)
+    // Calculate file path using module metadata for multi-module support
     String packagePath = implPackage.replace('.', '/');
+    
+    // Resolve module path prefix for multi-module architectures
+    String modulePath = resolveModulePath("usecases");
+    
     Path filePath = projectPath
+        .resolve(modulePath)
         .resolve(structureMetadata.getSourceDirectory())
         .resolve(packagePath)
         .resolve(config.name() + "UseCase.java");
 
     return GeneratedFile.javaSource(filePath, content);
+  }
+
+  /**
+   * Resolves the module filesystem path for a given package type.
+   * For multi-module architectures, returns the module's path (e.g., "domain").
+   * For single-module architectures, returns "." (current directory).
+   */
+  private String resolveModulePath(String packageType) {
+    try {
+      com.pragma.archetype.domain.model.structure.ModuleMetadata useCaseModule = structureMetadata.getUseCaseModule();
+      if (useCaseModule != null && !".".equals(useCaseModule.getPath())) {
+        return useCaseModule.getPath();
+      }
+    } catch (IllegalStateException e) {
+      // useCaseModule not configured, fall back to root
+    }
+    return ".";
   }
 
   private Map<String, Object> prepareTemplateData(UseCaseConfig config) {
