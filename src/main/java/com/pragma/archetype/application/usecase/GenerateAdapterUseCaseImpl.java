@@ -8,6 +8,7 @@ import com.pragma.archetype.application.port.out.AdapterDiscoveryPort;
 import com.pragma.archetype.domain.model.adapter.AdapterDirection;
 import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.port.in.GenerateAdapterUseCase;
+import com.pragma.archetype.domain.port.out.BackupPort;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
@@ -37,9 +38,10 @@ public class GenerateAdapterUseCaseImpl extends AbstractGenerateAdapterUseCase
       FileSystemPort fileSystemPort,
       AdapterDiscoveryPort adapterDiscovery,
       TemplateRepository templateRepository,
-      YamlConfigurationAdapter yamlConfigurationAdapter) {
+      YamlConfigurationAdapter yamlConfigurationAdapter,
+      BackupPort backupPort) {
     super(generator, configurationPort, fileSystemPort, adapterDiscovery, templateRepository,
-        yamlConfigurationAdapter);
+        yamlConfigurationAdapter, backupPort);
   }
 
   @Override

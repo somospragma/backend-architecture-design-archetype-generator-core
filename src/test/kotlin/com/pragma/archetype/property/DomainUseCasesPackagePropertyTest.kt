@@ -100,12 +100,14 @@ class DomainUseCasesPackagePropertyTest : PropertyTestBase() {
             }
         }
 
-        "Property 15.3: useCaseModule should be 'domain' for all architectures" {
+        "Property 15.3: useCaseModule should reference domain layer for all architectures" {
             checkAll(Arb.enum<ArchType>()) { archType ->
                 val structure = loadStructure(archType)
                 val useCaseModule = structure["useCaseModule"] as? String
                 if (useCaseModule != null) {
-                    useCaseModule shouldBe "domain"
+                    // hexagonal-multi-granular uses separate "usecases" module (still under domain/ folder)
+                    val validValues = listOf("domain", "usecases")
+                    (useCaseModule in validValues) shouldBe true
                 }
             }
         }
@@ -127,12 +129,14 @@ class DomainUseCasesPackagePropertyTest : PropertyTestBase() {
             }
         }
 
-        "Property 15.5: entityModule should be 'domain' for all architectures" {
+        "Property 15.5: entityModule should reference domain layer for all architectures" {
             checkAll(Arb.enum<ArchType>()) { archType ->
                 val structure = loadStructure(archType)
                 val entityModule = structure["entityModule"] as? String
                 if (entityModule != null) {
-                    entityModule shouldBe "domain"
+                    // hexagonal-multi-granular uses separate "model" module (still under domain/ folder)
+                    val validValues = listOf("domain", "model")
+                    (entityModule in validValues) shouldBe true
                 }
             }
         }

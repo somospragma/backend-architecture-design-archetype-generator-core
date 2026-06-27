@@ -157,8 +157,7 @@ class StructureMetadataTest {
         }
 
         @Test
-        @SuppressWarnings("deprecation")
-        void shouldGetModulesForBackwardCompatibility() {
+        void shouldGetModuleMetadataNames() {
                 var modules = List.of(
                                 ModuleMetadata.builder().name("domain").path("domain").build(),
                                 ModuleMetadata.builder().name("application").path("application").build());
@@ -168,9 +167,9 @@ class StructureMetadataTest {
                                 Map.of("driven", "path/{name}"),
                                 modules);
 
-                var moduleNames = metadata.getModules();
-                assertEquals(2, moduleNames.size());
-                assertTrue(moduleNames.contains("domain"));
-                assertTrue(moduleNames.contains("application"));
+                var moduleMetadata = metadata.getModuleMetadata();
+                assertEquals(2, moduleMetadata.size());
+                assertEquals("domain", moduleMetadata.get(0).getName());
+                assertEquals("application", moduleMetadata.get(1).getName());
         }
 }

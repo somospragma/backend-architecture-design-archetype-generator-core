@@ -14,11 +14,13 @@ import com.pragma.archetype.application.generator.UnifiedAdapterGenerator;
 import com.pragma.archetype.application.port.out.AdapterDiscoveryPort;
 import com.pragma.archetype.domain.model.adapter.AdapterDirection;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
+import com.pragma.archetype.domain.model.backup.BackupManifest;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.structure.StructureMetadata;
 import com.pragma.archetype.domain.model.template.TemplateRepositoryPaths;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateInputAdapterUseCase.GenerationResult;
+import com.pragma.archetype.domain.port.out.BackupPort;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
@@ -87,6 +89,7 @@ public abstract class AbstractGenerateAdapterUseCase {
   protected final TemplateRepository templateRepository;
   protected final YamlConfigurationAdapter yamlConfigurationAdapter;
   protected final AdapterConfigurationService adapterConfigurationService;
+  protected final BackupPort backupPort;
 
   protected AbstractGenerateAdapterUseCase(
       UnifiedAdapterGenerator generator,
@@ -94,13 +97,15 @@ public abstract class AbstractGenerateAdapterUseCase {
       FileSystemPort fileSystemPort,
       AdapterDiscoveryPort adapterDiscovery,
       TemplateRepository templateRepository,
-      YamlConfigurationAdapter yamlConfigurationAdapter) {
+      YamlConfigurationAdapter yamlConfigurationAdapter,
+      BackupPort backupPort) {
     this.generator = generator;
     this.configurationPort = configurationPort;
     this.fileSystemPort = fileSystemPort;
     this.adapterDiscovery = adapterDiscovery;
     this.templateRepository = templateRepository;
     this.yamlConfigurationAdapter = yamlConfigurationAdapter;
+    this.backupPort = backupPort;
     this.adapterConfigurationService = new AdapterConfigurationService(
         configurationPort, fileSystemPort, templateRepository, yamlConfigurationAdapter);
   }
@@ -120,6 +125,7 @@ public abstract class AbstractGenerateAdapterUseCase {
   public GenerationResult execute(Path projectPath, UnifiedAdapterGenerator.AdapterConfig config) {
     logger.info("Starting {} adapter generation: {}", getDirection(), config.getName());
 
+    BackupManifest backup = null;
     try {
       // STEP 1: Validate configuration (basic validation)
       ValidationResult basicValidation = validateBasicConfiguration(config);
@@ -148,8 +154,7 @@ public abstract class AbstractGenerateAdapterUseCase {
       List<Path> filesToBackup = identifyFilesToBackup(projectPath, config);
 
       // STEP 6: Create backup
-      // TODO: implement BackupService
-      logger.info("Files to backup: {}", filesToBackup.size());
+      backup = backupPort.createBackup(projectPath, filesToBackup);
 
       // STEP 7: Generate adapter files
       List<GeneratedFile> generatedFiles = generator.generate(
@@ -158,6 +163,8 @@ public abstract class AbstractGenerateAdapterUseCase {
       // STEP 8: Write files to disk
       for (GeneratedFile file : generatedFiles) {
         fileSystemPort.writeFile(file);
+        // Track newly created files for potential rollback
+        backup = backupPort.trackCreatedFile(backup, file.path());
       }
 
       // STEP 9: Load adapter metadata
@@ -188,14 +195,24 @@ public abstract class AbstractGenerateAdapterUseCase {
       // STEP 16: Check dependency conflicts (informational only)
       checkDependencyConflicts(config);
 
-      // TODO: Delete backup on success
+      // STEP 17: Confirm backup (delete backup files, generation was successful)
+      backupPort.confirmBackup(backup);
 
       logger.info("Successfully generated {} adapter: {}", getDirection(), config.getName());
       return GenerationResult.success(generatedFiles);
 
     } catch (Exception e) {
       logger.error("Failed to generate {} adapter: {}", getDirection(), config.getName(), e);
-      // TODO: Restore backup on failure
+      // Restore backup on failure — rollback all changes
+      try {
+        if (backup != null) {
+          backupPort.restoreBackup(backup);
+          logger.info("Rollback completed successfully for adapter: {}", config.getName());
+        }
+      } catch (Exception rollbackError) {
+        logger.error("Rollback failed! Project may be in inconsistent state. Backup ID: {}",
+            backup != null ? backup.id() : "unknown", rollbackError);
+      }
       return GenerationResult.failure(List.of(
           "Failed to generate adapter: " + e.getMessage()));
     }

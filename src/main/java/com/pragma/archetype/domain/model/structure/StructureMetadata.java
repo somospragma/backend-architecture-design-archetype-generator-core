@@ -122,21 +122,6 @@ public record StructureMetadata(
   }
 
   /**
-   * Gets the list of module names for backward compatibility.
-   * 
-   * @deprecated Use getModuleMetadata() instead
-   */
-  @Deprecated(since = "1.2.0", forRemoval = true)
-  public java.util.List<String> getModules() {
-    if (moduleMetadata == null) {
-      return Collections.emptyList();
-    }
-    return moduleMetadata.stream()
-        .map(m -> m.getName())
-        .toList();
-  }
-
-  /**
    * Gets adapter base directory without {name} placeholder.
    * Example: "infrastructure/entry-points/{name}" → "infrastructure/entry-points"
    *

@@ -190,36 +190,6 @@ public class TemplateAdapterDiscovery implements AdapterDiscoveryPort {
     }
   }
 
-  // Legacy methods (deprecated)
-
-  @Override
-  @Deprecated
-  public List<AdapterMetadata> discoverAdapters(AdapterDirection direction) {
-    // Default to spring/reactive for backward compatibility
-    return discoverAdapters(direction, "spring", "reactive");
-  }
-
-  @Override
-  @Deprecated
-  public Optional<AdapterMetadata> findAdapter(String adapterName, AdapterDirection direction) {
-    // Default to spring/reactive for backward compatibility
-    return findAdapter(adapterName, direction, "spring", "reactive");
-  }
-
-  @Override
-  @Deprecated
-  public boolean adapterExists(String adapterName, AdapterDirection direction) {
-    // Default to spring/reactive for backward compatibility
-    return adapterExists(adapterName, direction, "spring", "reactive");
-  }
-
-  @Override
-  @Deprecated
-  public List<String> listAdapterNames(AdapterDirection direction) {
-    // Default to spring/reactive for backward compatibility
-    return listAdapterNames(direction, "spring", "reactive");
-  }
-
   // Private helper methods
 
   private String buildIndexPath(String framework, String paradigm, AdapterDirection direction) {

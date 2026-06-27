@@ -18,9 +18,6 @@ import java.io.StringWriter
  * - Not use Lombok @Data/@Getter/@Setter annotations on DTOs
  * - Not use the suffix DTO
  *
- * Note: The Controller.java.ftl uses FreeMarker raw string escaping,
- * so the output contains literal placeholder patterns.
- *
  * **Validates: Requirements 4.1, 4.2, 4.4, 4.5**
  */
 class DtosAsRecordsPropertyTest : PropertyTestBase() {
@@ -40,7 +37,9 @@ class DtosAsRecordsPropertyTest : PropertyTestBase() {
         val dataModel = mapOf(
             "controllerName" to controllerName,
             "packageName" to packageName,
-            "basePackage" to basePackage
+            "basePackage" to basePackage,
+            "portsPackage" to "$basePackage.domain.ports",
+            "useCaseName" to ""
         )
         val writer = StringWriter()
         template.process(dataModel, writer)
@@ -55,7 +54,7 @@ class DtosAsRecordsPropertyTest : PropertyTestBase() {
                 DomainModelGenerators.packageName()
             ) { controllerName, packageName, basePackage ->
                 val output = processControllerTemplate(controllerName, packageName, basePackage)
-                output shouldContain "record Create\${controllerName}Request("
+                output shouldContain "record Create${controllerName}Request("
             }
         }
 
@@ -66,7 +65,7 @@ class DtosAsRecordsPropertyTest : PropertyTestBase() {
                 DomainModelGenerators.packageName()
             ) { controllerName, packageName, basePackage ->
                 val output = processControllerTemplate(controllerName, packageName, basePackage)
-                output shouldContain "record \${controllerName}Response("
+                output shouldContain "record ${controllerName}Response("
             }
         }
 
@@ -109,8 +108,8 @@ class DtosAsRecordsPropertyTest : PropertyTestBase() {
             ) { controllerName, packageName, basePackage ->
                 val output = processControllerTemplate(controllerName, packageName, basePackage)
                 // Should not define DTOs as regular classes
-                output shouldNotContain "class Create\${controllerName}Request"
-                output shouldNotContain "class \${controllerName}Response"
+                output shouldNotContain "class Create${controllerName}Request"
+                output shouldNotContain "class ${controllerName}Response"
             }
         }
     }

@@ -796,21 +796,25 @@ public class UnifiedAdapterGenerator {
         ModuleMetadata useCaseMod = sm.getUseCaseModule();
         if (entityMod != null) {
           String modelPath = entityMod.getPackage("model");
-          data.put("modelPackage", projectConfig.basePackage() + "." + modelPath.replace("/", ".").replace("-", ""));
+          String modelSuffix = modelPath.replace("/", ".").replace("-", "");
+          data.put("modelPackage", modelSuffix.isBlank() ? projectConfig.basePackage() : projectConfig.basePackage() + "." + modelSuffix);
         } else {
           data.put("modelPackage", projectConfig.basePackage() + ".domain.model");
         }
         if (useCaseMod != null) {
           String usecasesPath = useCaseMod.getPackage("usecases");
           String portsPath = useCaseMod.getPackage("ports");
-          data.put("useCasesPackage", projectConfig.basePackage() + "." + usecasesPath.replace("/", ".").replace("-", ""));
-          data.put("portsPackage", projectConfig.basePackage() + "." + portsPath.replace("/", ".").replace("-", ""));
+          String ucSuffix = usecasesPath.replace("/", ".").replace("-", "");
+          String pSuffix = portsPath.replace("/", ".").replace("-", "");
+          data.put("useCasesPackage", ucSuffix.isBlank() ? projectConfig.basePackage() : projectConfig.basePackage() + "." + ucSuffix);
+          data.put("portsPackage", pSuffix.isBlank() ? projectConfig.basePackage() : projectConfig.basePackage() + "." + pSuffix);
         } else {
           data.put("useCasesPackage", projectConfig.basePackage() + ".domain.usecases");
           data.put("portsPackage", projectConfig.basePackage() + ".domain.ports");
         }
       } catch (Exception e) {
         // Fallback to hardcoded defaults (single-module style)
+        System.err.println("WARNING: Failed to resolve packages from structure.yml: " + e.getMessage());
         data.put("modelPackage", projectConfig.basePackage() + ".domain.model");
         data.put("useCasesPackage", projectConfig.basePackage() + ".domain.usecases");
         data.put("portsPackage", projectConfig.basePackage() + ".domain.ports");

@@ -357,10 +357,41 @@ public class YamlConfigurationAdapter implements ConfigurationPort {
     @SuppressWarnings("unchecked")
     Map<String, Object> architecture = (Map<String, Object>) data.get("architecture");
 
-    String architectureType = (String) architecture.get("type");
-    String paradigm = (String) architecture.get("paradigm");
-    String framework = (String) architecture.get("framework");
-    Boolean adaptersAsModules = (Boolean) architecture.get("adaptersAsModules");
+    ArchitectureType architectureTypeEnum = null;
+    Paradigm paradigmEnum = null;
+    Framework frameworkEnum = null;
+    Boolean adaptersAsModules = null;
+
+    if (architecture != null) {
+      String architectureType = (String) architecture.get("type");
+      String paradigm = (String) architecture.get("paradigm");
+      String framework = (String) architecture.get("framework");
+      adaptersAsModules = (Boolean) architecture.get("adaptersAsModules");
+
+      if (architectureType != null && !architectureType.isBlank()) {
+        try {
+          architectureTypeEnum = ArchitectureType.valueOf(architectureType.toUpperCase().replace('-', '_'));
+        } catch (IllegalArgumentException e) {
+          // Invalid architecture type — will be caught by validator
+        }
+      }
+
+      if (paradigm != null && !paradigm.isBlank()) {
+        try {
+          paradigmEnum = Paradigm.valueOf(paradigm.toUpperCase());
+        } catch (IllegalArgumentException e) {
+          // Invalid paradigm — will be caught by validator
+        }
+      }
+
+      if (framework != null && !framework.isBlank()) {
+        try {
+          frameworkEnum = Framework.valueOf(framework.toUpperCase());
+        } catch (IllegalArgumentException e) {
+          // Invalid framework — will be caught by validator
+        }
+      }
+    }
 
     // Parse dependency overrides if present
     @SuppressWarnings("unchecked")
@@ -369,14 +400,23 @@ public class YamlConfigurationAdapter implements ConfigurationPort {
       dependencyOverrides = Map.of();
     }
 
+    LocalDateTime createdAt = null;
+    if (createdAtStr != null && !createdAtStr.isBlank()) {
+      try {
+        createdAt = LocalDateTime.parse(createdAtStr, DATE_FORMATTER);
+      } catch (Exception e) {
+        // Invalid date format — non-critical, leave as null
+      }
+    }
+
     return ProjectConfig.builder()
         .name(name)
         .basePackage(basePackage)
-        .architecture(ArchitectureType.valueOf(architectureType.toUpperCase().replace('-', '_')))
-        .paradigm(Paradigm.valueOf(paradigm.toUpperCase()))
-        .framework(Framework.valueOf(framework.toUpperCase()))
+        .architecture(architectureTypeEnum)
+        .paradigm(paradigmEnum)
+        .framework(frameworkEnum)
         .pluginVersion(pluginVersion)
-        .createdAt(LocalDateTime.parse(createdAtStr, DATE_FORMATTER))
+        .createdAt(createdAt)
         .adaptersAsModules(adaptersAsModules != null && adaptersAsModules)
         .dependencyOverrides(dependencyOverrides)
         .build();

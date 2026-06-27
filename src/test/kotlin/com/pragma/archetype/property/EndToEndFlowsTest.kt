@@ -39,7 +39,7 @@ class EndToEndFlowsTest : StringSpec() {
      */
     private val drivenAdaptersByParadigm = mapOf(
         "imperative" to listOf("mongodb", "postgresql", "redis", "http-client", "dynamodb", "sqs-producer"),
-        "reactive" to listOf("mongodb", "postgresql", "redis", "rest-client", "dynamodb", "sqs-producer")
+        "reactive" to listOf("mongodb", "postgresql", "redis", "http-client", "dynamodb", "sqs-producer")
     )
 
     /**
@@ -237,7 +237,9 @@ class EndToEndFlowsTest : StringSpec() {
                 val structure = loadStructureYaml(arch.templateDir)
                 val entityModule = structure["entityModule"] as? String
                 if (entityModule != null) {
-                    entityModule shouldBe "domain"
+                    // hexagonal-multi-granular uses "model" module for entities
+                    val expected = if (arch.name == "hexagonal-multi-granular") "model" else "domain"
+                    entityModule shouldBe expected
                 }
             }
         }
@@ -247,7 +249,9 @@ class EndToEndFlowsTest : StringSpec() {
                 val structure = loadStructureYaml(arch.templateDir)
                 val useCaseModule = structure["useCaseModule"] as? String
                 if (useCaseModule != null) {
-                    useCaseModule shouldBe "domain"
+                    // hexagonal-multi-granular uses "usecases" module
+                    val expected = if (arch.name == "hexagonal-multi-granular") "usecases" else "domain"
+                    useCaseModule shouldBe expected
                 }
             }
         }

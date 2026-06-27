@@ -197,12 +197,9 @@ public class AdapterMetadata {
   List<String> dependencies = Collections.emptyList();
 
   /**
-   * List of runtime dependencies required by this adapter.
-   * 
-   * @deprecated Use String dependencies for new code. Kept for backward
-   *             compatibility.
+   * List of runtime dependencies required by this adapter as Dependency records.
+   * Includes group, artifact, version, and scope information.
    */
-  @Deprecated
   @Builder.Default
   List<Dependency> runtimeDependencies = Collections.emptyList();
 
@@ -234,11 +231,9 @@ public class AdapterMetadata {
   String buildConfiguration;
 
   /**
-   * Application properties template path.
-   * 
-   * @deprecated Kept for backward compatibility.
+   * Fallback application properties template path.
+   * Used when applicationPropertiesTemplate is not set directly.
    */
-  @Deprecated
   String legacyApplicationPropertiesTemplate;
 
   /**
@@ -347,23 +342,10 @@ public class AdapterMetadata {
   }
 
   /**
-   * Gets all dependencies (runtime + test).
-   * 
-   * @deprecated Kept for backward compatibility.
-   */
-  @Deprecated
-  public List<Dependency> getAllDependencies() {
-    return java.util.stream.Stream.concat(
-        runtimeDependencies.stream(),
-        testDependencies.stream()).toList();
-  }
-
-  /**
    * Validates that the metadata is complete and valid.
-   * 
-   * @deprecated Kept for backward compatibility.
+   *
+   * @return ValidationResult with success or failure
    */
-  @Deprecated
   public com.pragma.archetype.domain.model.validation.ValidationResult validate() {
     if (name == null || name.isBlank()) {
       return com.pragma.archetype.domain.model.validation.ValidationResult.failure("Adapter name cannot be empty");

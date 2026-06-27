@@ -191,7 +191,8 @@ public class GenerateInputAdapterTask extends BaseCleanArchTask {
           fileSystemPort,
           adapterDiscovery,
           templateRepository,
-          yamlConfigurationAdapter);
+          yamlConfigurationAdapter,
+          new com.pragma.archetype.infrastructure.adapter.out.filesystem.FileSystemBackupAdapter());
 
       // 9. Execute use case
       GenerationResult result = useCase.execute(projectPath, config);

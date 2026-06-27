@@ -78,20 +78,6 @@ public interface TemplateRepository {
   StructureMetadata loadStructureMetadata(ArchitectureType architecture);
 
   /**
-   * Loads adapter metadata for a given adapter name (legacy method).
-   * This method uses the legacy flat structure:
-   * adapters/{adapterName}/metadata.yml
-   *
-   * @param adapterName the name of the adapter
-   * @return adapter metadata for the adapter
-   * @throws TemplateNotFoundException if metadata.yml is not found
-   * @deprecated Use {@link #loadAdapterMetadata(String, String, String, String)}
-   *             instead
-   */
-  @Deprecated
-  com.pragma.archetype.domain.model.adapter.AdapterMetadata loadAdapterMetadata(String adapterName);
-
-  /**
    * Loads adapter metadata for a given adapter using framework-aware structure.
    * Path:
    * frameworks/{framework}/{paradigm}/adapters/{adapterType}/{adapterName}/metadata.yml

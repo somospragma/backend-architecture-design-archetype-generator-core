@@ -219,6 +219,9 @@ public class GenerateUseCaseTask extends DefaultTask {
           String portsPackage = useCaseModule.getPackage("ports");
           // Convert filesystem path to package notation: "domain/ports" → "domain.ports", "ports" → "ports"
           String packageSuffix = portsPackage.replace("/", ".").replace("-", "");
+          if (packageSuffix.isBlank()) {
+            return projectConfig.basePackage();
+          }
           return projectConfig.basePackage() + "." + packageSuffix;
         }
       } catch (IllegalStateException | IllegalArgumentException e) {

@@ -17,9 +17,6 @@ import java.io.StringWriter
  * - Include @Operation annotations on each endpoint method
  * - Include @ApiResponse annotations documenting success and error responses
  *
- * Note: The Controller.java.ftl uses FreeMarker raw string escaping,
- * so the output contains literal placeholder patterns.
- *
  * **Validates: Requirements 25.1, 25.2, 25.3**
  */
 class OpenApiAnnotationsPropertyTest : PropertyTestBase() {
@@ -39,7 +36,9 @@ class OpenApiAnnotationsPropertyTest : PropertyTestBase() {
         val dataModel = mapOf(
             "controllerName" to controllerName,
             "packageName" to packageName,
-            "basePackage" to basePackage
+            "basePackage" to basePackage,
+            "portsPackage" to "$basePackage.domain.ports",
+            "useCaseName" to ""
         )
         val writer = StringWriter()
         template.process(dataModel, writer)
@@ -83,14 +82,14 @@ class OpenApiAnnotationsPropertyTest : PropertyTestBase() {
             }
         }
 
-        "Property 18.4: @Tag annotation should reference the controller name placeholder" {
+        "Property 18.4: @Tag annotation should reference the controller name" {
             checkAll(
                 DomainModelGenerators.className(),
                 DomainModelGenerators.packageName(),
                 DomainModelGenerators.packageName()
             ) { controllerName, packageName, basePackage ->
                 val output = processControllerTemplate(controllerName, packageName, basePackage)
-                output shouldContain "@Tag(name = \"\${controllerName}\""
+                output shouldContain "@Tag(name = \"${controllerName}\""
             }
         }
 

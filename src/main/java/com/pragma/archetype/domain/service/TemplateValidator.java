@@ -79,6 +79,21 @@ public class TemplateValidator {
    * @return ValidationResult with success status and any error messages
    */
   public ValidationResult validateAdapterTemplates(String adapterName) {
+    // Default to spring/reactive/driven-adapters for backward compatibility
+    return validateAdapterTemplates(adapterName, "spring", "reactive", "driven-adapters");
+  }
+
+  /**
+   * Validates all templates for an adapter with full framework context.
+   *
+   * @param adapterName the adapter name to validate
+   * @param framework   the framework (e.g., "spring")
+   * @param paradigm    the paradigm (e.g., "reactive", "imperative")
+   * @param adapterType the adapter type (e.g., "driven-adapters", "entry-points")
+   * @return ValidationResult with success status and any error messages
+   */
+  public ValidationResult validateAdapterTemplates(String adapterName, String framework,
+      String paradigm, String adapterType) {
     Objects.requireNonNull(adapterName, "Adapter name cannot be null");
 
     List<String> errors = new ArrayList<>();
@@ -86,7 +101,7 @@ public class TemplateValidator {
 
     try {
       // 1. Load and validate adapter metadata
-      AdapterMetadata metadata = templateRepository.loadAdapterMetadata(adapterName);
+      AdapterMetadata metadata = templateRepository.loadAdapterMetadata(adapterName, framework, paradigm, adapterType);
       ValidationResult metadataValidation = metadata.validate();
       if (!metadataValidation.valid()) {
         errors.add("Adapter metadata validation failed for " + adapterName);

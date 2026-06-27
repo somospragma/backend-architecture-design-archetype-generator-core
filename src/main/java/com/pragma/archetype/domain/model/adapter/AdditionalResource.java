@@ -52,20 +52,6 @@ public record AdditionalResource(
   }
 
   /**
-   * Resolves the full destination path for this resource using default resources
-   * path.
-   * 
-   * @deprecated Use resolveDestination(String, String) with explicit
-   *             resourcesPath
-   * @param adapterName The adapter name (for variable substitution)
-   * @return The resolved destination path relative to project root
-   */
-  @Deprecated
-  public String resolveDestination(String adapterName) {
-    return resolveDestination(adapterName, "src/main/resources");
-  }
-
-  /**
    * Checks if this resource should be processed as a FreeMarker template.
    */
   public boolean shouldProcessAsTemplate() {

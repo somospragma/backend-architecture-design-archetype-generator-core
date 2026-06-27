@@ -30,9 +30,8 @@ class AdapterMetadataLoaderIntegrationTest {
 
   @BeforeEach
   void setUp() throws IOException {
-    // Create adapter directory structure
-    Path adaptersDir = tempDir.resolve("adapters");
-    Path mongoAdapterDir = adaptersDir.resolve("mongodb-adapter");
+    // Create framework-aware adapter directory structure
+    Path mongoAdapterDir = tempDir.resolve("frameworks/spring/reactive/adapters/driven-adapters/mongodb-adapter");
     Files.createDirectories(mongoAdapterDir);
 
     // Create metadata.yml with all new fields
@@ -71,7 +70,7 @@ class AdapterMetadataLoaderIntegrationTest {
   @DisplayName("Should load adapter metadata through FreemarkerTemplateRepository")
   void shouldLoadAdapterMetadataThroughRepository() {
     // When
-    AdapterMetadata metadata = repository.loadAdapterMetadata("mongodb-adapter");
+    AdapterMetadata metadata = repository.loadAdapterMetadata("mongodb-adapter", "spring", "reactive", "driven-adapters");
 
     // Then
     assertNotNull(metadata);
@@ -123,7 +122,7 @@ class AdapterMetadataLoaderIntegrationTest {
 
     // When/Then
     assertThrows(Exception.class, () -> {
-      repository.loadAdapterMetadata("invalid-adapter");
+      repository.loadAdapterMetadata("invalid-adapter", "spring", "reactive", "driven-adapters");
     });
   }
 }

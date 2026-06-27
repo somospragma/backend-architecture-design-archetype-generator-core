@@ -69,10 +69,10 @@ class AdapterMetadataLoaderTest {
             artifact: spring-boot-starter-data-mongodb-reactive
             version: 3.2.0
         """;
-    contentProvider.addTemplate("adapters/mongodb-adapter/metadata.yml", yaml);
+    contentProvider.addTemplate("frameworks/spring/reactive/adapters/driven-adapters/mongodb-adapter/metadata.yml", yaml);
 
     // When
-    AdapterMetadata metadata = loader.loadAdapterMetadata("mongodb-adapter");
+    AdapterMetadata metadata = loader.loadAdapterMetadata("mongodb-adapter", "spring", "reactive", "driven-adapters");
 
     // Then
     assertNotNull(metadata);
@@ -106,10 +106,10 @@ class AdapterMetadataLoaderTest {
             version: 4.11.0
             scope: test
         """;
-    contentProvider.addTemplate("adapters/mongodb-adapter/metadata.yml", yaml);
+    contentProvider.addTemplate("frameworks/spring/reactive/adapters/driven-adapters/mongodb-adapter/metadata.yml", yaml);
 
     // When
-    AdapterMetadata metadata = loader.loadAdapterMetadata("mongodb-adapter");
+    AdapterMetadata metadata = loader.loadAdapterMetadata("mongodb-adapter", "spring", "reactive", "driven-adapters");
 
     // Then
     assertNotNull(metadata);
@@ -137,12 +137,12 @@ class AdapterMetadataLoaderTest {
             version: 3.2.0
         applicationPropertiesTemplate: application-properties.yml.ftl
         """;
-    contentProvider.addTemplate("adapters/mongodb-adapter/metadata.yml", yaml);
-    contentProvider.addTemplate("adapters/mongodb-adapter/application-properties.yml.ftl",
+    contentProvider.addTemplate("frameworks/spring/reactive/adapters/driven-adapters/mongodb-adapter/metadata.yml", yaml);
+    contentProvider.addTemplate("frameworks/spring/reactive/adapters/driven-adapters/mongodb-adapter/application-properties.yml.ftl",
         "spring:\n  data:\n    mongodb:\n      uri: mongodb://localhost:27017");
 
     // When
-    AdapterMetadata metadata = loader.loadAdapterMetadata("mongodb-adapter");
+    AdapterMetadata metadata = loader.loadAdapterMetadata("mongodb-adapter", "spring", "reactive", "driven-adapters");
 
     // Then
     assertNotNull(metadata);
@@ -167,11 +167,11 @@ class AdapterMetadataLoaderTest {
             packagePath: config
             templatePath: MongoConfig.java.ftl
         """;
-    contentProvider.addTemplate("adapters/mongodb-adapter/metadata.yml", yaml);
-    contentProvider.addTemplate("adapters/mongodb-adapter/MongoConfig.java.ftl", "public class MongoConfig {}");
+    contentProvider.addTemplate("frameworks/spring/reactive/adapters/driven-adapters/mongodb-adapter/metadata.yml", yaml);
+    contentProvider.addTemplate("frameworks/spring/reactive/adapters/driven-adapters/mongodb-adapter/MongoConfig.java.ftl", "public class MongoConfig {}");
 
     // When
-    AdapterMetadata metadata = loader.loadAdapterMetadata("mongodb-adapter");
+    AdapterMetadata metadata = loader.loadAdapterMetadata("mongodb-adapter", "spring", "reactive", "driven-adapters");
 
     // Then
     assertNotNull(metadata);
@@ -209,15 +209,15 @@ class AdapterMetadataLoaderTest {
             packagePath: health
             templatePath: MongoHealthIndicator.java.ftl
         """;
-    contentProvider.addTemplate("adapters/mongodb-adapter/metadata.yml", yaml);
-    contentProvider.addTemplate("adapters/mongodb-adapter/application-properties.yml.ftl",
+    contentProvider.addTemplate("frameworks/spring/reactive/adapters/driven-adapters/mongodb-adapter/metadata.yml", yaml);
+    contentProvider.addTemplate("frameworks/spring/reactive/adapters/driven-adapters/mongodb-adapter/application-properties.yml.ftl",
         "spring:\n  data:\n    mongodb:\n      uri: mongodb://localhost:27017");
-    contentProvider.addTemplate("adapters/mongodb-adapter/MongoConfig.java.ftl", "public class MongoConfig {}");
-    contentProvider.addTemplate("adapters/mongodb-adapter/MongoHealthIndicator.java.ftl",
+    contentProvider.addTemplate("frameworks/spring/reactive/adapters/driven-adapters/mongodb-adapter/MongoConfig.java.ftl", "public class MongoConfig {}");
+    contentProvider.addTemplate("frameworks/spring/reactive/adapters/driven-adapters/mongodb-adapter/MongoHealthIndicator.java.ftl",
         "public class MongoHealthIndicator {}");
 
     // When
-    AdapterMetadata metadata = loader.loadAdapterMetadata("mongodb-adapter");
+    AdapterMetadata metadata = loader.loadAdapterMetadata("mongodb-adapter", "spring", "reactive", "driven-adapters");
 
     // Then
     assertNotNull(metadata);
@@ -235,7 +235,7 @@ class AdapterMetadataLoaderTest {
   void shouldThrowExceptionWhenMetadataFileNotFound() {
     // When/Then
     assertThrows(TemplateNotFoundException.class, () -> {
-      loader.loadAdapterMetadata("nonexistent-adapter");
+      loader.loadAdapterMetadata("nonexistent-adapter", "spring", "reactive", "driven-adapters");
     });
   }
 
@@ -247,11 +247,11 @@ class AdapterMetadataLoaderTest {
         type: driven
         description: MongoDB database adapter
         """;
-    contentProvider.addTemplate("adapters/mongodb-adapter/metadata.yml", yaml);
+    contentProvider.addTemplate("frameworks/spring/reactive/adapters/driven-adapters/mongodb-adapter/metadata.yml", yaml);
 
     // When/Then
     assertThrows(TemplateNotFoundException.class, () -> {
-      loader.loadAdapterMetadata("mongodb-adapter");
+      loader.loadAdapterMetadata("mongodb-adapter", "spring", "reactive", "driven-adapters");
     });
   }
 
@@ -269,12 +269,12 @@ class AdapterMetadataLoaderTest {
             version: 3.2.0
         applicationPropertiesTemplate: application-properties.yml.ftl
         """;
-    contentProvider.addTemplate("adapters/mongodb-adapter/metadata.yml", yaml);
+    contentProvider.addTemplate("frameworks/spring/reactive/adapters/driven-adapters/mongodb-adapter/metadata.yml", yaml);
     // Note: NOT adding the application-properties.yml.ftl template
 
     // When/Then
     assertThrows(TemplateNotFoundException.class, () -> {
-      loader.loadAdapterMetadata("mongodb-adapter");
+      loader.loadAdapterMetadata("mongodb-adapter", "spring", "reactive", "driven-adapters");
     });
   }
 
@@ -295,12 +295,12 @@ class AdapterMetadataLoaderTest {
             packagePath: config
             templatePath: MongoConfig.java.ftl
         """;
-    contentProvider.addTemplate("adapters/mongodb-adapter/metadata.yml", yaml);
+    contentProvider.addTemplate("frameworks/spring/reactive/adapters/driven-adapters/mongodb-adapter/metadata.yml", yaml);
     // Note: NOT adding the MongoConfig.java.ftl template
 
     // When/Then
     assertThrows(TemplateNotFoundException.class, () -> {
-      loader.loadAdapterMetadata("mongodb-adapter");
+      loader.loadAdapterMetadata("mongodb-adapter", "spring", "reactive", "driven-adapters");
     });
   }
 
@@ -317,10 +317,10 @@ class AdapterMetadataLoaderTest {
             artifact: spring-boot-starter
             version: 3.2.0
         """;
-    contentProvider.addTemplate("adapters/simple-adapter/metadata.yml", yaml);
+    contentProvider.addTemplate("frameworks/spring/reactive/adapters/driven-adapters/simple-adapter/metadata.yml", yaml);
 
     // When
-    AdapterMetadata metadata = loader.loadAdapterMetadata("simple-adapter");
+    AdapterMetadata metadata = loader.loadAdapterMetadata("simple-adapter", "spring", "reactive", "driven-adapters");
 
     // Then
     assertNotNull(metadata);

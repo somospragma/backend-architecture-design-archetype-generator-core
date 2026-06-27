@@ -148,12 +148,14 @@ class FlatDomainPortsPropertyTest : PropertyTestBase() {
             }
         }
 
-        "Property 1.6: useCaseModule should reference domain for all architectures" {
+        "Property 1.6: useCaseModule should reference domain layer for all architectures" {
             checkAll(Arb.enum<ArchType>()) { archType ->
                 val structure = loadStructure(archType)
                 val useCaseModule = structure["useCaseModule"] as? String
                 if (useCaseModule != null) {
-                    useCaseModule shouldBe "domain"
+                    // hexagonal-multi-granular uses separate "usecases" module (under domain/ folder)
+                    val validValues = listOf("domain", "usecases")
+                    (useCaseModule in validValues) shouldBe true
                 }
             }
         }

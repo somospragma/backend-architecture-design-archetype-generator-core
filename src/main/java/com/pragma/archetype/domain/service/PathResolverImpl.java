@@ -2,6 +2,7 @@ package com.pragma.archetype.domain.service;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -59,10 +60,13 @@ public class PathResolverImpl implements PathResolver {
     // check if this is a multi-module architecture
     if (pathTemplate.contains("{module}") && !fullContext.containsKey("module")) {
       if (metadata.isMultiModule()) {
+        List<String> moduleNames = metadata.getModuleMetadata() != null
+            ? metadata.getModuleMetadata().stream().map(m -> m.getName()).toList()
+            : List.of();
         throw new IllegalArgumentException(
             String.format("Architecture '%s' is multi-module but no module was specified. " +
                 "Available modules: %s",
-                architecture.getValue(), String.join(", ", metadata.getModules())));
+                architecture.getValue(), String.join(", ", moduleNames)));
       }
       // For single-module architectures, remove the {module} placeholder
       pathTemplate = pathTemplate.replace("{module}/", "").replace("/{module}", "");

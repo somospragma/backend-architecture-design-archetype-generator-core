@@ -212,6 +212,9 @@ public class GenerateEntityTask extends DefaultTask {
           String modelPackage = entityModule.getPackage("model");
           // Convert filesystem path to package notation: "domain/model" → "domain.model", "model" → "model"
           String packageSuffix = modelPackage.replace("/", ".").replace("-", "");
+          if (packageSuffix.isBlank()) {
+            return projectConfig.basePackage();
+          }
           return projectConfig.basePackage() + "." + packageSuffix;
         }
       } catch (IllegalStateException | IllegalArgumentException e) {

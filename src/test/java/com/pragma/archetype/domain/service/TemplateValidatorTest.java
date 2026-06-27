@@ -166,7 +166,7 @@ class TemplateValidatorTest {
                         String adapterName = "mongodb";
                         AdapterMetadata metadata = createValidAdapterMetadata(adapterName);
 
-                        when(templateRepository.loadAdapterMetadata(adapterName)).thenReturn(metadata);
+                        when(templateRepository.loadAdapterMetadata(adapterName, "spring", "reactive", "driven-adapters")).thenReturn(metadata);
                         when(templateRepository.validateTemplate("adapters/mongodb/Adapter.java.ftl"))
                                         .thenReturn(ValidationResult.success());
                         when(templateRepository.validateTemplate("adapters/mongodb/DataEntity.java.ftl"))
@@ -192,7 +192,7 @@ class TemplateValidatorTest {
                         when(metadata.hasApplicationProperties()).thenReturn(false);
                         when(metadata.hasConfigurationClasses()).thenReturn(false);
 
-                        when(templateRepository.loadAdapterMetadata(adapterName)).thenReturn(metadata);
+                        when(templateRepository.loadAdapterMetadata(adapterName, "spring", "reactive", "driven-adapters")).thenReturn(metadata);
                         when(templateRepository.validateTemplate(anyString())).thenReturn(ValidationResult.success());
 
                         // When
@@ -211,7 +211,7 @@ class TemplateValidatorTest {
                         String adapterName = "mongodb";
                         AdapterMetadata metadata = createValidAdapterMetadata(adapterName);
 
-                        when(templateRepository.loadAdapterMetadata(adapterName)).thenReturn(metadata);
+                        when(templateRepository.loadAdapterMetadata(adapterName, "spring", "reactive", "driven-adapters")).thenReturn(metadata);
                         when(templateRepository.validateTemplate("adapters/mongodb/Adapter.java.ftl"))
                                         .thenReturn(ValidationResult.failure("Template not found"));
                         when(templateRepository.validateTemplate("adapters/mongodb/DataEntity.java.ftl"))
@@ -235,7 +235,7 @@ class TemplateValidatorTest {
                         String adapterName = "mongodb";
                         AdapterMetadata metadata = createValidAdapterMetadata(adapterName);
 
-                        when(templateRepository.loadAdapterMetadata(adapterName)).thenReturn(metadata);
+                        when(templateRepository.loadAdapterMetadata(adapterName, "spring", "reactive", "driven-adapters")).thenReturn(metadata);
                         when(templateRepository.validateTemplate("adapters/mongodb/Adapter.java.ftl"))
                                         .thenReturn(ValidationResult.success());
                         when(templateRepository.validateTemplate("adapters/mongodb/DataEntity.java.ftl"))
@@ -259,7 +259,7 @@ class TemplateValidatorTest {
                         String adapterName = "mongodb";
                         AdapterMetadata metadata = createValidAdapterMetadata(adapterName);
 
-                        when(templateRepository.loadAdapterMetadata(adapterName)).thenReturn(metadata);
+                        when(templateRepository.loadAdapterMetadata(adapterName, "spring", "reactive", "driven-adapters")).thenReturn(metadata);
                         when(templateRepository.validateTemplate("adapters/mongodb/Adapter.java.ftl"))
                                         .thenReturn(ValidationResult.success());
                         when(templateRepository.validateTemplate("adapters/mongodb/DataEntity.java.ftl"))
@@ -283,7 +283,7 @@ class TemplateValidatorTest {
                         String adapterName = "mongodb";
                         AdapterMetadata metadata = createAdapterMetadataWithApplicationProperties(adapterName);
 
-                        when(templateRepository.loadAdapterMetadata(adapterName)).thenReturn(metadata);
+                        when(templateRepository.loadAdapterMetadata(adapterName, "spring", "reactive", "driven-adapters")).thenReturn(metadata);
                         when(templateRepository.validateTemplate("adapters/mongodb/Adapter.java.ftl"))
                                         .thenReturn(ValidationResult.success());
                         when(templateRepository.validateTemplate("adapters/mongodb/DataEntity.java.ftl"))
@@ -309,7 +309,7 @@ class TemplateValidatorTest {
                         String adapterName = "mongodb";
                         AdapterMetadata metadata = createAdapterMetadataWithConfigurationClasses(adapterName);
 
-                        when(templateRepository.loadAdapterMetadata(adapterName)).thenReturn(metadata);
+                        when(templateRepository.loadAdapterMetadata(adapterName, "spring", "reactive", "driven-adapters")).thenReturn(metadata);
                         when(templateRepository.validateTemplate("adapters/mongodb/Adapter.java.ftl"))
                                         .thenReturn(ValidationResult.success());
                         when(templateRepository.validateTemplate("adapters/mongodb/DataEntity.java.ftl"))
@@ -334,7 +334,7 @@ class TemplateValidatorTest {
                         // Given
                         String adapterName = "mongodb";
 
-                        when(templateRepository.loadAdapterMetadata(adapterName))
+                        when(templateRepository.loadAdapterMetadata(adapterName, "spring", "reactive", "driven-adapters"))
                                         .thenThrow(new TemplateRepository.TemplateNotFoundException(
                                                         "Adapter not found"));
 
@@ -353,7 +353,7 @@ class TemplateValidatorTest {
                         // Given
                         String adapterName = "mongodb";
 
-                        when(templateRepository.loadAdapterMetadata(adapterName))
+                        when(templateRepository.loadAdapterMetadata(adapterName, "spring", "reactive", "driven-adapters"))
                                         .thenThrow(new RuntimeException("Unexpected error"));
 
                         // When

@@ -41,7 +41,9 @@ class GatewaySuffixPropertyTest : PropertyTestBase() {
             "entityName" to entityName,
             "adapterName" to adapterName,
             "packageName" to packageName,
-            "basePackage" to basePackage
+            "basePackage" to basePackage,
+            "portsPackage" to "$basePackage.domain.ports",
+            "modelPackage" to "$basePackage.domain.model"
         )
         val writer = StringWriter()
         template.process(dataModel, writer)
@@ -57,7 +59,7 @@ class GatewaySuffixPropertyTest : PropertyTestBase() {
                 DomainModelGenerators.packageName()
             ) { entityName, adapterName, packageName, basePackage ->
                 val output = processPostgresqlAdapterTemplate(entityName, adapterName, packageName, basePackage)
-                output shouldContain "implements I\${entityName}Gateway"
+                output shouldContain "implements I${entityName}Gateway"
             }
         }
 
@@ -69,7 +71,7 @@ class GatewaySuffixPropertyTest : PropertyTestBase() {
                 DomainModelGenerators.packageName()
             ) { entityName, adapterName, packageName, basePackage ->
                 val output = processPostgresqlAdapterTemplate(entityName, adapterName, packageName, basePackage)
-                output shouldContain ".domain.ports.I\${entityName}Gateway;"
+                output shouldContain "import ${basePackage}.domain.ports.I${entityName}Gateway;"
             }
         }
 
@@ -81,8 +83,8 @@ class GatewaySuffixPropertyTest : PropertyTestBase() {
                 DomainModelGenerators.packageName()
             ) { entityName, adapterName, packageName, basePackage ->
                 val output = processPostgresqlAdapterTemplate(entityName, adapterName, packageName, basePackage)
-                output shouldNotContain "implements \${entityName}Repository"
-                output shouldNotContain "implements I\${entityName}Repository"
+                output shouldNotContain "implements ${entityName}Repository"
+                output shouldNotContain "implements I${entityName}Repository"
             }
         }
 
@@ -94,7 +96,7 @@ class GatewaySuffixPropertyTest : PropertyTestBase() {
                 DomainModelGenerators.packageName()
             ) { entityName, adapterName, packageName, basePackage ->
                 val output = processPostgresqlAdapterTemplate(entityName, adapterName, packageName, basePackage)
-                output shouldContain "I\${entityName}Gateway"
+                output shouldContain "I${entityName}Gateway"
             }
         }
 
@@ -106,7 +108,7 @@ class GatewaySuffixPropertyTest : PropertyTestBase() {
                 DomainModelGenerators.packageName()
             ) { entityName, adapterName, packageName, basePackage ->
                 val output = processPostgresqlAdapterTemplate(entityName, adapterName, packageName, basePackage)
-                output shouldContain "\${adapterName}Adapter implements"
+                output shouldContain "${adapterName}Adapter implements"
             }
         }
     }

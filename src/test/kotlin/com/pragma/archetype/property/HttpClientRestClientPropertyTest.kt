@@ -18,9 +18,6 @@ import java.io.StringWriter
  * - Not reference RestTemplate in any import or field
  * - Provide methods for GET, POST, PUT, PATCH, and DELETE operations
  *
- * Note: The HTTP client Adapter.java.ftl uses FreeMarker raw string escaping,
- * so the output contains literal placeholder patterns.
- *
  * **Validates: Requirements 9.1, 9.2, 9.3, 9.4**
  */
 class HttpClientRestClientPropertyTest : PropertyTestBase() {
@@ -41,7 +38,10 @@ class HttpClientRestClientPropertyTest : PropertyTestBase() {
             "entityName" to entityName,
             "adapterName" to adapterName,
             "packageName" to packageName,
-            "basePackage" to basePackage
+            "basePackage" to basePackage,
+            "portsPackage" to "$basePackage.domain.ports",
+            "modelPackage" to "$basePackage.domain.model",
+            "entityPackage" to "$packageName.entity"
         )
         val writer = StringWriter()
         template.process(dataModel, writer)

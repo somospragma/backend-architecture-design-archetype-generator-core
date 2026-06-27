@@ -262,14 +262,6 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
   }
 
   @Override
-  public com.pragma.archetype.domain.model.adapter.AdapterMetadata loadAdapterMetadata(String adapterName) {
-    if (adapterMetadataLoader == null) {
-      adapterMetadataLoader = new AdapterMetadataLoader(this);
-    }
-    return adapterMetadataLoader.loadAdapterMetadata(adapterName);
-  }
-
-  @Override
   public com.pragma.archetype.domain.model.adapter.AdapterMetadata loadAdapterMetadata(
       String adapterName,
       String framework,

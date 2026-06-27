@@ -93,7 +93,6 @@ class ErrorScenarioIntegrationTest {
 
     @Test
     @DisplayName("Should fail when required field 'project.name' is missing")
-    @org.junit.jupiter.api.Disabled("TODO: Fix YAML validation - validator not catching these errors")
     void shouldFailWhenProjectNameMissing() throws IOException {
       // Given
       Path projectPath = tempDir.resolve("test-project");
@@ -149,7 +148,6 @@ class ErrorScenarioIntegrationTest {
 
     @Test
     @DisplayName("Should fail when basePackage has invalid format")
-    @org.junit.jupiter.api.Disabled("TODO: Fix YAML validation - validator not catching these errors")
     void shouldFailWhenBasePackageInvalid() throws IOException {
       // Given
       Path projectPath = tempDir.resolve("test-project");
@@ -305,7 +303,6 @@ class ErrorScenarioIntegrationTest {
 
     @Test
     @DisplayName("Should handle basePackage with consecutive dots")
-    @org.junit.jupiter.api.Disabled("TODO: Fix YAML validation - validator not catching these errors")
     void shouldHandleBasePackageWithConsecutiveDots() throws IOException {
       // Given
       Path projectPath = tempDir.resolve("test-project");

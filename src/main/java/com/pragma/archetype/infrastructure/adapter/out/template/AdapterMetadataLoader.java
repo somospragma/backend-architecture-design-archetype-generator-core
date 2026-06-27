@@ -37,34 +37,6 @@ public class AdapterMetadataLoader {
   }
 
   /**
-   * Loads adapter metadata for the specified adapter using legacy flat structure.
-   * This method is deprecated and will try both legacy and framework-aware paths.
-   *
-   * @param adapterName The name of the adapter to load metadata for
-   * @return AdapterMetadata containing parsed adapter information
-   * @throws TemplateNotFoundException if metadata.yml cannot be found or parsed
-   * @deprecated Use {@link #loadAdapterMetadata(String, String, String, String)}
-   *             instead
-   */
-  @Deprecated
-  public AdapterMetadata loadAdapterMetadata(String adapterName) {
-    // Try legacy path first for backward compatibility
-    String legacyPath = "adapters/" + adapterName + "/metadata.yml";
-
-    try {
-      return loadMetadataFromPath(legacyPath, adapterName);
-    } catch (Exception e) {
-      // If legacy path fails, we can't determine framework/paradigm without more
-      // context
-      throw new TemplateNotFoundException(
-          "Failed to load adapter metadata for: " + adapterName +
-              ". Legacy path not found. Use loadAdapterMetadata(adapterName, framework, paradigm, adapterType) instead. "
-              +
-              "Error: " + e.getMessage());
-    }
-  }
-
-  /**
    * Loads adapter metadata from a specific metadata.yml path.
    * This is useful for dynamic adapter discovery.
    *
@@ -498,14 +470,6 @@ public class AdapterMetadataLoader {
     }
 
     return new Dependency(group, artifact, version, scope);
-  }
-
-  /**
-   * @deprecated Use {@link #parseDependency(Map, String, boolean)} instead
-   */
-  @Deprecated
-  private Dependency parseDependency(Map<String, Object> depData, String defaultScope) {
-    return parseDependency(depData, defaultScope, false);
   }
 
   /**

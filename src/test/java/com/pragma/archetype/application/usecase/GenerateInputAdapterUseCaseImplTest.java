@@ -28,6 +28,7 @@ import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.structure.StructureMetadata;
 import com.pragma.archetype.domain.port.in.GenerateInputAdapterUseCase.GenerationResult;
+import com.pragma.archetype.domain.port.out.BackupPort;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
@@ -55,6 +56,9 @@ class GenerateInputAdapterUseCaseImplTest {
     private YamlConfigurationAdapter yamlConfigurationAdapter;
 
     @Mock
+    private BackupPort backupPort;
+
+    @Mock
     private ProjectConfig projectConfig;
 
     @Mock
@@ -73,7 +77,8 @@ class GenerateInputAdapterUseCaseImplTest {
                 fileSystemPort,
                 adapterDiscoveryPort,
                 templateRepository,
-                yamlConfigurationAdapter);
+                yamlConfigurationAdapter,
+                backupPort);
 
         // Setup common mocks (lenient for optional usage in some tests)
         lenient().when(configurationPort.readConfiguration(any())).thenReturn(Optional.of(projectConfig));
@@ -111,6 +116,12 @@ class GenerateInputAdapterUseCaseImplTest {
         // Mock StructureMetadata methods
         lenient().when(structureMetadata.getSourceDirectory()).thenReturn("src/main/java");
         lenient().when(structureMetadata.getResourcesPath()).thenReturn("src/main/resources");
+
+        // Mock BackupPort methods
+        var emptyManifest = new com.pragma.archetype.domain.model.backup.BackupManifest(
+                "test-backup", java.time.Instant.now(), Path.of("/tmp/backup"), List.of());
+        lenient().when(backupPort.createBackup(any(), any())).thenReturn(emptyManifest);
+        lenient().when(backupPort.trackCreatedFile(any(), any())).thenReturn(emptyManifest);
     }
 
     @Test

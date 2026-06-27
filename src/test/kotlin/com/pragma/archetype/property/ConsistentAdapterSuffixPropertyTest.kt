@@ -18,10 +18,6 @@ import java.io.StringWriter
  * - Use Controller suffix for imperative REST entry-points
  * - Use Handler suffix for reactive REST entry-points
  *
- * Note: The PostgreSQL Adapter.java.ftl and Controller.java.ftl use FreeMarker raw
- * string escaping, so the output contains literal placeholder patterns.
- * The Handler.java.ftl uses direct FreeMarker substitution.
- *
  * **Validates: Requirements 12.1, 12.2, 12.3, 12.4**
  */
 class ConsistentAdapterSuffixPropertyTest : PropertyTestBase() {
@@ -42,7 +38,10 @@ class ConsistentAdapterSuffixPropertyTest : PropertyTestBase() {
             "entityName" to entityName,
             "adapterName" to adapterName,
             "packageName" to packageName,
-            "basePackage" to basePackage
+            "basePackage" to basePackage,
+            "portsPackage" to "$basePackage.domain.ports",
+            "modelPackage" to "$basePackage.domain.model",
+            "entityPackage" to "$packageName.entity"
         )
         val writer = StringWriter()
         template.process(dataModel, writer)
@@ -56,7 +55,9 @@ class ConsistentAdapterSuffixPropertyTest : PropertyTestBase() {
         val dataModel = mapOf(
             "controllerName" to controllerName,
             "packageName" to packageName,
-            "basePackage" to basePackage
+            "basePackage" to basePackage,
+            "portsPackage" to "$basePackage.domain.ports",
+            "useCaseName" to ""
         )
         val writer = StringWriter()
         template.process(dataModel, writer)
@@ -85,7 +86,7 @@ class ConsistentAdapterSuffixPropertyTest : PropertyTestBase() {
                 DomainModelGenerators.packageName()
             ) { entityName, adapterName, packageName, basePackage ->
                 val output = processPostgresqlAdapterTemplate(entityName, adapterName, packageName, basePackage)
-                output shouldContain "\${adapterName}Adapter"
+                output shouldContain "${adapterName}Adapter"
             }
         }
 
@@ -97,8 +98,9 @@ class ConsistentAdapterSuffixPropertyTest : PropertyTestBase() {
                 DomainModelGenerators.packageName()
             ) { entityName, adapterName, packageName, basePackage ->
                 val output = processPostgresqlAdapterTemplate(entityName, adapterName, packageName, basePackage)
-                output shouldNotContain "\${adapterName}Repository"
-                output shouldNotContain "\${entityName}Repository"
+                // The class declaration should use Adapter suffix, not Repository
+                output shouldNotContain "public class ${adapterName}Repository"
+                output shouldNotContain "public class ${entityName}Repository"
             }
         }
 
@@ -109,7 +111,7 @@ class ConsistentAdapterSuffixPropertyTest : PropertyTestBase() {
                 DomainModelGenerators.packageName()
             ) { controllerName, packageName, basePackage ->
                 val output = processImperativeControllerTemplate(controllerName, packageName, basePackage)
-                output shouldContain "\${controllerName}Controller"
+                output shouldContain "${controllerName}Controller"
             }
         }
 

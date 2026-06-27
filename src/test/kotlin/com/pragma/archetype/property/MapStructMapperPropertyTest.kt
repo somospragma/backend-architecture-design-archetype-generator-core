@@ -22,9 +22,6 @@ import java.io.StringWriter
  * Since there is no standalone mapper template, we verify mapper usage patterns
  * in the PostgreSQL adapter template which imports and uses the mapper.
  *
- * Note: The PostgreSQL Adapter.java.ftl uses FreeMarker raw string escaping,
- * so the output contains literal placeholder patterns.
- *
  * **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5**
  */
 class MapStructMapperPropertyTest : PropertyTestBase() {
@@ -45,7 +42,9 @@ class MapStructMapperPropertyTest : PropertyTestBase() {
             "entityName" to entityName,
             "adapterName" to adapterName,
             "packageName" to packageName,
-            "basePackage" to basePackage
+            "basePackage" to basePackage,
+            "portsPackage" to "$basePackage.domain.ports",
+            "modelPackage" to "$basePackage.domain.model"
         )
         val writer = StringWriter()
         template.process(dataModel, writer)
@@ -61,7 +60,7 @@ class MapStructMapperPropertyTest : PropertyTestBase() {
                 DomainModelGenerators.packageName()
             ) { entityName, adapterName, packageName, basePackage ->
                 val output = processPostgresqlAdapterTemplate(entityName, adapterName, packageName, basePackage)
-                output shouldContain "\${entityName}EntityMapper"
+                output shouldContain "${entityName}EntityMapper"
             }
         }
 
@@ -73,7 +72,7 @@ class MapStructMapperPropertyTest : PropertyTestBase() {
                 DomainModelGenerators.packageName()
             ) { entityName, adapterName, packageName, basePackage ->
                 val output = processPostgresqlAdapterTemplate(entityName, adapterName, packageName, basePackage)
-                output shouldContain ".mapper.\${entityName}EntityMapper;"
+                output shouldContain ".mapper.${entityName}EntityMapper;"
             }
         }
 
@@ -86,7 +85,7 @@ class MapStructMapperPropertyTest : PropertyTestBase() {
             ) { entityName, adapterName, packageName, basePackage ->
                 val output = processPostgresqlAdapterTemplate(entityName, adapterName, packageName, basePackage)
                 output shouldContain "@RequiredArgsConstructor"
-                output shouldContain "\${entityName}EntityMapper mapper;"
+                output shouldContain "${entityName}EntityMapper mapper;"
             }
         }
 
