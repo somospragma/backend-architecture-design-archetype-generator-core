@@ -193,7 +193,7 @@ public abstract class AbstractGenerateAdapterUseCase {
       adapterConfigurationService.addTestDependenciesIfNeeded(projectPath, adapterConfig, metadata);
 
       // STEP 16: Check dependency conflicts (informational only)
-      checkDependencyConflicts(config);
+      checkDependencyConflicts(projectPath, config);
 
       // STEP 17: Confirm backup (delete backup files, generation was successful)
       backupPort.confirmBackup(backup);
@@ -685,20 +685,53 @@ public abstract class AbstractGenerateAdapterUseCase {
   }
 
   /**
-   * Checks for dependency conflicts (informational only, doesn't block
-   * generation).
+   * Checks for dependency conflicts (informational only, doesn't block generation).
+   * Detects cases where a new dependency uses a different version than an existing one.
    */
-  private void checkDependencyConflicts(UnifiedAdapterGenerator.AdapterConfig config) {
-
+  private void checkDependencyConflicts(Path projectPath, UnifiedAdapterGenerator.AdapterConfig config) {
     try {
       AdapterMetadata metadata = loadAdapterMetadataWithFallback(config);
 
-      // TODO: Implement actual conflict detection
-      // For now, just log the dependencies being added
-      if (metadata.getDependencies() != null && !metadata.getDependencies().isEmpty()) {
-        logger.info("Adding {} dependencies for adapter: {}",
-            metadata.getDependencies().size(), config.getName());
+      if (metadata.getRuntimeDependencies() == null || metadata.getRuntimeDependencies().isEmpty()) {
+        return;
       }
+
+      // Read existing build file to check for version conflicts
+      Path buildFilePath = projectPath.resolve("build.gradle.kts");
+
+      if (!fileSystemPort.exists(buildFilePath)) {
+        logger.info("Adding {} dependencies for adapter: {}",
+            metadata.getRuntimeDependencies().size(), config.getName());
+        return;
+      }
+
+      String buildContent = fileSystemPort.readFile(buildFilePath);
+
+      for (var dep : metadata.getRuntimeDependencies()) {
+        String groupArtifact = dep.group() + ":" + dep.artifact();
+        String newVersion = dep.version();
+
+        // Check if this dependency already exists with a different version
+        if (buildContent.contains(dep.group()) && buildContent.contains(dep.artifact())) {
+          String pattern = dep.group() + ":" + dep.artifact() + ":";
+          int idx = buildContent.indexOf(pattern);
+          if (idx >= 0) {
+            int versionStart = idx + pattern.length();
+            int versionEnd = buildContent.indexOf("\"", versionStart);
+            if (versionEnd < 0) versionEnd = buildContent.indexOf("'", versionStart);
+            if (versionEnd > versionStart) {
+              String existingVersion = buildContent.substring(versionStart, versionEnd);
+              if (newVersion != null && !newVersion.equals(existingVersion)) {
+                logger.warn("Dependency version conflict detected for {}: " +
+                    "existing={}, new={}. The existing version will be preserved.",
+                    groupArtifact, existingVersion, newVersion);
+              }
+            }
+          }
+        }
+      }
+
+      logger.info("Dependency check complete for adapter: {}", config.getName());
 
     } catch (Exception e) {
       logger.warn("Failed to check dependency conflicts: {}", e.getMessage());
