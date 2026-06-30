@@ -78,6 +78,11 @@ class UnifiedAdapterGeneratorTest {
     lenient().when(structureMetadata.getResourcesPath()).thenReturn("src/main/resources");
     lenient().when(structureMetadata.getSourceDirectory()).thenReturn("src/main/java");
     lenient().when(structureMetadata.getAdapterBaseDirectory(anyString())).thenReturn("infrastructure/entry-points");
+    lenient().when(structureMetadata.findModuleForPath(anyString())).thenReturn(null);
+    lenient().when(structureMetadata.pathToPackageName(anyString())).thenAnswer(
+        invocation -> invocation.getArgument(0, String.class).replace("-", "").replace("/", "."));
+    lenient().when(structureMetadata.stripModulePrefix(anyString(), anyString())).thenAnswer(
+        invocation -> invocation.getArgument(0, String.class));
 
     lenient().when(projectConfig.adaptersAsModules()).thenReturn(false);
     lenient().when(projectConfig.basePackage()).thenReturn("com.test");
@@ -85,6 +90,8 @@ class UnifiedAdapterGeneratorTest {
     lenient().when(projectConfig.architecture()).thenReturn(com.pragma.archetype.domain.model.project.ArchitectureType.HEXAGONAL_SINGLE);
 
     lenient().when(templateRepository.processTemplate(anyString(), anyMap())).thenReturn("public class TestController {}");
+    lenient().when(templateRepository.loadStructureMetadata(any())).thenReturn(structureMetadata);
+    lenient().when(templateRepository.templateExists(anyString())).thenReturn(true);
     lenient().when(pathResolver.resolveAdapterPath(any(), anyString(), anyString(), anyMap()))
         .thenReturn(Path.of("infrastructure/adapter/in/rest"));
   }

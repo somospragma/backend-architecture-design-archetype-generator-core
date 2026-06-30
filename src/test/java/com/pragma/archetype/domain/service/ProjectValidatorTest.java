@@ -81,6 +81,7 @@ class ProjectValidatorTest {
   void shouldFailWhenProjectIsAlreadyInitialized() {
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
     when(configurationPort.configurationExists(projectPath)).thenReturn(true);
+    when(configurationPort.readConfiguration(projectPath)).thenReturn(java.util.Optional.of(validConfig));
 
     ValidationResult result = validator.validateForInitialization(projectPath, validConfig);
 

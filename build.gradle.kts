@@ -95,11 +95,6 @@ gradlePlugin {
 
 tasks.test {
     useJUnitPlatform()
-    // TODO: Remove ignoreFailures once these 6 pre-existing test failures are fixed:
-    // - UnifiedAdapterGeneratorTest (3 tests): NPE in generator mock setup
-    // - ProjectValidatorTest: assertion about already-initialized project
-    // - GenerateEntityTaskDeepTest, GenerateUseCaseTaskDeepTest: reflection tests with TemplateNotFoundException
-    ignoreFailures = true
     finalizedBy(tasks.jacocoTestReport)
 }
 
