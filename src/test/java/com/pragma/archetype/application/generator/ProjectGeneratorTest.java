@@ -31,6 +31,7 @@ import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.model.project.Framework;
 import com.pragma.archetype.domain.model.project.Paradigm;
+import com.pragma.archetype.domain.model.template.TemplateVersions;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 
@@ -52,6 +53,7 @@ class ProjectGeneratorTest {
   void setUp() {
     generator = new ProjectGenerator(templateRepository, fileSystemPort);
     projectPath = Paths.get("/test/project");
+    lenient().when(templateRepository.loadVersions()).thenReturn(TemplateVersions.empty());
 
     config = ProjectConfig.builder()
         .name("payment-service")
@@ -175,6 +177,29 @@ class ProjectGeneratorTest {
     assertTrue((Boolean) context.get("isReactive"));
     assertFalse((Boolean) context.get("isImperative"));
     assertTrue((Boolean) context.get("isSpring"));
+  }
+
+  @Test
+  @DisplayName("Should expose template versions to templates")
+  void shouldExposeTemplateVersionsToTemplates() {
+    // Given
+    when(templateRepository.loadVersions()).thenReturn(new TemplateVersions(
+        1, "25", "9.1.0", java.util.Map.of("spring-boot", "4.1.0"), java.util.Map.of("jacoco-min-coverage", "0.9")));
+
+    // When
+    generator.generateProject(projectPath, config);
+
+    // Then
+    ArgumentCaptor<java.util.Map<String, Object>> contextCaptor = ArgumentCaptor.forClass(java.util.Map.class);
+    verify(templateRepository, atLeastOnce()).processTemplate(anyString(), contextCaptor.capture());
+
+    java.util.Map<String, Object> context = contextCaptor.getValue();
+    java.util.Map<?, ?> versions = (java.util.Map<?, ?>) context.get("versions");
+    assertEquals("25", context.get("javaVersion"));
+    assertEquals("25", versions.get("java"));
+    assertEquals("9.1.0", versions.get("gradle"));
+    assertEquals("4.1.0", ((java.util.Map<?, ?>) versions.get("libraries")).get("spring-boot"));
+    assertEquals("0.9", ((java.util.Map<?, ?>) versions.get("quality")).get("jacoco-min-coverage"));
   }
 
   @Test

@@ -52,10 +52,13 @@ public class AdapterMetadata {
     }
 
     /**
-     * Gets the Maven coordinate string.
+     * Gets the Maven coordinate string. Dependencies without a version are
+     * managed by a BOM (e.g. Spring Boot) and render as {@code group:artifact}.
      */
     public String toCoordinate() {
-      return String.format("%s:%s:%s", group, artifact, version);
+      return version == null || version.isBlank()
+          ? String.format("%s:%s", group, artifact)
+          : String.format("%s:%s:%s", group, artifact, version);
     }
   }
 

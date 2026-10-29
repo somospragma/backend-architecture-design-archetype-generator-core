@@ -12,6 +12,7 @@ import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.model.structure.ModuleMetadata;
 import com.pragma.archetype.domain.model.structure.StaticFile;
 import com.pragma.archetype.domain.model.structure.StructureMetadata;
+import com.pragma.archetype.domain.model.template.TemplateVersions;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 
@@ -146,10 +147,11 @@ public class ProjectGenerator {
         }
 
         /**
-         * Checks if the architecture is multi-module.
+         * Checks if the architecture is multi-module, as declared by its
+         * structure.yml (a non-empty modules list).
          */
         private boolean isMultiModuleArchitecture(ArchitectureType architecture) {
-                return architecture.isMultiModule();
+                return templateRepository.loadStructureMetadata(architecture).isMultiModule();
         }
 
         /**
@@ -186,21 +188,16 @@ public class ProjectGenerator {
                 context.put("pluginVersion", config.pluginVersion());
                 context.put("createdAt", config.createdAt().toString());
 
-                // Java version
-                context.put("javaVersion", "21");
+                // Versions come from the template repository (versions.yml), never
+                // from the plugin, so bumping them does not require a plugin release
+                TemplateVersions versions = templateRepository.loadVersions();
+                context.put("versions", versions.toTemplateModel());
+                if (versions.java() != null) {
+                        context.put("javaVersion", versions.java());
+                }
 
-                // Dependency versions
                 context.put("groupId", config.basePackage());
                 context.put("version", "0.0.1-SNAPSHOT");
-                context.put("springBootVersion", "4.0.3");
-                context.put("gradleVersion", "9.0");
-                context.put("mapstructVersion", "1.6.3");
-                context.put("lombokVersion", "1.18.36");
-                context.put("archunitVersion", "1.3.0");
-
-                // Quality tool thresholds
-                context.put("jacocoMinCoverage", "0.85");
-                context.put("pitMinMutationKill", "20");
 
                 // Package path variables for config and domain packages
                 context.put("configPackagePath",
@@ -464,16 +461,16 @@ public class ProjectGenerator {
                 String architecturePath = "architectures/"
                                 + config.architecture().getValue();
 
-                // For hexagonal-multi: domain, application, infrastructure
-                if (config.architecture() == ArchitectureType.HEXAGONAL_MULTI) {
+                // hexagonal-multi keeps its dedicated layout (domain, application,
+                // infrastructure with the Spring Boot application inside)
+                if (ArchitectureType.HEXAGONAL_MULTI.equals(config.architecture())) {
                         files.addAll(generateDomainModule(projectPath, config, context, architecturePath));
                         files.addAll(generateApplicationModule(projectPath, config, context, architecturePath));
                         files.addAll(generateInfrastructureModule(projectPath, config, context, architecturePath));
-                }
-
-                // For hexagonal-multi-granular: domain modules + app-service
-                if (config.architecture() == ArchitectureType.HEXAGONAL_MULTI_GRANULAR) {
-                        files.addAll(generateGranularStructure(projectPath, config, context, architecturePath));
+                } else {
+                        // Any other multi-module architecture is driven entirely by its
+                        // structure.yml, so new ones need no plugin changes
+                        files.addAll(generateModulesFromStructure(projectPath, config, context, architecturePath));
                 }
 
                 return files;
@@ -637,11 +634,11 @@ public class ProjectGenerator {
         }
 
         /**
-         * Generates granular multi-module structure.
-         * Reads module definitions from structure.yml and creates each module dynamically.
+         * Generates a multi-module structure from structure.yml: organizing
+         * folders first, then each declared module.
          * Infrastructure adapters are created dynamically when generating adapters.
          */
-        private List<GeneratedFile> generateGranularStructure(
+        private List<GeneratedFile> generateModulesFromStructure(
                         Path projectPath,
                         ProjectConfig config,
                         Map<String, Object> context,
@@ -660,16 +657,9 @@ public class ProjectGenerator {
                         }
                 }
 
-                // Read folders from structure.yml if available
-                // For granular architectures, folders are defined separately from modules
-                try {
-                        // Create standard organizing folders
-                        fileSystemPort.createDirectory(projectPath.resolve("domain"));
-                        fileSystemPort.createDirectory(projectPath.resolve("application"));
-                        fileSystemPort.createDirectory(projectPath.resolve("infrastructure/entry-points"));
-                        fileSystemPort.createDirectory(projectPath.resolve("infrastructure/driven-adapters"));
-                } catch (Exception e) {
-                        // Folders may already exist
+                // Organizing folders that are not modules (structure.yml "folders")
+                for (String folder : structureMetadata.folders()) {
+                        fileSystemPort.createDirectory(projectPath.resolve(folder));
                 }
 
                 // Generate each module defined in structure.yml

@@ -108,12 +108,11 @@ public class EntityGenerator {
 
     String packagePath = entityConfig.packageName().replace('.', '/');
 
-    // For single module architectures
-    if (!projectConfig.architecture().isMultiModule()) {
-      // Load StructureMetadata to get source directory
-      com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
-          .loadStructureMetadata(projectConfig.architecture());
+    com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
+        .loadStructureMetadata(projectConfig.architecture());
 
+    // For single module architectures
+    if (!structureMetadata.isMultiModule()) {
       return projectPath
           .resolve(structureMetadata.getSourceDirectory())
           .resolve(packagePath)
@@ -122,10 +121,6 @@ public class EntityGenerator {
 
     // For multi-module architectures, use dynamic module resolution
     try {
-      // Load StructureMetadata
-      com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
-          .loadStructureMetadata(projectConfig.architecture());
-
       // Get entity module metadata
       com.pragma.archetype.domain.model.structure.ModuleMetadata entityModule = structureMetadata.getEntityModule();
 

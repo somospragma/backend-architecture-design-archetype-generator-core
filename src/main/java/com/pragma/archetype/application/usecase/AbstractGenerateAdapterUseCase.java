@@ -414,7 +414,8 @@ public abstract class AbstractGenerateAdapterUseCase {
     // 11-15. Lists must be valid (not null)
     // These are handled by the model itself
 
-    // 16. Each dependency must have: group, artifact, version
+    // 16. Each dependency must have: group, artifact and optionally a version
+    // (no version means it is managed by a BOM such as Spring Boot's)
     validateDependencies(metadata, errors);
 
     // 17. Each configurationClass must have: name, packagePath, templatePath
@@ -436,8 +437,8 @@ public abstract class AbstractGenerateAdapterUseCase {
     if (metadata.getDependencies() != null && !metadata.getDependencies().isEmpty()) {
       for (String dep : metadata.getDependencies()) {
         String[] parts = dep.split(":");
-        if (parts.length < 3) {
-          errors.add("Dependency has invalid format (expected group:artifact:version): " + dep);
+        if (parts.length < 2 || parts.length > 3) {
+          errors.add("Dependency has invalid format (expected group:artifact[:version]): " + dep);
         } else {
           validateDependencyParts(dep, parts, errors);
         }
@@ -455,7 +456,7 @@ public abstract class AbstractGenerateAdapterUseCase {
     if (parts[1].isBlank()) {
       errors.add("Dependency missing artifact: " + dep);
     }
-    if (parts[2].isBlank()) {
+    if (parts.length == 3 && parts[2].isBlank()) {
       errors.add("Dependency missing version: " + dep);
     }
   }

@@ -102,6 +102,50 @@ class StructureMetadataLoaderTest {
   }
 
   @Test
+  void loadStructureMetadata_withFoldersAndAdaptersAsModules_shouldParseThem() {
+    // Given
+    ArchitectureType architecture = ArchitectureType.HEXAGONAL_MULTI_GRANULAR;
+    String yamlContent = """
+        architecture: hexagonal-multi-granular
+        adaptersAsModules: true
+        adapterPaths:
+          driven: "infrastructure/driven-adapters/{name}"
+          driving: "infrastructure/entry-points/{name}"
+        folders:
+          - "domain"
+          - "infrastructure/entry-points"
+        """;
+
+    when(contentProvider.getTemplateContent("architectures/hexagonal-multi-granular/structure.yml"))
+        .thenReturn(yamlContent);
+
+    // When
+    StructureMetadata metadata = loader.loadStructureMetadata(architecture);
+
+    // Then
+    assertTrue(metadata.adaptersAsModules());
+    assertEquals(java.util.List.of("domain", "infrastructure/entry-points"), metadata.folders());
+  }
+
+  @Test
+  void loadStructureMetadata_withoutFolders_shouldDefaultToNoneAndAdaptersAsPackages() {
+    // Given
+    when(contentProvider.getTemplateContent("architectures/onion-single/structure.yml"))
+        .thenReturn("""
+            architecture: onion-single
+            adapterPaths:
+              driven: "infrastructure/adapter/out/{name}"
+            """);
+
+    // When
+    StructureMetadata metadata = loader.loadStructureMetadata(ArchitectureType.ONION_SINGLE);
+
+    // Then
+    assertFalse(metadata.adaptersAsModules());
+    assertTrue(metadata.folders().isEmpty());
+  }
+
+  @Test
   void loadStructureMetadata_withEmptyYaml_shouldThrowException() {
     // Given
     ArchitectureType architecture = ArchitectureType.HEXAGONAL_SINGLE;

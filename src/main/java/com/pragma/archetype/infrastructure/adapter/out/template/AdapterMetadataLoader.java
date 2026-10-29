@@ -24,6 +24,7 @@ import com.pragma.archetype.domain.port.out.TemplateRepository.TemplateNotFoundE
 public class AdapterMetadataLoader {
 
   private final TemplateContentProvider contentProvider;
+  private final TemplateVersionsLoader versionsLoader;
   private final Yaml yaml;
 
   /**
@@ -33,7 +34,25 @@ public class AdapterMetadataLoader {
    */
   public AdapterMetadataLoader(TemplateContentProvider contentProvider) {
     this.contentProvider = contentProvider;
+    this.versionsLoader = new TemplateVersionsLoader(contentProvider);
     this.yaml = new Yaml();
+  }
+
+  /**
+   * Resolves a dependency or plugin version. {@code versionRef} points to an
+   * alias under {@code libraries} in versions.yml and wins over a literal
+   * {@code version}; with neither, the version is managed by a BOM.
+   *
+   * @return the version, or null when a BOM manages it
+   */
+  private String resolveVersion(Map<String, Object> data) {
+    String versionRef = extractOptionalString(data, "versionRef");
+    if (versionRef != null) {
+      return versionsLoader.load().library(versionRef)
+          .orElseThrow(() -> new IllegalArgumentException(
+              "Unknown versionRef '" + versionRef + "': declare it under 'libraries' in versions.yml"));
+    }
+    return extractOptionalString(data, "version");
   }
 
   /**
@@ -461,7 +480,7 @@ public class AdapterMetadataLoader {
       throw new IllegalArgumentException("Required field 'artifact' or 'artifactId' is missing");
     }
 
-    String version = extractOptionalString(depData, "version");
+    String version = resolveVersion(depData);
     String scope = extractOptionalString(depData, "scope");
 
     // Use provided scope or default scope
@@ -604,18 +623,17 @@ public class AdapterMetadataLoader {
             // Already in string format (group:artifact:version)
             return (String) dep;
           } else if (dep instanceof Map) {
-            // Parse from map format (group, artifact, version)
+            // Parse from map format (group, artifact, version or versionRef)
             Map<String, Object> depMap = (Map<String, Object>) dep;
             String group = (String) depMap.get("group");
             String artifact = (String) depMap.get("artifact");
-            String version = (String) depMap.get("version");
 
-            if (group == null || artifact == null || version == null) {
+            if (group == null || artifact == null) {
               throw new IllegalArgumentException(
-                  "Dependency must have 'group', 'artifact', and 'version' fields");
+                  "Dependency must have 'group' and 'artifact' fields");
             }
 
-            return String.format("%s:%s:%s", group, artifact, version);
+            return new Dependency(group, artifact, resolveVersion(depMap), null).toCoordinate();
           } else {
             throw new IllegalArgumentException(
                 "Dependency must be either a String or a Map with group/artifact/version");
@@ -681,7 +699,7 @@ public class AdapterMetadataLoader {
     return pluginsList.stream()
         .map(p -> new AdapterMetadata.BuildPlugin(
             (String) p.get("id"),
-            (String) p.get("version")))
+            resolveVersion(p)))
         .toList();
   }
 

@@ -1,5 +1,7 @@
 package com.pragma.archetype.property
 
+import com.pragma.archetype.infrastructure.adapter.out.template.TemplateContentProvider
+import com.pragma.archetype.infrastructure.adapter.out.template.TemplateVersionsLoader
 import freemarker.template.Configuration
 import freemarker.template.TemplateExceptionHandler
 import io.kotest.matchers.string.shouldContain
@@ -22,10 +24,16 @@ import java.io.StringWriter
  */
 class BuildSystemFilesPropertyTest : PropertyTestBase() {
 
+    private val templatesDir = File("../backend-architecture-design-archetype-generator-templates/templates")
+
+    // Same versions model the plugin exposes, read from the real versions.yml
+    private val versionsModel: Map<String, Any> = TemplateVersionsLoader(object : TemplateContentProvider {
+        override fun getTemplateContent(templatePath: String) = File(templatesDir, templatePath).readText()
+        override fun templateExists(templatePath: String) = File(templatesDir, templatePath).exists()
+    }).load().toTemplateModel()
+
     private val freemarkerConfig: Configuration = Configuration(Configuration.VERSION_2_3_32).apply {
-        setDirectoryForTemplateLoading(
-            File("../backend-architecture-design-archetype-generator-templates/templates")
-        )
+        setDirectoryForTemplateLoading(templatesDir)
         defaultEncoding = "UTF-8"
         templateExceptionHandler = TemplateExceptionHandler.RETHROW_HANDLER
     }
@@ -33,7 +41,7 @@ class BuildSystemFilesPropertyTest : PropertyTestBase() {
     private fun processTemplate(templatePath: String, dataModel: Map<String, Any>): String {
         val template = freemarkerConfig.getTemplate(templatePath)
         val writer = StringWriter()
-        template.process(dataModel, writer)
+        template.process(dataModel + ("versions" to versionsModel), writer)
         return writer.toString()
     }
 

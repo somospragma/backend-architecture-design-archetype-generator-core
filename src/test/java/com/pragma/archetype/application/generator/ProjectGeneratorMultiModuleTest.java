@@ -2,6 +2,7 @@ package com.pragma.archetype.application.generator;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -26,6 +27,7 @@ import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.model.project.Framework;
 import com.pragma.archetype.domain.model.project.Paradigm;
+import com.pragma.archetype.domain.model.template.TemplateVersions;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 
@@ -45,6 +47,7 @@ class ProjectGeneratorMultiModuleTest {
   void setUp() {
     generator = new ProjectGenerator(templateRepository, fileSystemPort);
     projectPath = Paths.get("/test/project");
+    lenient().when(templateRepository.loadVersions()).thenReturn(TemplateVersions.empty());
 
     when(templateRepository.processTemplate(anyString(), anyMap()))
         .thenReturn("template content");
@@ -112,6 +115,47 @@ class ProjectGeneratorMultiModuleTest {
     assertNotNull(files);
     assertFalse(files.isEmpty());
     verify(fileSystemPort).writeFiles(anyList());
+  }
+
+  @Test
+  void shouldGenerateMultiModuleArchitectureDeclaredOnlyByTemplates() {
+    // Given an architecture the plugin has never heard of, described by its structure.yml
+    ArchitectureType cleanMulti = ArchitectureType.fromValue("clean-multi");
+    var structureMetadata = new com.pragma.archetype.domain.model.structure.StructureMetadata(
+        "clean-multi",
+        "app/src/main/resources",
+        java.util.Map.of("driven", "adapters/{name}", "driving", "entrypoints/{name}"),
+        null, null, null, null, null,
+        java.util.List.of(
+            com.pragma.archetype.domain.model.structure.ModuleMetadata.builder().name("core").path("core").build(),
+            com.pragma.archetype.domain.model.structure.ModuleMetadata.builder().name("app").path("apps/app").build()),
+        null, null, null, null, null,
+        java.util.List.of("apps", "adapters"),
+        true);
+    when(templateRepository.loadStructureMetadata(cleanMulti)).thenReturn(structureMetadata);
+    when(templateRepository.templateExists(anyString()))
+        .thenAnswer(inv -> ((String) inv.getArgument(0)).startsWith("architectures/clean-multi/modules/"));
+
+    ProjectConfig config = ProjectConfig.builder()
+        .name("payment-service")
+        .basePackage("com.company.payment")
+        .architecture(cleanMulti)
+        .paradigm(Paradigm.REACTIVE)
+        .framework(Framework.SPRING)
+        .pluginVersion("1.0.0")
+        .build();
+
+    // When
+    List<GeneratedFile> files = generator.generateProject(projectPath, config);
+
+    // Then every module and organizing folder comes from structure.yml
+    List<Path> paths = files.stream().map(GeneratedFile::path).toList();
+    assertTrue(paths.contains(projectPath.resolve("core/build.gradle.kts")));
+    assertTrue(paths.contains(projectPath.resolve("apps/app/build.gradle.kts")));
+    verify(fileSystemPort).createDirectory(projectPath.resolve("apps"));
+    verify(fileSystemPort).createDirectory(projectPath.resolve("adapters"));
+    verify(templateRepository).processTemplate(
+        org.mockito.ArgumentMatchers.eq("architectures/clean-multi/modules/core/build.gradle.kts.ftl"), anyMap());
   }
 
   @Test

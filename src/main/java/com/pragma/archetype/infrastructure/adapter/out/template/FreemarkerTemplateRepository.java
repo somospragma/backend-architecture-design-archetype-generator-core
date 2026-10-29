@@ -54,6 +54,8 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
   private final TemplateConfig templateConfig;
   private final GitHubTemplateDownloader downloader;
   private final StructureMetadataLoader structureMetadataLoader;
+  private final TemplateVersionsLoader versionsLoader;
+  private final ArchitectureIndexLoader architectureIndexLoader;
   private AdapterMetadataLoader adapterMetadataLoader;
   private final TemplateSourceResolver sourceResolver;
 
@@ -69,6 +71,8 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
     this.sourceResolver = null;
     this.freemarkerConfig = createFreemarkerConfiguration();
     this.structureMetadataLoader = new StructureMetadataLoader(this);
+    this.versionsLoader = new TemplateVersionsLoader(this);
+    this.architectureIndexLoader = new ArchitectureIndexLoader(this);
   }
 
   /**
@@ -107,6 +111,8 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
 
     this.freemarkerConfig = createFreemarkerConfiguration();
     this.structureMetadataLoader = new StructureMetadataLoader(this);
+    this.versionsLoader = new TemplateVersionsLoader(this);
+    this.architectureIndexLoader = new ArchitectureIndexLoader(this);
   }
 
   /**
@@ -124,6 +130,8 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
     this.sourceResolver = null;
     this.freemarkerConfig = createFreemarkerConfiguration();
     this.structureMetadataLoader = new StructureMetadataLoader(this);
+    this.versionsLoader = new TemplateVersionsLoader(this);
+    this.architectureIndexLoader = new ArchitectureIndexLoader(this);
   }
 
   @Override
@@ -259,6 +267,16 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
   @Override
   public StructureMetadata loadStructureMetadata(ArchitectureType architecture) {
     return structureMetadataLoader.loadStructureMetadata(architecture);
+  }
+
+  @Override
+  public com.pragma.archetype.domain.model.template.TemplateVersions loadVersions() {
+    return versionsLoader.load();
+  }
+
+  @Override
+  public List<ArchitectureType> listArchitectures() {
+    return architectureIndexLoader.load();
   }
 
   @Override

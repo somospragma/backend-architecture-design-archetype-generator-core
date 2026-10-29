@@ -24,7 +24,9 @@ public record StructureMetadata(
     String useCaseModule,
     java.util.List<StaticFile> staticFiles,
     String sourceDirectory,
-    String testDirectory) {
+    String testDirectory,
+    java.util.List<String> folders,
+    boolean adaptersAsModules) {
 
   private static final String DEFAULT_SOURCE_DIR = "src/main/java";
   private static final String DEFAULT_TEST_DIR = "src/test/java";
@@ -43,6 +45,31 @@ public record StructureMetadata(
     if (staticFiles != null) {
       staticFiles = Collections.unmodifiableList(staticFiles);
     }
+    folders = folders == null ? java.util.List.of() : java.util.List.copyOf(folders);
+  }
+
+  /**
+   * Creates metadata without organizing folders and with adapters generated as
+   * packages (the defaults when structure.yml omits them).
+   */
+  public StructureMetadata(
+      String architectureType,
+      String resourcesPath,
+      Map<String, String> adapterPaths,
+      TemplatePaths templatePaths,
+      PackageMappings packageMappings,
+      NamingConventions namingConventions,
+      LayerDependencies layerDependencies,
+      java.util.List<String> packages,
+      java.util.List<ModuleMetadata> moduleMetadata,
+      String entityModule,
+      String useCaseModule,
+      java.util.List<StaticFile> staticFiles,
+      String sourceDirectory,
+      String testDirectory) {
+    this(architectureType, resourcesPath, adapterPaths, templatePaths, packageMappings, namingConventions,
+        layerDependencies, packages, moduleMetadata, entityModule, useCaseModule, staticFiles, sourceDirectory,
+        testDirectory, java.util.List.of(), false);
   }
 
   /**

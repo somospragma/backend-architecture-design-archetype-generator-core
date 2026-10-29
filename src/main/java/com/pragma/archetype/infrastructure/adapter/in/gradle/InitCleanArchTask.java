@@ -2,6 +2,8 @@ package com.pragma.archetype.infrastructure.adapter.in.gradle;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.TaskAction;
@@ -82,13 +84,13 @@ public class InitCleanArchTask extends BaseCleanArchTask {
       // 1. Validate inputs
       validateInputs();
 
-      // 2. Create configuration
-      ProjectConfig config = createProjectConfig();
-
-      // 3. Setup dependencies (adapters)
+      // 2. Setup dependencies (adapters)
       FileSystemPort fileSystemPort = new LocalFileSystemAdapter();
       ConfigurationPort configurationPort = new YamlConfigurationAdapter();
       TemplateRepository templateRepository = createTemplateRepository();
+
+      // 3. Create configuration (architectures come from the templates)
+      ProjectConfig config = createProjectConfig(templateRepository);
 
       // 4. Setup use case
       ProjectValidator validator = new ProjectValidator(fileSystemPort, configurationPort);
@@ -135,13 +137,13 @@ public class InitCleanArchTask extends BaseCleanArchTask {
           "Package name is required. Use --package=com.company.service");
     }
 
-    // Validate architecture
+    // Validate architecture name format; availability is checked against the
+    // templates in createProjectConfig
     try {
-      ArchitectureType.valueOf(architecture.toUpperCase().replace('-', '_'));
+      ArchitectureType.fromValue(architecture);
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException(
-          "Invalid architecture: " + architecture + ". " +
-              "Valid values: hexagonal-single, hexagonal-multi, hexagonal-multi-granular, onion-single, onion-multi");
+          "Invalid architecture: " + architecture + ". Use a name like hexagonal-single");
     }
 
     // Validate paradigm
@@ -164,12 +166,19 @@ public class InitCleanArchTask extends BaseCleanArchTask {
   /**
    * Creates project configuration from task inputs.
    */
-  private ProjectConfig createProjectConfig() {
+  private ProjectConfig createProjectConfig(TemplateRepository templateRepository) {
     String projectName = getProject().getName();
-    ArchitectureType archType = ArchitectureType.valueOf(architecture.toUpperCase().replace('-', '_'));
+    ArchitectureType archType = ArchitectureType.fromValue(architecture);
 
-    // Automatically enable adaptersAsModules for hexagonal-multi-granular
-    boolean adaptersAsModules = (archType == ArchitectureType.HEXAGONAL_MULTI_GRANULAR);
+    List<ArchitectureType> available = templateRepository.listArchitectures();
+    if (!available.contains(archType)) {
+      throw new IllegalArgumentException(
+          "Invalid architecture: " + architecture + ". Valid values: "
+              + available.stream().map(ArchitectureType::getValue).collect(Collectors.joining(", ")));
+    }
+
+    // structure.yml decides whether adapters are generated as Gradle modules
+    boolean adaptersAsModules = templateRepository.loadStructureMetadata(archType).adaptersAsModules();
 
     // Get plugin version from the base class method
     String pluginVersion = getPluginVersion();

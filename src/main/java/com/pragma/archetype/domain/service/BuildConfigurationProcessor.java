@@ -46,6 +46,8 @@ public class BuildConfigurationProcessor {
     variables.put("adapterName", adapterName);
     variables.put("packageName", packageName);
     variables.put("adapterType", adapterType);
+    // e.g. ${versions.libraries["grpc"]} for protoc plugin artifacts
+    variables.put("versions", templateRepository.loadVersions().toTemplateModel());
 
     // Process as inline template
     return templateRepository.processInlineTemplate(buildConfiguration, variables);

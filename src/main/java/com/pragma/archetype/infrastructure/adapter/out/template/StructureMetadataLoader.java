@@ -91,7 +91,9 @@ public class StructureMetadataLoader {
           useCaseModule,
           staticFiles,
           sourceDirectory,
-          testDirectory);
+          testDirectory,
+          extractFolders(data),
+          Boolean.TRUE.equals(data.get("adaptersAsModules")));
 
       ValidationResult validation = metadata.validate();
       if (!validation.valid()) {
@@ -197,6 +199,22 @@ public class StructureMetadataLoader {
     }
 
     return (java.util.List<String>) packagesObj;
+  }
+
+  /**
+   * Extracts organizing folders (optional): directories created at the project
+   * root that are not modules themselves, e.g. "infrastructure/entry-points".
+   */
+  @SuppressWarnings("unchecked")
+  private java.util.List<String> extractFolders(Map<String, Object> data) {
+    Object foldersObj = data.get("folders");
+    if (foldersObj == null) {
+      return java.util.List.of();
+    }
+    if (!(foldersObj instanceof List)) {
+      throw new IllegalArgumentException("Field 'folders' must be a list");
+    }
+    return (java.util.List<String>) foldersObj;
   }
 
   /**

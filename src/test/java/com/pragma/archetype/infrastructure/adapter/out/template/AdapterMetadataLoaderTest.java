@@ -448,4 +448,85 @@ class AdapterMetadataLoaderTest {
     assertEquals(1, metadata.getTemplates().size());
     assertEquals("Controller.java.ftl", metadata.getTemplates().get(0).getSource());
   }
+
+  @Test
+  @DisplayName("Should resolve versionRef from versions.yml")
+  void shouldResolveVersionRefFromVersionsFile() {
+    // Given
+    contentProvider.addTemplate("versions.yml", """
+        schemaVersion: 1
+        libraries:
+          grpc: "1.58.0"
+          protobuf-plugin: "0.9.4"
+        """);
+    contentProvider.addTemplate("frameworks/spring/imperative/adapters/entry-points/grpc/metadata.yml", """
+        name: grpc
+        type: driving
+        description: gRPC entry point
+        dependencies:
+          - group: io.grpc
+            artifact: grpc-stub
+            versionRef: grpc
+        testDependencies:
+          - group: io.grpc
+            artifact: grpc-testing
+            versionRef: grpc
+        buildPlugins:
+          - id: com.google.protobuf
+            versionRef: protobuf-plugin
+        """);
+
+    // When
+    AdapterMetadata metadata = loader.loadAdapterMetadata("grpc", "spring", "imperative", "entry-points");
+
+    // Then
+    assertEquals("1.58.0", metadata.getRuntimeDependencies().get(0).version());
+    assertEquals("1.58.0", metadata.getTestDependencies().get(0).version());
+    assertEquals("io.grpc:grpc-stub:1.58.0", metadata.getDependencies().get(0));
+    assertEquals("0.9.4", metadata.getBuildPlugins().get(0).version());
+  }
+
+  @Test
+  @DisplayName("Should leave the version empty when a BOM manages it")
+  void shouldAllowBomManagedDependencies() {
+    // Given
+    contentProvider.addTemplate("frameworks/spring/imperative/adapters/driven-adapters/mongodb/metadata.yml", """
+        name: mongodb
+        type: driven
+        description: MongoDB adapter
+        dependencies:
+          - group: org.springframework.boot
+            artifact: spring-boot-starter-data-mongodb
+        """);
+
+    // When
+    AdapterMetadata metadata = loader.loadAdapterMetadata("mongodb", "spring", "imperative", "driven-adapters");
+
+    // Then
+    Dependency dep = metadata.getRuntimeDependencies().get(0);
+    assertEquals(null, dep.version());
+    assertEquals("org.springframework.boot:spring-boot-starter-data-mongodb", dep.toCoordinate());
+    assertEquals("org.springframework.boot:spring-boot-starter-data-mongodb", metadata.getDependencies().get(0));
+  }
+
+  @Test
+  @DisplayName("Should fail with a clear message for an unknown versionRef")
+  void shouldRejectUnknownVersionRef() {
+    // Given
+    contentProvider.addTemplate("versions.yml", "schemaVersion: 1\n");
+    contentProvider.addTemplate("frameworks/spring/imperative/adapters/entry-points/grpc/metadata.yml", """
+        name: grpc
+        type: driving
+        description: gRPC entry point
+        dependencies:
+          - group: io.grpc
+            artifact: grpc-stub
+            versionRef: grpc
+        """);
+
+    // When / Then
+    Exception error = assertThrows(Exception.class,
+        () -> loader.loadAdapterMetadata("grpc", "spring", "imperative", "entry-points"));
+    assertTrue(error.getMessage().contains("Unknown versionRef 'grpc'"));
+  }
 }

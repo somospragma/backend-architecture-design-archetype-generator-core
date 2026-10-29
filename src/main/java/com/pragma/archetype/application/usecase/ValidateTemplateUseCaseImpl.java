@@ -33,8 +33,8 @@ public class ValidateTemplateUseCaseImpl implements ValidateTemplateUseCase {
     List<String> allWarnings = new ArrayList<>();
     int successCount = 0;
 
-    // Validate all architecture types
-    for (ArchitectureType architecture : ArchitectureType.values()) {
+    // Validate every architecture the template repository declares
+    for (ArchitectureType architecture : templateValidator.availableArchitectures()) {
       ValidationResult result = templateValidator.validateArchitectureTemplates(architecture);
       if (result.valid()) {
         successCount++;
@@ -69,9 +69,11 @@ public class ValidateTemplateUseCaseImpl implements ValidateTemplateUseCase {
     logger.info("Validating architecture templates: {}", architectureName);
 
     try {
-      // Parse architecture name to ArchitectureType
-      ArchitectureType architecture = ArchitectureType.valueOf(
-          architectureName.toUpperCase().replace('-', '_'));
+      // Only architectures declared by the template repository are valid
+      ArchitectureType architecture = ArchitectureType.fromValue(architectureName);
+      if (!templateValidator.availableArchitectures().contains(architecture)) {
+        throw new IllegalArgumentException("Unknown architecture type: " + architectureName);
+      }
 
       ValidationResult result = templateValidator.validateArchitectureTemplates(architecture);
 
@@ -91,8 +93,8 @@ public class ValidateTemplateUseCaseImpl implements ValidateTemplateUseCase {
     } catch (IllegalArgumentException e) {
       String error = "Unknown architecture type: " + architectureName;
       logger.error(error);
-      logger
-          .info("Valid architecture types: hexagonal-single, hexagonal-multi, hexagonal-multi-granular, onion-single");
+      logger.info("Valid architecture types: {}", templateValidator.availableArchitectures().stream()
+          .map(ArchitectureType::getValue).collect(java.util.stream.Collectors.joining(", ")));
       return ValidationResult.failure(error);
     }
   }

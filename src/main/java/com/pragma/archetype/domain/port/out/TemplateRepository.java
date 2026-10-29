@@ -78,6 +78,28 @@ public interface TemplateRepository {
   StructureMetadata loadStructureMetadata(ArchitectureType architecture);
 
   /**
+   * Loads the versions declared by the template repository in versions.yml.
+   * Templates are the single source of truth for versions, so a version bump
+   * never requires a plugin release.
+   *
+   * @return template versions, empty when the templates predate versions.yml
+   */
+  default com.pragma.archetype.domain.model.template.TemplateVersions loadVersions() {
+    return com.pragma.archetype.domain.model.template.TemplateVersions.empty();
+  }
+
+  /**
+   * Lists the architectures the template repository provides
+   * (architectures/index.yml), so new architectures need no plugin release.
+   *
+   * @return available architectures, the built-in ones when the templates
+   *         predate the index
+   */
+  default java.util.List<ArchitectureType> listArchitectures() {
+    return java.util.List.of(ArchitectureType.values());
+  }
+
+  /**
    * Loads adapter metadata for a given adapter using framework-aware structure.
    * Path:
    * frameworks/{framework}/{paradigm}/adapters/{adapterType}/{adapterName}/metadata.yml

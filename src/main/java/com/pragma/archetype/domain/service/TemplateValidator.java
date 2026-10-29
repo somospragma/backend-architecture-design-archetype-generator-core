@@ -27,6 +27,13 @@ public class TemplateValidator {
   }
 
   /**
+   * Architectures declared by the template repository.
+   */
+  public java.util.List<ArchitectureType> availableArchitectures() {
+    return templateRepository.listArchitectures();
+  }
+
+  /**
    * Validates all templates for an architecture.
    * 
    * @param architecture the architecture type to validate

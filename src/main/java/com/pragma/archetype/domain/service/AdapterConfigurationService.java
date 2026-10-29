@@ -369,7 +369,7 @@ public class AdapterConfigurationService {
 
             String updatedContent = buildFileContent;
             for (AdapterMetadata.Dependency testDep : metadata.getTestDependencies()) {
-                String coordinate = testDep.group() + ":" + testDep.artifact() + ":" + testDep.version();
+                String coordinate = testDep.toCoordinate();
                 updatedContent = addTestDependencyToBuildFile(updatedContent, coordinate);
             }
 
@@ -512,19 +512,14 @@ public class AdapterConfigurationService {
      */
     private String addDependencyToBuildFile(String buildFileContent, String dependency) {
         // Parse dependency coordinate
+        // group:artifact:version, or group:artifact when a BOM manages the version
         String[] parts = dependency.split(":");
-        if (parts.length < 3) {
-            logger.warn("Invalid dependency format: {}. Expected group:artifact:version", dependency);
+        if (parts.length < 2 || parts.length > 3) {
+            logger.warn("Invalid dependency format: {}. Expected group:artifact[:version]", dependency);
             return buildFileContent;
         }
 
-        String group = parts[0];
-        String artifact = parts[1];
-        String version = parts[2];
-
-        // Format: implementation("group:artifact:version")
-        String dependencyStatement = String.format("    implementation(\"%s:%s:%s\")",
-                group, artifact, version);
+        String dependencyStatement = String.format("    implementation(\"%s\")", dependency);
 
         // Check if dependency is already present
         if (buildFileContent.contains(dependencyStatement)) {
@@ -571,19 +566,14 @@ public class AdapterConfigurationService {
      */
     private String addTestDependencyToBuildFile(String buildFileContent, String dependency) {
         // Parse dependency coordinate
+        // group:artifact:version, or group:artifact when a BOM manages the version
         String[] parts = dependency.split(":");
-        if (parts.length < 3) {
-            logger.warn("Invalid test dependency format: {}. Expected group:artifact:version", dependency);
+        if (parts.length < 2 || parts.length > 3) {
+            logger.warn("Invalid test dependency format: {}. Expected group:artifact[:version]", dependency);
             return buildFileContent;
         }
 
-        String group = parts[0];
-        String artifact = parts[1];
-        String version = parts[2];
-
-        // Format: testImplementation("group:artifact:version")
-        String dependencyStatement = String.format("    testImplementation(\"%s:%s:%s\")",
-                group, artifact, version);
+        String dependencyStatement = String.format("    testImplementation(\"%s\")", dependency);
 
         // Check if dependency is already present
         if (buildFileContent.contains(dependencyStatement)) {

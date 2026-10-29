@@ -54,7 +54,7 @@ object DomainModelGenerators {
      * Generates architecture types.
      */
     fun architectureType(): Arb<ArchitectureType> = 
-        Arb.enum<ArchitectureType>()
+        Arb.of(ArchitectureType.values().toList())
     
     /**
      * Generates framework types.

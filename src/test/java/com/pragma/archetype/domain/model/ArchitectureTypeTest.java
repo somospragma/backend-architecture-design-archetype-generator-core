@@ -1,9 +1,8 @@
 package com.pragma.archetype.domain.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -44,20 +43,31 @@ class ArchitectureTypeTest {
   }
 
   @Test
-  void shouldThrowExceptionForInvalidValue() {
-    assertThrows(IllegalArgumentException.class, () -> ArchitectureType.fromValue("invalid"));
+  void shouldRejectNamesThatAreNotDirectoryNames() {
+    assertThrows(IllegalArgumentException.class, () -> ArchitectureType.fromValue(null));
+    assertThrows(IllegalArgumentException.class, () -> ArchitectureType.fromValue(" "));
+    assertThrows(IllegalArgumentException.class, () -> ArchitectureType.fromValue("hexagonal single"));
+    assertThrows(IllegalArgumentException.class, () -> ArchitectureType.fromValue("../hexagonal"));
   }
 
   @Test
-  void shouldIdentifyMultiModuleArchitectures() {
-    assertTrue(ArchitectureType.HEXAGONAL_MULTI.isMultiModule());
-    assertTrue(ArchitectureType.HEXAGONAL_MULTI_GRANULAR.isMultiModule());
-    assertTrue(ArchitectureType.ONION_MULTI.isMultiModule());
+  void shouldAcceptArchitecturesDeclaredOnlyByTemplates() {
+    ArchitectureType clean = ArchitectureType.fromValue("clean-multi");
+
+    assertEquals("clean-multi", clean.getValue());
+    assertEquals("CLEAN_MULTI", clean.name());
+    assertEquals(clean, ArchitectureType.fromValue("CLEAN_MULTI"));
   }
 
   @Test
-  void shouldIdentifySingleModuleArchitectures() {
-    assertFalse(ArchitectureType.HEXAGONAL_SINGLE.isMultiModule());
-    assertFalse(ArchitectureType.ONION_SINGLE.isMultiModule());
+  void shouldReturnSharedConstantsForBuiltInNames() {
+    assertSame(ArchitectureType.HEXAGONAL_MULTI, ArchitectureType.fromValue("hexagonal-multi"));
+    assertSame(ArchitectureType.HEXAGONAL_MULTI, ArchitectureType.valueOf("HEXAGONAL_MULTI"));
+  }
+
+  @Test
+  void shouldKeepEnumStyleNameForBuiltIns() {
+    assertEquals("HEXAGONAL_MULTI_GRANULAR", ArchitectureType.HEXAGONAL_MULTI_GRANULAR.name());
+    assertEquals(5, ArchitectureType.values().length);
   }
 }
