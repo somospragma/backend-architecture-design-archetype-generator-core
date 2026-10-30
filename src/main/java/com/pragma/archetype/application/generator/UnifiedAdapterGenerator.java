@@ -119,7 +119,9 @@ public class UnifiedAdapterGenerator {
   }
 
   /**
-   * Generates adapter as a new Gradle module (for granular architectures).
+   * Generates adapter as a new Gradle module (for granular architectures):
+   * the module build file plus the same files as an in-place adapter, which
+   * {@link #resolveAdapterFilePath} places inside the module.
    */
   private List<GeneratedFile> generateAsModule(
       Path projectPath,
@@ -129,63 +131,24 @@ public class UnifiedAdapterGenerator {
       ProjectConfig projectConfig) {
 
     var generatedFiles = new ArrayList<GeneratedFile>();
+    String modulePath = structureMetadata.adapterModulePath(adapterType(direction), config.getName());
 
-    // Determine module path based on direction using structure metadata
-    String moduleName = config.getName().toLowerCase().replaceAll("([a-z])([A-Z])", "$1-$2").toLowerCase();
-    String adapterType = direction == AdapterDirection.INPUT ? "driving" : "driven";
-    String moduleBasePath = structureMetadata.getAdapterBaseDirectory(adapterType);
-    if (moduleBasePath == null) {
-      // Fallback to default paths if not configured in structure.yml
-      moduleBasePath = direction == AdapterDirection.INPUT
-          ? "infrastructure/entry-points"
-          : "infrastructure/driven-adapters";
-    }
-    String modulePath = moduleBasePath + "/" + moduleName;
+    generatedFiles.add(generateModuleBuildFile(projectPath, config, projectConfig, modulePath, direction));
+    generatedFiles.addAll(generateInPlace(projectPath, config, direction, structureMetadata, projectConfig));
 
-    // 1. Create module build.gradle.kts
-    GeneratedFile buildFile = generateModuleBuildFile(projectPath, config, projectConfig, modulePath, direction);
-    generatedFiles.add(buildFile);
-
-    // 2. Generate main adapter file in the module
-    GeneratedFile mainFile = generateMainFileInModule(projectPath, config, direction, modulePath, projectConfig,
-        structureMetadata);
-    generatedFiles.add(mainFile);
-
-    // Output port the driven adapter implements, when the domain doesn't have it yet
-    generateGatewayPortIfMissing(projectPath, config, direction,
-        prepareTemplateData(config, direction, projectConfig), structureMetadata)
-        .ifPresent(generatedFiles::add);
-
-    // 3. Generate entity mapper if needed (for data store adapters)
-    if (needsEntityMapper(config, direction)) {
-      GeneratedFile mapperFile = generateMapperInModule(projectPath, config, modulePath, projectConfig,
-          structureMetadata);
-      generatedFiles.add(mapperFile);
-
-      GeneratedFile entityFile = generateDataEntityInModule(projectPath, config, direction, modulePath, projectConfig,
-          structureMetadata);
-      generatedFiles.add(entityFile);
-    }
-
-    // 4. Generate additional resources (GraphQL schemas, gRPC protos, etc.) - only
-    // for INPUT
-    if (direction == AdapterDirection.INPUT) {
-      String resourcesPath = structureMetadata.getResourcesPath();
-      List<GeneratedFile> additionalFiles = generateAdditionalResources(
-          projectPath, config, direction, resourcesPath, projectConfig);
-      generatedFiles.addAll(additionalFiles);
-    }
-
-    // 5. Update settings.gradle.kts to include the new module
+    // Register the module and make the application module depend on it
     String modulePathForSettings = modulePath.replace('/', ':');
     projectGenerator.addModuleToSettings(projectPath, modulePathForSettings);
-
-    // 6. Add dependency from app-service to this adapter module (use leaf name for flat includes)
     String[] segments = modulePathForSettings.split(":");
     String leafModuleName = segments[segments.length - 1];
-    projectGenerator.addDependencyToModule(projectPath, "application/app-service", ":" + leafModuleName);
+    projectGenerator.addDependencyToModule(projectPath, structureMetadata.applicationModulePath(),
+        ":" + leafModuleName);
 
     return generatedFiles;
+  }
+
+  private static String adapterType(AdapterDirection direction) {
+    return direction == AdapterDirection.INPUT ? "driving" : "driven";
   }
 
   /**
@@ -217,7 +180,7 @@ public class UnifiedAdapterGenerator {
       return java.util.Optional.empty();
     }
     Path gatewayPath = projectPath
-        .resolve(resolveUseCaseModulePath(structureMetadata))
+        .resolve(structureMetadata.modulePathForPackageType("ports"))
         .resolve(structureMetadata.getSourceDirectory())
         .resolve(portsPackage.replace('.', '/'))
         .resolve("I" + entityName + "Gateway.java")
@@ -228,25 +191,6 @@ public class UnifiedAdapterGenerator {
 
     return java.util.Optional.of(
         GeneratedFile.javaSource(gatewayPath, templateRepository.processTemplate(templatePath, data)));
-  }
-
-  /**
-   * Module that holds the domain ports (same module as the use cases), or the
-   * project root for single-module architectures.
-   */
-  private String resolveUseCaseModulePath(StructureMetadata structureMetadata) {
-    if (!structureMetadata.generatesMultiModuleProject()) {
-      return ".";
-    }
-    try {
-      ModuleMetadata useCaseModule = structureMetadata.getUseCaseModule();
-      if (useCaseModule != null && useCaseModule.getPath() != null) {
-        return useCaseModule.getPath();
-      }
-    } catch (IllegalStateException e) {
-      // useCaseModule not configured, fall back to the project root
-    }
-    return ".";
   }
 
   /**
@@ -283,9 +227,10 @@ public class UnifiedAdapterGenerator {
       generatedFiles.add(entityFile);
     }
 
-    // Generate additional resources (only for INPUT adapters)
+    // Generate additional resources (only for INPUT adapters) in the adapter's module,
+    // where its build plugins (e.g. protobuf) pick them up
     if (direction == AdapterDirection.INPUT) {
-      String resourcesPath = structureMetadata.getResourcesPath();
+      String resourcesPath = structureMetadata.adapterResourcesPath(adapterType(direction), config.getName());
       List<GeneratedFile> additionalFiles = generateAdditionalResources(
           projectPath, config, direction, resourcesPath, projectConfig);
       generatedFiles.addAll(additionalFiles);
@@ -535,97 +480,17 @@ public class UnifiedAdapterGenerator {
     data.put("adapterType", config.getType().toLowerCase());
     data.put(BASE_PACKAGE_KEY, projectConfig.basePackage());
     data.put("direction", direction.name().toLowerCase());
+    data.put(VARIABLE_PARADIGM, config.getParadigm());
 
-    // Select template based on architecture
-    String templatePath = "architectures/hexagonal-multi-granular/modules/adapter-build.gradle.kts.ftl";
+    String templatePath = "architectures/" + projectConfig.architecture().getValue()
+        + "/modules/adapter-build.gradle.kts.ftl";
     String content = templateRepository.processTemplate(templatePath, data);
 
     Path filePath = projectPath.resolve(modulePath).resolve("build.gradle.kts");
     return new GeneratedFile(filePath, content, FileType.GRADLE_BUILD, false);
   }
 
-  private GeneratedFile generateMainFileInModule(
-      Path projectPath,
-      AdapterConfig config,
-      AdapterDirection direction,
-      String modulePath,
-      ProjectConfig projectConfig,
-      StructureMetadata structureMetadata) {
-
-    Map<String, Object> data = prepareTemplateData(config, direction, projectConfig);
-    AdapterMetadata metadata = getAdapterMetadata(config, direction);
-    String templatePath = getMainTemplatePath(config, direction, metadata);
-    String content = templateRepository.processTemplate(templatePath, data);
-
-    String suffix = getAdapterSuffix(metadata);
-    String packagePath = config.getPackageName().replace('.', '/');
-    Path filePath = projectPath
-        .resolve(modulePath)
-        .resolve(structureMetadata.getSourceDirectory())
-        .resolve(packagePath)
-        .resolve(config.getName() + suffix + ".java");
-
-    return GeneratedFile.javaSource(filePath, content);
-  }
-
-  private GeneratedFile generateMapperInModule(
-      Path projectPath,
-      AdapterConfig config,
-      String modulePath,
-      ProjectConfig projectConfig,
-      StructureMetadata structureMetadata) {
-
-    Map<String, Object> data = prepareTemplateData(config, AdapterDirection.OUTPUT, projectConfig);
-    
-    // Add mapper-specific packages
-    String adapterPackage = config.getPackageName();
-    data.put("packageName", adapterPackage + ".mapper");
-    data.put("entityPackage", adapterPackage + ".entity");
-    
-    String templatePath = getMapperTemplatePath(config, AdapterDirection.OUTPUT);
-    String content = templateRepository.processTemplate(templatePath, data);
-
-    String mapperPackage = adapterPackage + ".mapper";
-    String packagePath = mapperPackage.replace('.', '/');
-    Path filePath = projectPath
-        .resolve(modulePath)
-        .resolve(structureMetadata.getSourceDirectory())
-        .resolve(packagePath)
-        .resolve(config.getEntityName() + "EntityMapper.java");
-
-    return GeneratedFile.javaSource(filePath, content);
-  }
-
   // ========== HELPER METHODS ==========
-
-  private GeneratedFile generateDataEntityInModule(
-      Path projectPath,
-      AdapterConfig config,
-      AdapterDirection direction,
-      String modulePath,
-      ProjectConfig projectConfig,
-      StructureMetadata structureMetadata) {
-
-    Map<String, Object> data = prepareTemplateData(config, direction, projectConfig);
-    
-    // Add entity-specific package
-    String adapterPackage = config.getPackageName();
-    data.put("packageName", adapterPackage + ".entity");
-    
-    AdapterMetadata metadata = getAdapterMetadata(config, direction);
-    String templatePath = getDataEntityTemplatePath(config, direction, metadata);
-    String content = templateRepository.processTemplate(templatePath, data);
-
-    String entityPackage = adapterPackage + ".entity";
-    String packagePath = entityPackage.replace('.', '/');
-    Path filePath = projectPath
-        .resolve(modulePath)
-        .resolve(structureMetadata.getSourceDirectory())
-        .resolve(packagePath)
-        .resolve(config.getEntityName() + "Entity.java");
-
-    return GeneratedFile.javaSource(filePath, content);
-  }
 
   /**
    * Validates that the adapter type exists for the given direction.
@@ -769,6 +634,15 @@ public class UnifiedAdapterGenerator {
       StructureMetadata structureMetadata) {
 
     String sourceDir = structureMetadata.getSourceDirectory();
+
+    if (structureMetadata.adaptersAsModules()) {
+      // Adapter module: its package lives inside the module's own source directory
+      return projectPath
+          .resolve(structureMetadata.adapterModulePath(adapterType(direction), config.getName()))
+          .resolve(sourceDir)
+          .resolve(config.getPackageName().replace('.', PATH_SEPARATOR.charAt(0)))
+          .resolve(fileName);
+    }
 
     if (projectConfig != null) {
       // Use PathResolver for dynamic path resolution

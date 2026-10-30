@@ -315,7 +315,11 @@ public class ProjectGenerator {
                                 frameworkPath + "/application.yml.ftl",
                                 context);
 
-                Path resourcesPath = projectPath.resolve("src/main/resources");
+                // Load structure metadata to locate the application module
+                StructureMetadata structureMetadata = templateRepository
+                                .loadStructureMetadata(config.architecture());
+
+                Path resourcesPath = projectPath.resolve(structureMetadata.getResourcesPath());
                 fileSystemPort.createDirectory(resourcesPath);
 
                 files.add(GeneratedFile.create(
@@ -339,15 +343,13 @@ public class ProjectGenerator {
                                 frameworkPath + "/Application.java.ftl",
                                 context);
 
-                // Load structure metadata to get source directory
-                StructureMetadata structureMetadata = templateRepository
-                                .loadStructureMetadata(config.architecture());
-
                 String applicationClassName = toPascalCase(config.name()) + "Application.java";
                 Path mainClassPath = projectPath
+                                .resolve(structureMetadata.applicationModulePath())
                                 .resolve(structureMetadata.getSourceDirectory())
                                 .resolve(config.basePackage().replace('.', '/'))
-                                .resolve(applicationClassName);
+                                .resolve(applicationClassName)
+                                .normalize();
 
                 fileSystemPort.createDirectory(mainClassPath.getParent());
 
@@ -472,6 +474,9 @@ public class ProjectGenerator {
                         // structure.yml, so new ones need no plugin changes
                         files.addAll(generateModulesFromStructure(projectPath, config, context, architecturePath));
                 }
+
+                // application.yml and the main class, in the module that runs the application
+                files.addAll(generateFrameworkFiles(projectPath, config, context));
 
                 return files;
         }
@@ -598,35 +603,6 @@ public class ProjectGenerator {
                 files.add(GeneratedFile.create(infrastructureSrcPath.resolve(inputAdapterDir + "/rest/.gitkeep"), ""));
                 files.add(GeneratedFile.create(infrastructureSrcPath.resolve(outputAdapterDir + "/.gitkeep"), ""));
 
-                // Generate application.yml
-                String frameworkPath = "frameworks/" + config.framework().name().toLowerCase() + "/"
-                                + config.paradigm().name().toLowerCase() + "/project";
-
-                String applicationYmlContent = templateRepository.processTemplate(
-                                frameworkPath + "/application.yml.ftl",
-                                context);
-
-                Path resourcesPath = infrastructurePath.resolve("src/main/resources");
-                fileSystemPort.createDirectory(resourcesPath);
-
-                files.add(GeneratedFile.create(
-                                resourcesPath.resolve("application.yml"),
-                                applicationYmlContent));
-
-                // Generate main Application class
-                String applicationClassContent = templateRepository.processTemplate(
-                                frameworkPath + "/Application.java.ftl",
-                                context);
-
-                String applicationClassName = toPascalCase(config.name()) + "Application.java";
-                Path mainClassPath = infrastructureSrcPath
-                                .resolve("config")
-                                .resolve(applicationClassName);
-
-                files.add(GeneratedFile.create(
-                                mainClassPath,
-                                applicationClassContent));
-
                 // Note: UseCasesConfig.java and ErrorType.java are now generated via
                 // staticFiles in structure.yml. BeanConfiguration.java is deprecated.
 
@@ -718,168 +694,6 @@ public class ProjectGenerator {
 
                 fileSystemPort.createDirectory(srcPath);
                 files.add(GeneratedFile.create(srcPath.resolve(".gitkeep"), ""));
-
-                return files;
-        }
-
-        private List<GeneratedFile> generateGranularDomainModelModule(
-                        Path projectPath,
-                        ProjectConfig config,
-                        Map<String, Object> context,
-                        String architecturePath) {
-
-                List<GeneratedFile> files = new ArrayList<>();
-                Path modulePath = projectPath.resolve("domain/model");
-
-                // Load structure metadata to get source directory
-                StructureMetadata structureMetadata = templateRepository
-                                .loadStructureMetadata(config.architecture());
-
-                // Generate build.gradle.kts
-                String buildGradleContent = templateRepository.processTemplate(
-                                architecturePath + "/modules/domain-model/build.gradle.kts.ftl",
-                                context);
-                files.add(GeneratedFile.create(
-                                modulePath.resolve("build.gradle.kts"),
-                                buildGradleContent));
-
-                // Create package structure
-                Path srcPath = modulePath
-                                .resolve(structureMetadata.getSourceDirectory())
-                                .resolve(config.basePackage().replace('.', '/'))
-                                .resolve("domain/model");
-
-                fileSystemPort.createDirectory(srcPath);
-                files.add(GeneratedFile.create(srcPath.resolve(".gitkeep"), ""));
-
-                return files;
-        }
-
-        private List<GeneratedFile> generateGranularDomainPortsModule(
-                        Path projectPath,
-                        ProjectConfig config,
-                        Map<String, Object> context,
-                        String architecturePath) {
-
-                List<GeneratedFile> files = new ArrayList<>();
-                Path modulePath = projectPath.resolve("domain/ports");
-
-                // Load structure metadata to get source directory
-                StructureMetadata structureMetadata = templateRepository
-                                .loadStructureMetadata(config.architecture());
-
-                // Generate build.gradle.kts
-                String buildGradleContent = templateRepository.processTemplate(
-                                architecturePath + "/modules/domain-ports/build.gradle.kts.ftl",
-                                context);
-                files.add(GeneratedFile.create(
-                                modulePath.resolve("build.gradle.kts"),
-                                buildGradleContent));
-
-                // Create package structure
-                Path srcPath = modulePath
-                                .resolve(structureMetadata.getSourceDirectory())
-                                .resolve(config.basePackage().replace('.', '/'))
-                                .resolve("domain/port");
-
-                fileSystemPort.createDirectory(srcPath.resolve("in"));
-                fileSystemPort.createDirectory(srcPath.resolve("out"));
-                files.add(GeneratedFile.create(srcPath.resolve("in/.gitkeep"), ""));
-                files.add(GeneratedFile.create(srcPath.resolve("out/.gitkeep"), ""));
-
-                return files;
-        }
-
-        private List<GeneratedFile> generateGranularDomainUseCaseModule(
-                        Path projectPath,
-                        ProjectConfig config,
-                        Map<String, Object> context,
-                        String architecturePath) {
-
-                List<GeneratedFile> files = new ArrayList<>();
-                Path modulePath = projectPath.resolve("domain/usecases");
-
-                // Load structure metadata to get source directory
-                StructureMetadata structureMetadata = templateRepository
-                                .loadStructureMetadata(config.architecture());
-
-                // Generate build.gradle.kts
-                String buildGradleContent = templateRepository.processTemplate(
-                                architecturePath + "/modules/domain-usecase/build.gradle.kts.ftl",
-                                context);
-                files.add(GeneratedFile.create(
-                                modulePath.resolve("build.gradle.kts"),
-                                buildGradleContent));
-
-                // Create package structure
-                Path srcPath = modulePath
-                                .resolve(structureMetadata.getSourceDirectory())
-                                .resolve(config.basePackage().replace('.', '/'));
-
-                fileSystemPort.createDirectory(srcPath);
-                files.add(GeneratedFile.create(srcPath.resolve(".gitkeep"), ""));
-
-                return files;
-        }
-
-        private List<GeneratedFile> generateGranularAppServiceModule(
-                        Path projectPath,
-                        ProjectConfig config,
-                        Map<String, Object> context,
-                        String architecturePath) {
-
-                List<GeneratedFile> files = new ArrayList<>();
-                Path modulePath = projectPath.resolve("application/app-service");
-
-                // Load structure metadata to get source directory
-                StructureMetadata structureMetadata = templateRepository
-                                .loadStructureMetadata(config.architecture());
-
-                // Generate build.gradle.kts
-                String buildGradleContent = templateRepository.processTemplate(
-                                architecturePath + "/modules/app-service/build.gradle.kts.ftl",
-                                context);
-                files.add(GeneratedFile.create(
-                                modulePath.resolve("build.gradle.kts"),
-                                buildGradleContent));
-
-                // Create package structure
-                Path srcPath = modulePath
-                                .resolve(structureMetadata.getSourceDirectory())
-                                .resolve(config.basePackage().replace('.', '/'))
-                                .resolve("config");
-
-                fileSystemPort.createDirectory(srcPath);
-
-                // Generate application.yml
-                String frameworkPath = "frameworks/" + config.framework().name().toLowerCase() + "/"
-                                + config.paradigm().name().toLowerCase() + "/project";
-
-                String applicationYmlContent = templateRepository.processTemplate(
-                                frameworkPath + "/application.yml.ftl",
-                                context);
-
-                Path resourcesPath = modulePath.resolve("src/main/resources");
-                fileSystemPort.createDirectory(resourcesPath);
-
-                files.add(GeneratedFile.create(
-                                resourcesPath.resolve("application.yml"),
-                                applicationYmlContent));
-
-                // Generate main Application class
-                String applicationClassContent = templateRepository.processTemplate(
-                                frameworkPath + "/Application.java.ftl",
-                                context);
-
-                String applicationClassName = toPascalCase(config.name()) + "Application.java";
-                Path mainClassPath = srcPath.resolve(applicationClassName);
-
-                files.add(GeneratedFile.create(
-                                mainClassPath,
-                                applicationClassContent));
-
-                // Note: UseCasesConfig.java and ErrorType.java are now generated via
-                // staticFiles in structure.yml. BeanConfiguration.java is deprecated.
 
                 return files;
         }

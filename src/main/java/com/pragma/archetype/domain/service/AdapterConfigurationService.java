@@ -124,8 +124,9 @@ public class AdapterConfigurationService {
                 return;
             }
 
-            // Determine application.yml path
-            Path applicationYmlPath = projectPath.resolve("src/main/resources/application.yml");
+            // application.yml lives in the module that runs the application
+            Path applicationYmlPath = projectPath.resolve(structureMetadata.getResourcesPath())
+                    .resolve("application.yml");
 
             // Read existing application.yml if it exists
             Map<String, Object> existingProperties = yamlConfigurationAdapter.readYaml(applicationYmlPath);
@@ -213,19 +214,10 @@ public class AdapterConfigurationService {
                     String sourceDir = structureMetadata.getSourceDirectory();
                     String fileName = config.name() + configClass.name() + ".java";
                     
-                    // For multi-module, resolve to the infrastructure module path
-                    Path basePath = projectPath;
-                    if (structureMetadata.isMultiModule()) {
-                        for (var module : structureMetadata.moduleMetadata()) {
-                            if (module.getPackageTypes().containsKey("drivenAdapters")
-                                    || module.getPackageTypes().containsKey("entryPoints")
-                                    || module.getPackageTypes().containsKey("config")) {
-                                basePath = projectPath.resolve(module.getPath());
-                                break;
-                            }
-                        }
-                    }
-                    
+                    // Next to the adapter, so it compiles against the adapter's dependencies
+                    Path basePath = projectPath.resolve(
+                            structureMetadata.adapterModulePath(adapterType(config), config.name())).normalize();
+
                     Path configFilePath = basePath
                             .resolve(sourceDir)
                             .resolve(packagePath)
@@ -278,28 +270,32 @@ public class AdapterConfigurationService {
     }
 
     /**
-     * Resolves the correct build.gradle.kts path based on architecture.
-     * For multi-module, adapters go in the infrastructure module.
+     * Resolves the build.gradle.kts of the module that owns the adapter
+     * (see {@link StructureMetadata#adapterModulePath}); the root build file
+     * when the structure cannot be loaded.
      */
     private Path resolveBuildFilePath(Path projectPath, AdapterConfig config) {
         try {
             var projectConfig = configurationPort.readConfiguration(projectPath).orElse(null);
             if (projectConfig != null) {
                 var structureMetadata = templateRepository.loadStructureMetadata(projectConfig.architecture());
-                if (structureMetadata.isMultiModule()) {
-                    // For multi-module, find the infrastructure module path
-                    for (var module : structureMetadata.moduleMetadata()) {
-                        if (module.getPackageTypes().containsKey("drivenAdapters")
-                                || module.getPackageTypes().containsKey("entryPoints")) {
-                            return projectPath.resolve(module.getPath()).resolve("build.gradle.kts");
-                        }
-                    }
-                }
+                return resolveBuildFilePath(projectPath, config, structureMetadata);
             }
         } catch (Exception e) {
             logger.debug("Could not resolve module build file, using root: {}", e.getMessage());
         }
         return projectPath.resolve("build.gradle.kts");
+    }
+
+    private Path resolveBuildFilePath(Path projectPath, AdapterConfig config, StructureMetadata structureMetadata) {
+        return projectPath
+                .resolve(structureMetadata.adapterModulePath(adapterType(config), config.name()))
+                .resolve("build.gradle.kts")
+                .normalize();
+    }
+
+    private static String adapterType(AdapterConfig config) {
+        return config.direction() == AdapterDirection.INPUT ? "driving" : "driven";
     }
 
     private void addDependenciesToBuildFile(
@@ -410,8 +406,13 @@ public class AdapterConfigurationService {
 
             logger.info("Processing build plugins and configuration for adapter: {}", config.name());
 
-            // Determine the build file path
-            Path buildFilePath = projectPath.resolve("build.gradle.kts");
+            // Plugins and their configuration belong to the module that compiles the adapter
+            Path buildFilePath = resolveBuildFilePath(projectPath, config, structureMetadata);
+            String modulePath = structureMetadata.adapterModulePath(adapterType(config), config.name());
+            // Paths inside a module build file are relative to that module
+            String resourcesPath = ".".equals(modulePath)
+                    ? structureMetadata.getResourcesPath()
+                    : "src/main/resources";
 
             if (!fileSystemPort.exists(buildFilePath)) {
                 logger.warn("Build file not found at {}, skipping build configuration", buildFilePath);
@@ -430,7 +431,7 @@ public class AdapterConfigurationService {
             if (metadata.hasBuildConfiguration()) {
                 String processedConfig = buildConfigurationProcessor.process(
                         metadata.getBuildConfiguration(),
-                        structureMetadata,
+                        resourcesPath,
                         config.name(),
                         config.packageName(),
                         config.type());

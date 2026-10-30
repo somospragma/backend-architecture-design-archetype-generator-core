@@ -85,6 +85,78 @@ public record StructureMetadata(
   }
 
   /**
+   * Gradle module, relative to the project root, that owns an adapter. Its
+   * dependencies, build plugins, configuration classes and resources all go
+   * there: the adapter's own module when adapters are modules, the module
+   * containing the adapter path in multi-module projects, or {@code "."} for
+   * single-module projects.
+   *
+   * @param adapterType "driven" or "driving"
+   * @param adapterName the adapter name as given by the user
+   */
+  public String adapterModulePath(String adapterType, String adapterName) {
+    if (adaptersAsModules) {
+      String baseDirectory = getAdapterBaseDirectory(adapterType);
+      if (baseDirectory == null) {
+        baseDirectory = "driving".equals(adapterType)
+            ? "infrastructure/entry-points"
+            : "infrastructure/driven-adapters";
+      }
+      return baseDirectory + "/" + adapterName.toLowerCase();
+    }
+    if (!generatesMultiModuleProject()) {
+      return ".";
+    }
+    String baseDirectory = getAdapterBaseDirectory(adapterType);
+    ModuleMetadata owningModule = findModuleForPath(baseDirectory);
+    return owningModule != null ? owningModule.getPath() : ".";
+  }
+
+  /**
+   * Resources directory of an adapter's module, relative to the project root.
+   */
+  public String adapterResourcesPath(String adapterType, String adapterName) {
+    String modulePath = adapterModulePath(adapterType, adapterName);
+    return ".".equals(modulePath) ? getResourcesPath() : modulePath + "/" + DEFAULT_RESOURCES_PATH;
+  }
+
+  /**
+   * Module that holds a kind of domain code ("ports", "usecases", "model"): the
+   * multi-module module declaring that package type, else the use case module,
+   * else {@code "."}. Lets an architecture keep ports in their own module.
+   */
+  public String modulePathForPackageType(String packageType) {
+    if (!generatesMultiModuleProject()) {
+      return ".";
+    }
+    for (ModuleMetadata module : getModuleMetadata()) {
+      if (module.getPackageTypes() != null && module.getPackageTypes().containsKey(packageType)
+          && module.getPath() != null) {
+        return module.getPath();
+      }
+    }
+    if (useCaseModule != null && !useCaseModule.isBlank()) {
+      ModuleMetadata module = getModule(useCaseModule);
+      if (module != null && module.getPath() != null) {
+        return module.getPath();
+      }
+    }
+    return ".";
+  }
+
+  /**
+   * Module that runs the application (holds application.yml and the main
+   * class): the module containing {@code resourcesPath}, or {@code "."}.
+   */
+  public String applicationModulePath() {
+    if (!generatesMultiModuleProject()) {
+      return ".";
+    }
+    ModuleMetadata appModule = findModuleForPath(getResourcesPath());
+    return appModule != null ? appModule.getPath() : ".";
+  }
+
+  /**
    * Resolves the path for an adapter based on its type and name.
    *
    * @param adapterType The type of adapter (driven or driving)

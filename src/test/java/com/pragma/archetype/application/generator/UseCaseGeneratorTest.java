@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,6 +38,7 @@ class UseCaseGeneratorTest {
         void setUp() {
                 // Mock structureMetadata to return default source directory
                 when(structureMetadata.getSourceDirectory()).thenReturn("src/main/java");
+                lenient().when(structureMetadata.modulePathForPackageType(anyString())).thenReturn(".");
 
                 generator = new UseCaseGenerator(templateRepository, structureMetadata);
         }

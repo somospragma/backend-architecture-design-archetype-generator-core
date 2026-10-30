@@ -3,7 +3,6 @@ package com.pragma.archetype.domain.service;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.pragma.archetype.domain.model.structure.StructureMetadata;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 
 /**
@@ -23,7 +22,7 @@ public class BuildConfigurationProcessor {
    * Processes buildConfiguration as FreeMarker template with variables.
    * 
    * @param buildConfiguration The build configuration template string
-   * @param structureMetadata  The structure metadata (for resourcesPath, etc.)
+   * @param resourcesPath      Resources directory, relative to the build file being edited
    * @param adapterName        Name of the adapter
    * @param packageName        Package name of the adapter
    * @param adapterType        Type of the adapter
@@ -31,7 +30,7 @@ public class BuildConfigurationProcessor {
    */
   public String process(
       String buildConfiguration,
-      StructureMetadata structureMetadata,
+      String resourcesPath,
       String adapterName,
       String packageName,
       String adapterType) {
@@ -42,7 +41,7 @@ public class BuildConfigurationProcessor {
 
     // Prepare variables for the template
     Map<String, Object> variables = new HashMap<>();
-    variables.put("resourcesPath", structureMetadata.getResourcesPath());
+    variables.put("resourcesPath", resourcesPath);
     variables.put("adapterName", adapterName);
     variables.put("packageName", packageName);
     variables.put("adapterType", adapterType);

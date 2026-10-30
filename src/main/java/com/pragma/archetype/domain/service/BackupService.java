@@ -9,6 +9,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 import com.pragma.archetype.domain.port.out.FileSystemPort;
@@ -34,6 +35,7 @@ public class BackupService {
 
   private static final String BACKUP_DIR = ".cleanarch/backups";
 
+  private static final AtomicLong BACKUP_SEQUENCE = new AtomicLong();
   private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS");
 
   private final FileSystemPort fileSystemPort;
@@ -150,10 +152,11 @@ public class BackupService {
   }
 
   /**
-   * Generates a unique backup ID based on timestamp.
+   * Generates a unique backup ID: a readable timestamp plus a counter, so two
+   * backups created in the same millisecond do not collide.
    */
   private String generateBackupId() {
-    return "backup_" + LocalDateTime.now().format(TIMESTAMP_FORMAT);
+    return "backup_" + LocalDateTime.now().format(TIMESTAMP_FORMAT) + "_" + BACKUP_SEQUENCE.incrementAndGet();
   }
 
   /**

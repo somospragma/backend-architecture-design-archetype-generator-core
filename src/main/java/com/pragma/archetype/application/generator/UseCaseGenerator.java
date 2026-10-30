@@ -112,20 +112,11 @@ public class UseCaseGenerator {
   }
 
   /**
-   * Resolves the module filesystem path for a given package type.
-   * For multi-module architectures, returns the module's path (e.g., "domain").
-   * For single-module architectures, returns "." (current directory).
+   * Resolves the module filesystem path for a given package type
+   * (see {@link com.pragma.archetype.domain.model.structure.StructureMetadata#modulePathForPackageType}).
    */
   private String resolveModulePath(String packageType) {
-    try {
-      com.pragma.archetype.domain.model.structure.ModuleMetadata useCaseModule = structureMetadata.getUseCaseModule();
-      if (useCaseModule != null && !".".equals(useCaseModule.getPath())) {
-        return useCaseModule.getPath();
-      }
-    } catch (IllegalStateException e) {
-      // useCaseModule not configured, fall back to root
-    }
-    return ".";
+    return structureMetadata.modulePathForPackageType(packageType);
   }
 
   private Map<String, Object> prepareTemplateData(UseCaseConfig config) {

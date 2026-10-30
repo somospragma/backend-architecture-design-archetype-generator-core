@@ -172,4 +172,68 @@ class StructureMetadataTest {
                 assertEquals("domain", moduleMetadata.get(0).getName());
                 assertEquals("application", moduleMetadata.get(1).getName());
         }
+
+        private static StructureMetadata structure(String resourcesPath, List<ModuleMetadata> modules,
+                        String useCaseModule, boolean adaptersAsModules, Boolean multiModule) {
+                return new StructureMetadata(
+                                "test-architecture",
+                                resourcesPath,
+                                Map.of(
+                                                "driven", "infrastructure/driven-adapters/{name}",
+                                                "driving", "infrastructure/entry-points/{name}"),
+                                null, null, null, null, null,
+                                modules,
+                                null, useCaseModule, null, null, null,
+                                List.of(),
+                                adaptersAsModules,
+                                multiModule);
+        }
+
+        @Test
+        void shouldPlaceAdaptersInProjectRootForSingleModule() {
+                var metadata = structure("src/main/resources",
+                                List.of(ModuleMetadata.builder().name("domain").path("domain").build()),
+                                "domain", false, false);
+
+                assertEquals(".", metadata.adapterModulePath("driven", "Orders"));
+                assertEquals("src/main/resources", metadata.adapterResourcesPath("driving", "Orders"));
+                assertEquals(".", metadata.applicationModulePath());
+                assertEquals(".", metadata.modulePathForPackageType("ports"));
+        }
+
+        @Test
+        void shouldPlaceAdaptersInTheModuleContainingTheirPathForMultiModule() {
+                var metadata = structure("infrastructure/src/main/resources",
+                                List.of(
+                                                ModuleMetadata.builder().name("domain").path("domain")
+                                                                .packageTypes(Map.of("ports", "ports")).build(),
+                                                ModuleMetadata.builder().name("infrastructure").path("infrastructure")
+                                                                .build()),
+                                "domain", false, true);
+
+                assertEquals("infrastructure", metadata.adapterModulePath("driven", "Orders"));
+                assertEquals("infrastructure/src/main/resources", metadata.adapterResourcesPath("driving", "Orders"));
+                assertEquals("infrastructure", metadata.applicationModulePath());
+                assertEquals("domain", metadata.modulePathForPackageType("ports"));
+        }
+
+        @Test
+        void shouldGiveEachAdapterItsOwnModuleWhenAdaptersAreModules() {
+                var metadata = structure("application/app-service/src/main/resources",
+                                List.of(
+                                                ModuleMetadata.builder().name("ports").path("domain/ports")
+                                                                .packageTypes(Map.of("ports", "")).build(),
+                                                ModuleMetadata.builder().name("usecases").path("domain/usecases")
+                                                                .packageTypes(Map.of("usecases", "")).build(),
+                                                ModuleMetadata.builder().name("app-service").path("application/app-service")
+                                                                .build()),
+                                "usecases", true, true);
+
+                assertEquals("infrastructure/driven-adapters/orders", metadata.adapterModulePath("driven", "Orders"));
+                assertEquals("infrastructure/entry-points/orders/src/main/resources",
+                                metadata.adapterResourcesPath("driving", "Orders"));
+                assertEquals("application/app-service", metadata.applicationModulePath());
+                assertEquals("domain/ports", metadata.modulePathForPackageType("ports"));
+                assertEquals("domain/usecases", metadata.modulePathForPackageType("usecases"));
+        }
 }
