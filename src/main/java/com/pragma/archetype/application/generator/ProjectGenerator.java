@@ -148,10 +148,10 @@ public class ProjectGenerator {
 
         /**
          * Checks if the architecture is multi-module, as declared by its
-         * structure.yml (a non-empty modules list).
+         * structure.yml.
          */
         private boolean isMultiModuleArchitecture(ArchitectureType architecture) {
-                return templateRepository.loadStructureMetadata(architecture).isMultiModule();
+                return templateRepository.loadStructureMetadata(architecture).generatesMultiModuleProject();
         }
 
         /**

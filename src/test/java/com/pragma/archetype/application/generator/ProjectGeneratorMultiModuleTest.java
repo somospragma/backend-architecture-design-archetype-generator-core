@@ -131,7 +131,8 @@ class ProjectGeneratorMultiModuleTest {
             com.pragma.archetype.domain.model.structure.ModuleMetadata.builder().name("app").path("apps/app").build()),
         null, null, null, null, null,
         java.util.List.of("apps", "adapters"),
-        true);
+        true,
+        null);
     when(templateRepository.loadStructureMetadata(cleanMulti)).thenReturn(structureMetadata);
     when(templateRepository.templateExists(anyString()))
         .thenAnswer(inv -> ((String) inv.getArgument(0)).startsWith("architectures/clean-multi/modules/"));
@@ -156,6 +157,43 @@ class ProjectGeneratorMultiModuleTest {
     verify(fileSystemPort).createDirectory(projectPath.resolve("adapters"));
     verify(templateRepository).processTemplate(
         org.mockito.ArgumentMatchers.eq("architectures/clean-multi/modules/core/build.gradle.kts.ftl"), anyMap());
+  }
+
+  @Test
+  void shouldGenerateApplicationClassForSingleModuleArchitectureWithModuleMetadata() {
+    // Given a single-module structure.yml that still lists moduleMetadata to locate packages
+    var structureMetadata = new com.pragma.archetype.domain.model.structure.StructureMetadata(
+        "hexagonal-single",
+        "src/main/resources",
+        java.util.Map.of("driven", "infrastructure/driven-adapters/{name}"),
+        null, null, null, null,
+        java.util.List.of("domain/model", "infrastructure/driven-adapters"),
+        java.util.List.of(
+            com.pragma.archetype.domain.model.structure.ModuleMetadata.builder().name("domain").path("domain").build()),
+        null, null, null, null, null,
+        java.util.List.of(),
+        false,
+        false);
+    when(templateRepository.loadStructureMetadata(ArchitectureType.HEXAGONAL_SINGLE)).thenReturn(structureMetadata);
+
+    ProjectConfig config = ProjectConfig.builder()
+        .name("payment-service")
+        .basePackage("com.company.payment")
+        .architecture(ArchitectureType.HEXAGONAL_SINGLE)
+        .paradigm(Paradigm.IMPERATIVE)
+        .framework(Framework.SPRING)
+        .pluginVersion("1.0.0")
+        .build();
+
+    // When
+    List<GeneratedFile> files = generator.generateProject(projectPath, config);
+
+    // Then the single-module layout is generated, including the Spring Boot entry point
+    List<Path> paths = files.stream().map(GeneratedFile::path).toList();
+    assertTrue(paths.contains(projectPath.resolve("src/main/resources/application.yml")));
+    assertTrue(paths.contains(projectPath.resolve("src/main/java/com/company/payment/PaymentServiceApplication.java")));
+    verify(templateRepository).processTemplate(
+        org.mockito.ArgumentMatchers.eq("frameworks/spring/imperative/project/Application.java.ftl"), anyMap());
   }
 
   @Test

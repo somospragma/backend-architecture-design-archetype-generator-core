@@ -1,5 +1,6 @@
 package com.pragma.archetype.application.generator;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -150,6 +151,11 @@ public class UnifiedAdapterGenerator {
         structureMetadata);
     generatedFiles.add(mainFile);
 
+    // Output port the driven adapter implements, when the domain doesn't have it yet
+    generateGatewayPortIfMissing(projectPath, config, direction,
+        prepareTemplateData(config, direction, projectConfig), structureMetadata)
+        .ifPresent(generatedFiles::add);
+
     // 3. Generate entity mapper if needed (for data store adapters)
     if (needsEntityMapper(config, direction)) {
       GeneratedFile mapperFile = generateMapperInModule(projectPath, config, modulePath, projectConfig,
@@ -183,6 +189,67 @@ public class UnifiedAdapterGenerator {
   }
 
   /**
+   * Generates the output port {@code I{Entity}Gateway} in the domain ports
+   * package when a driven adapter is created and the port does not exist yet.
+   * An existing port is never overwritten, so operations the developer added
+   * are kept. Templates without domain/Gateway.java.ftl skip this step.
+   */
+  private java.util.Optional<GeneratedFile> generateGatewayPortIfMissing(
+      Path projectPath,
+      AdapterConfig config,
+      AdapterDirection direction,
+      Map<String, Object> data,
+      StructureMetadata structureMetadata) {
+
+    String entityName = config.getEntityName();
+    if (direction != AdapterDirection.OUTPUT || entityName == null || entityName.isBlank()) {
+      return java.util.Optional.empty();
+    }
+
+    String templatePath = String.format("frameworks/%s/%s/domain/Gateway.java.ftl",
+        config.getFramework(), config.getParadigm());
+    if (!templateRepository.templateExists(templatePath)) {
+      return java.util.Optional.empty();
+    }
+
+    String portsPackage = (String) data.get("portsPackage");
+    if (portsPackage == null) {
+      return java.util.Optional.empty();
+    }
+    Path gatewayPath = projectPath
+        .resolve(resolveUseCaseModulePath(structureMetadata))
+        .resolve(structureMetadata.getSourceDirectory())
+        .resolve(portsPackage.replace('.', '/'))
+        .resolve("I" + entityName + "Gateway.java")
+        .normalize();
+    if (Files.exists(gatewayPath)) {
+      return java.util.Optional.empty();
+    }
+
+    return java.util.Optional.of(
+        GeneratedFile.javaSource(gatewayPath, templateRepository.processTemplate(templatePath, data)));
+  }
+
+  /**
+   * Module that holds the domain ports (same module as the use cases), or the
+   * project root for single-module architectures.
+   */
+  private String resolveUseCaseModulePath(StructureMetadata structureMetadata) {
+    if (!structureMetadata.generatesMultiModuleProject()) {
+      return ".";
+    }
+    try {
+      ModuleMetadata useCaseModule = structureMetadata.getUseCaseModule();
+      if (useCaseModule != null && useCaseModule.getPath() != null) {
+        return useCaseModule.getPath();
+      }
+    } catch (IllegalStateException e) {
+      // useCaseModule not configured, fall back to the project root
+    }
+    return ".";
+  }
+
+  /**
    * Generates adapter files in existing structure (traditional approach).
    */
   private List<GeneratedFile> generateInPlace(
@@ -201,6 +268,10 @@ public class UnifiedAdapterGenerator {
     List<GeneratedFile> adapterFiles = generateAllTemplateFiles(
         projectPath, config, direction, data, projectConfig, structureMetadata);
     generatedFiles.addAll(adapterFiles);
+
+    // Output port the driven adapter implements, when the domain doesn't have it yet
+    generateGatewayPortIfMissing(projectPath, config, direction, data, structureMetadata)
+        .ifPresent(generatedFiles::add);
 
     // Generate entity mapper if needed
     if (needsEntityMapper(config, direction)) {

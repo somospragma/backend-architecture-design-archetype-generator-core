@@ -1,12 +1,16 @@
 package com.pragma.archetype.application.generator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.nio.file.Path;
@@ -16,6 +20,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -137,7 +142,7 @@ class UnifiedAdapterGeneratorTest {
 
     // Then
     assertNotNull(result);
-    assertEquals(1, result.size());
+    assertEquals(2, result.size()); // Adapter + IUserGateway output port
   }
 
   @Test
@@ -191,7 +196,64 @@ class UnifiedAdapterGeneratorTest {
 
     // Then
     assertNotNull(result);
-    assertEquals(3, result.size()); // Main + Mapper + Entity
+    assertEquals(4, result.size()); // Main + Mapper + Entity + IUserGateway output port
+  }
+
+  @Test
+  void shouldGenerateGatewayPortForDrivenAdapterWhenMissing(@TempDir Path projectPath) {
+    // Given
+    var config = createTestConfig("UserRepository", "postgresql", AdapterDirection.OUTPUT);
+    stubOutputAdapter();
+    when(templateRepository.processTemplate(org.mockito.ArgumentMatchers.eq(GATEWAY_TEMPLATE), anyMap()))
+        .thenReturn("public interface IUserGateway {}");
+
+    // When
+    var result = generator.generate(projectPath, config, AdapterDirection.OUTPUT, structureMetadata, projectConfig);
+
+    // Then
+    Path gateway = projectPath.resolve("src/main/java/com/test/domain/ports/IUserGateway.java");
+    assertTrue(result.stream().anyMatch(file -> file.path().equals(gateway)));
+  }
+
+  @Test
+  void shouldKeepExistingGatewayPort(@TempDir Path projectPath) throws java.io.IOException {
+    // Given a port the developer already filled with operations
+    Path gateway = projectPath.resolve("src/main/java/com/test/domain/ports/IUserGateway.java");
+    java.nio.file.Files.createDirectories(gateway.getParent());
+    java.nio.file.Files.writeString(gateway, "public interface IUserGateway { User save(User user); }");
+    var config = createTestConfig("UserRepository", "postgresql", AdapterDirection.OUTPUT);
+    stubOutputAdapter();
+
+    // When
+    var result = generator.generate(projectPath, config, AdapterDirection.OUTPUT, structureMetadata, projectConfig);
+
+    // Then it is neither regenerated nor overwritten
+    assertFalse(result.stream().anyMatch(file -> file.path().equals(gateway)));
+    verify(templateRepository, never()).processTemplate(org.mockito.ArgumentMatchers.eq(GATEWAY_TEMPLATE), anyMap());
+  }
+
+  @Test
+  void shouldSkipGatewayPortWhenTemplatesDoNotProvideIt(@TempDir Path projectPath) {
+    // Given templates older than domain/Gateway.java.ftl
+    var config = createTestConfig("UserRepository", "postgresql", AdapterDirection.OUTPUT);
+    stubOutputAdapter();
+    when(templateRepository.templateExists(GATEWAY_TEMPLATE)).thenReturn(false);
+
+    // When
+    var result = generator.generate(projectPath, config, AdapterDirection.OUTPUT, structureMetadata, projectConfig);
+
+    // Then
+    assertFalse(result.stream().anyMatch(file -> file.path().getFileName().toString().equals("IUserGateway.java")));
+  }
+
+  private static final String GATEWAY_TEMPLATE = "frameworks/spring/imperative/domain/Gateway.java.ftl";
+
+  private void stubOutputAdapter() {
+    lenient().when(adapterMetadata.getDirection()).thenReturn(AdapterDirection.OUTPUT);
+    lenient().when(adapterMetadata.getSuffix()).thenReturn("Adapter");
+    when(adapterDiscovery.adapterExists(anyString(), any(), anyString(), anyString())).thenReturn(true);
+    when(adapterDiscovery.findAdapter(anyString(), any(), anyString(), anyString()))
+        .thenReturn(Optional.of(adapterMetadata));
   }
 
   private UnifiedAdapterGenerator.AdapterConfig createTestConfig(

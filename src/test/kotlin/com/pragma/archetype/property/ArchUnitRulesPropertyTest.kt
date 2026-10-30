@@ -133,7 +133,7 @@ class ArchUnitRulesPropertyTest : PropertyTestBase() {
             ) { basePackage, archType ->
                 val output = processNamingConventionTestTemplate(basePackage, archType)
                 output shouldContain "adapterClassesShouldEndWithAdapterSuffix"
-                output shouldContain "haveSimpleNameEndingWith(\"Adapter\")"
+                output shouldContain "haveNameMatching(\".*(Adapter|"
             }
         }
 

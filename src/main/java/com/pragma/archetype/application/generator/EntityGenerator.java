@@ -112,7 +112,7 @@ public class EntityGenerator {
         .loadStructureMetadata(projectConfig.architecture());
 
     // For single module architectures
-    if (!structureMetadata.isMultiModule()) {
+    if (!structureMetadata.generatesMultiModuleProject()) {
       return projectPath
           .resolve(structureMetadata.getSourceDirectory())
           .resolve(packagePath)

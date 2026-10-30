@@ -26,7 +26,8 @@ public record StructureMetadata(
     String sourceDirectory,
     String testDirectory,
     java.util.List<String> folders,
-    boolean adaptersAsModules) {
+    boolean adaptersAsModules,
+    Boolean multiModule) {
 
   private static final String DEFAULT_SOURCE_DIR = "src/main/java";
   private static final String DEFAULT_TEST_DIR = "src/test/java";
@@ -69,7 +70,18 @@ public record StructureMetadata(
       String testDirectory) {
     this(architectureType, resourcesPath, adapterPaths, templatePaths, packageMappings, namingConventions,
         layerDependencies, packages, moduleMetadata, entityModule, useCaseModule, staticFiles, sourceDirectory,
-        testDirectory, java.util.List.of(), false);
+        testDirectory, java.util.List.of(), false, null);
+  }
+
+  /**
+   * Whether the generated project is a multi-module Gradle build. Uses the
+   * explicit {@code multiModule} flag of structure.yml; single-module
+   * architectures also declare moduleMetadata (to locate packages), so the
+   * presence of modules alone is not enough. Without the flag, falls back to
+   * {@link #isMultiModule()}.
+   */
+  public boolean generatesMultiModuleProject() {
+    return multiModule != null ? multiModule : isMultiModule();
   }
 
   /**

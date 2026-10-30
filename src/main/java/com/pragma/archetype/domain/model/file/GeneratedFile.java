@@ -17,6 +17,7 @@ public record GeneratedFile(
     Objects.requireNonNull(path, "Path cannot be null");
     Objects.requireNonNull(content, "Content cannot be null");
     Objects.requireNonNull(type, "File type cannot be null");
+    path = JavaSourceNames.alignWithPublicType(path, content);
   }
 
   /**

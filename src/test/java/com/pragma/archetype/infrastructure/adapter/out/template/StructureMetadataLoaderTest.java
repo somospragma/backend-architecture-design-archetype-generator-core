@@ -107,6 +107,7 @@ class StructureMetadataLoaderTest {
     ArchitectureType architecture = ArchitectureType.HEXAGONAL_MULTI_GRANULAR;
     String yamlContent = """
         architecture: hexagonal-multi-granular
+        multiModule: true
         adaptersAsModules: true
         adapterPaths:
           driven: "infrastructure/driven-adapters/{name}"
@@ -125,6 +126,28 @@ class StructureMetadataLoaderTest {
     // Then
     assertTrue(metadata.adaptersAsModules());
     assertEquals(java.util.List.of("domain", "infrastructure/entry-points"), metadata.folders());
+    assertTrue(metadata.generatesMultiModuleProject());
+  }
+
+  @Test
+  void loadStructureMetadata_singleModuleWithModuleMetadata_shouldNotBeMultiModuleProject() {
+    // Given single-module architectures list moduleMetadata only to locate packages
+    when(contentProvider.getTemplateContent("architectures/hexagonal-single/structure.yml"))
+        .thenReturn("""
+            architecture: hexagonal-single
+            multiModule: false
+            adapterPaths:
+              driven: "infrastructure/driven-adapters/{name}"
+            moduleMetadata:
+              - name: domain
+                path: domain
+            """);
+
+    // When
+    StructureMetadata metadata = loader.loadStructureMetadata(ArchitectureType.HEXAGONAL_SINGLE);
+
+    // Then
+    assertFalse(metadata.generatesMultiModuleProject());
   }
 
   @Test
