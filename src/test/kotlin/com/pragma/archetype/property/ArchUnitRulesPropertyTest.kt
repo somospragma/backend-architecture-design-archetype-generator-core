@@ -40,14 +40,25 @@ class ArchUnitRulesPropertyTest : PropertyTestBase() {
     /**
      * Architecture types mapped to their template directory names.
      */
-    enum class ArchType(val templateDir: String) {
+    interface Arch {
+        val templateDir: String
+    }
+
+    enum class ArchType(override val templateDir: String) : Arch {
         HEXAGONAL_SINGLE("hexagonal-single"),
         HEXAGONAL_MULTI("hexagonal-multi"),
         HEXAGONAL_MULTI_GRANULAR("hexagonal-multi-granular"),
         ONION_SINGLE("onion-single")
     }
 
-    private fun processArchitectureTestTemplate(basePackage: String, archType: ArchType): String {
+    /** Architectures with input ports and use cases in domain.usecases. */
+    enum class HexagonalArchType(override val templateDir: String) : Arch {
+        HEXAGONAL_SINGLE("hexagonal-single"),
+        HEXAGONAL_MULTI("hexagonal-multi"),
+        HEXAGONAL_MULTI_GRANULAR("hexagonal-multi-granular")
+    }
+
+    private fun processArchitectureTestTemplate(basePackage: String, archType: Arch): String {
         val template = freemarkerConfig.getTemplate(
             "architectures/${archType.templateDir}/tests/architecture/ArchitectureTest.java.ftl"
         )
@@ -57,7 +68,7 @@ class ArchUnitRulesPropertyTest : PropertyTestBase() {
         return writer.toString()
     }
 
-    private fun processNamingConventionTestTemplate(basePackage: String, archType: ArchType): String {
+    private fun processNamingConventionTestTemplate(basePackage: String, archType: Arch): String {
         val template = freemarkerConfig.getTemplate(
             "architectures/${archType.templateDir}/tests/architecture/NamingConventionTest.java.ftl"
         )
@@ -71,7 +82,7 @@ class ArchUnitRulesPropertyTest : PropertyTestBase() {
         "Property 14.1: ArchitectureTest should include domain layer isolation rule" {
             checkAll(
                 DomainModelGenerators.packageName(),
-                Arb.enum<ArchType>()
+                Arb.enum<HexagonalArchType>()
             ) { basePackage, archType ->
                 val output = processArchitectureTestTemplate(basePackage, archType)
                 output shouldContain "domainLayerShouldBeIsolated"
@@ -83,7 +94,7 @@ class ArchUnitRulesPropertyTest : PropertyTestBase() {
         "Property 14.2: ArchitectureTest should include application layer isolation rule" {
             checkAll(
                 DomainModelGenerators.packageName(),
-                Arb.enum<ArchType>()
+                Arb.enum<HexagonalArchType>()
             ) { basePackage, archType ->
                 val output = processArchitectureTestTemplate(basePackage, archType)
                 output shouldContain "applicationLayerShouldOnlyDependOnDomain"
@@ -94,7 +105,7 @@ class ArchUnitRulesPropertyTest : PropertyTestBase() {
         "Property 14.3: NamingConventionTest should include I prefix rule for port interfaces" {
             checkAll(
                 DomainModelGenerators.packageName(),
-                Arb.enum<ArchType>()
+                Arb.enum<HexagonalArchType>()
             ) { basePackage, archType ->
                 val output = processNamingConventionTestTemplate(basePackage, archType)
                 output shouldContain "portInterfacesShouldHaveIPrefix"
@@ -106,7 +117,7 @@ class ArchUnitRulesPropertyTest : PropertyTestBase() {
         "Property 14.4: NamingConventionTest should include Gateway suffix rule for output ports" {
             checkAll(
                 DomainModelGenerators.packageName(),
-                Arb.enum<ArchType>()
+                Arb.enum<HexagonalArchType>()
             ) { basePackage, archType ->
                 val output = processNamingConventionTestTemplate(basePackage, archType)
                 output shouldContain "outputPortsShouldHaveGatewaySuffix"
@@ -117,7 +128,7 @@ class ArchUnitRulesPropertyTest : PropertyTestBase() {
         "Property 14.5: NamingConventionTest should include UseCase suffix rule" {
             checkAll(
                 DomainModelGenerators.packageName(),
-                Arb.enum<ArchType>()
+                Arb.enum<HexagonalArchType>()
             ) { basePackage, archType ->
                 val output = processNamingConventionTestTemplate(basePackage, archType)
                 output shouldContain "useCasesShouldEndWithUseCaseSuffix"
@@ -178,6 +189,43 @@ class ArchUnitRulesPropertyTest : PropertyTestBase() {
             ) { basePackage, archType ->
                 val output = processNamingConventionTestTemplate(basePackage, archType)
                 output shouldContain "package $basePackage.architecture;"
+            }
+        }
+
+        "Property 14.11: Onion ArchitectureTest should enforce rings and framework-free core" {
+            checkAll(DomainModelGenerators.packageName()) { basePackage ->
+                val output = processArchitectureTestTemplate(basePackage, ArchType.ONION_SINGLE)
+                output shouldContain "onionArchitecture()"
+                output shouldContain ".domainModels(\"..domain.model..\")"
+                output shouldContain ".domainServices(\"..domain.gateway..\")"
+                output shouldContain ".applicationServices(\"..application..\")"
+                output shouldContain "domainIsFreeOfFrameworks"
+                output shouldContain "useCasesAreFreeOfFrameworks"
+                output shouldContain "drivenAdaptersImplementADomainGateway"
+                output shouldContain "drivenAdaptersDoNotCallUseCases"
+            }
+        }
+
+        "Property 14.12: Onion ArchitectureTest should forbid Reactor in the core only for imperative projects" {
+            checkAll(DomainModelGenerators.packageName()) { basePackage ->
+                val template = freemarkerConfig.getTemplate(
+                    "architectures/onion-single/tests/architecture/ArchitectureTest.java.ftl"
+                )
+                fun render(reactive: Boolean) = StringWriter().also {
+                    template.process(mapOf("basePackage" to basePackage, "isReactive" to reactive), it)
+                }.toString()
+                render(reactive = false) shouldContain "\"reactor..\""
+                render(reactive = true) shouldNotContain "\"reactor..\""
+            }
+        }
+
+        "Property 14.13: Onion NamingConventionTest should check gateways and use cases in their rings" {
+            checkAll(DomainModelGenerators.packageName()) { basePackage ->
+                val output = processNamingConventionTestTemplate(basePackage, ArchType.ONION_SINGLE)
+                output shouldContain "resideInAPackage(\"..domain.gateway..\")"
+                output shouldContain "haveSimpleNameEndingWith(\"Gateway\")"
+                output shouldContain "resideInAPackage(\"..application.usecase..\")"
+                output shouldContain "haveSimpleNameEndingWith(\"UseCase\")"
             }
         }
     }

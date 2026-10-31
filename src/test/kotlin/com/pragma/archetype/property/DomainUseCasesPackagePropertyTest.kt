@@ -24,8 +24,9 @@ class DomainUseCasesPackagePropertyTest : PropertyTestBase() {
     enum class ArchType(val templateDir: String) {
         HEXAGONAL_SINGLE("hexagonal-single"),
         HEXAGONAL_MULTI("hexagonal-multi"),
-        HEXAGONAL_MULTI_GRANULAR("hexagonal-multi-granular"),
-        ONION_SINGLE("onion-single")
+        HEXAGONAL_MULTI_GRANULAR("hexagonal-multi-granular")
+        // onion-single is excluded on purpose: it keeps use cases in
+        // application.usecase and gateways in domain.gateway, without input ports
     }
 
     @Suppress("UNCHECKED_CAST")

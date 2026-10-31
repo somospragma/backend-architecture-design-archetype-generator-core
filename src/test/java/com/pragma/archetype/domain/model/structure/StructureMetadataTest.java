@@ -236,4 +236,45 @@ class StructureMetadataTest {
                 assertEquals("domain/ports", metadata.modulePathForPackageType("ports"));
                 assertEquals("domain/usecases", metadata.modulePathForPackageType("usecases"));
         }
+
+        @Test
+        void shouldResolvePackagesFromDeclaredPackageTypes() {
+                var metadata = structure("src/main/resources",
+                                List.of(
+                                                ModuleMetadata.builder().name("domain").path(".")
+                                                                .packageTypes(Map.of("model", "domain/model",
+                                                                                "ports", "domain/gateway"))
+                                                                .build(),
+                                                ModuleMetadata.builder().name("application").path(".")
+                                                                .packageTypes(Map.of("usecases", "application/usecase"))
+                                                                .build()),
+                                "application", false, false);
+
+                assertEquals("com.acme.domain.model", metadata.packageForType("com.acme", "model"));
+                assertEquals("com.acme.domain.gateway", metadata.packageForType("com.acme", "ports"));
+                assertEquals("com.acme.application.usecase", metadata.packageForType("com.acme", "usecases"));
+        }
+
+        @Test
+        void shouldFallBackToDomainPackageWhenTypeIsNotDeclared() {
+                var metadata = structure("src/main/resources",
+                                List.of(ModuleMetadata.builder().name("usecases").path("usecases")
+                                                .packageTypes(Map.of("usecases", "")).build()),
+                                "usecases", false, true);
+
+                assertEquals("com.acme.domain.ports", metadata.packageForType("com.acme", "ports"));
+                assertEquals("com.acme", metadata.packageForType("com.acme", "usecases"));
+        }
+
+        @Test
+        void shouldGenerateUseCaseInputPortsUnlessDisabled() {
+                var defaults = structure("src/main/resources", List.of(), null, false, false);
+                var onion = new StructureMetadata("onion-single", "src/main/resources",
+                                Map.of("driven", "d/{name}", "driving", "e/{name}"),
+                                null, null, null, null, null, List.of(), null, null, null, null, null,
+                                List.of(), false, false, false);
+
+                assertTrue(defaults.generatesUseCaseInputPorts());
+                assertFalse(onion.generatesUseCaseInputPorts());
+        }
 }

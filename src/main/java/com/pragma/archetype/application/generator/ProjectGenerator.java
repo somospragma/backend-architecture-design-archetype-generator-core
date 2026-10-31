@@ -211,6 +211,13 @@ public class ProjectGenerator {
                         StructureMetadata structureMetadata = templateRepository
                                         .loadStructureMetadata(config.architecture());
 
+                        // Domain packages as the architecture declares them (UseCasesConfig
+                        // scans useCasesPackage, so it must match where use cases live)
+                        context.put("useCasesPackage",
+                                        structureMetadata.packageForType(config.basePackage(), "usecases"));
+                        context.put("portsPackage",
+                                        structureMetadata.packageForType(config.basePackage(), "ports"));
+
                         // Add driven adapters package (e.g., "infrastructure.drivenadapters")
                         String drivenBasePath = structureMetadata.getAdapterBaseDirectory("driven");
                         if (drivenBasePath != null) {

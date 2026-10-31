@@ -212,24 +212,10 @@ public class GenerateUseCaseTask extends DefaultTask {
       com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
           .loadStructureMetadata(projectConfig.architecture());
 
-      // Use the useCaseModule's packageTypes to resolve the ports package
-      try {
-        com.pragma.archetype.domain.model.structure.ModuleMetadata useCaseModule = structureMetadata.getUseCaseModule();
-        if (useCaseModule != null) {
-          String portsPackage = useCaseModule.getPackage("ports");
-          // Convert filesystem path to package notation: "domain/ports" → "domain.ports", "ports" → "ports"
-          String packageSuffix = portsPackage.replace("/", ".").replace("-", "");
-          if (packageSuffix.isBlank()) {
-            return projectConfig.basePackage();
-          }
-          return projectConfig.basePackage() + "." + packageSuffix;
-        }
-      } catch (IllegalStateException | IllegalArgumentException e) {
-        // Fall through to default
-      }
-
-      // Fallback: use cases port goes in domain.ports
-      return projectConfig.basePackage() + ".domain.ports";
+      // Use cases are addressed through their input port when the architecture
+      // has them (hexagonal), otherwise directly in the use cases package (onion)
+      return structureMetadata.packageForType(projectConfig.basePackage(),
+          structureMetadata.generatesUseCaseInputPorts() ? "ports" : "usecases");
     } catch (Exception e) {
       throw new IllegalArgumentException(
           "Could not auto-detect package name. Please provide --packageName or ensure .cleanarch.yml exists", e);

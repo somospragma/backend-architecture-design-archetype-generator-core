@@ -19,7 +19,6 @@ import com.pragma.archetype.domain.model.adapter.TemplateFile;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.file.FileType;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
-import com.pragma.archetype.domain.model.structure.ModuleMetadata;
 import com.pragma.archetype.domain.model.structure.StructureMetadata;
 import com.pragma.archetype.domain.model.template.TemplateRepositoryPaths;
 import com.pragma.archetype.domain.port.out.PathResolver;
@@ -735,34 +734,31 @@ public class UnifiedAdapterGenerator {
           projectConfig.basePackage().replace('.', '/') + "/infrastructure/config");
       
       // Use structure.yml module metadata for package resolution if available
+      String basePackage = projectConfig.basePackage();
       try {
         StructureMetadata sm = templateRepository.loadStructureMetadata(projectConfig.architecture());
-        ModuleMetadata entityMod = sm.getEntityModule();
-        ModuleMetadata useCaseMod = sm.getUseCaseModule();
-        if (entityMod != null) {
-          String modelPath = entityMod.getPackage("model");
-          String modelSuffix = modelPath.replace("/", ".").replace("-", "");
-          data.put("modelPackage", modelSuffix.isBlank() ? projectConfig.basePackage() : projectConfig.basePackage() + "." + modelSuffix);
-        } else {
-          data.put("modelPackage", projectConfig.basePackage() + ".domain.model");
-        }
-        if (useCaseMod != null) {
-          String usecasesPath = useCaseMod.getPackage("usecases");
-          String portsPath = useCaseMod.getPackage("ports");
-          String ucSuffix = usecasesPath.replace("/", ".").replace("-", "");
-          String pSuffix = portsPath.replace("/", ".").replace("-", "");
-          data.put("useCasesPackage", ucSuffix.isBlank() ? projectConfig.basePackage() : projectConfig.basePackage() + "." + ucSuffix);
-          data.put("portsPackage", pSuffix.isBlank() ? projectConfig.basePackage() : projectConfig.basePackage() + "." + pSuffix);
-        } else {
-          data.put("useCasesPackage", projectConfig.basePackage() + ".domain.usecases");
-          data.put("portsPackage", projectConfig.basePackage() + ".domain.ports");
-        }
+        data.put("modelPackage", sm.packageForType(basePackage, "model"));
+        data.put("useCasesPackage", sm.packageForType(basePackage, "usecases"));
+        data.put("portsPackage", sm.packageForType(basePackage, "ports"));
+        data.put("useCaseInputPorts", sm.generatesUseCaseInputPorts());
       } catch (Exception e) {
         // Fallback to hardcoded defaults (single-module style)
         System.err.println("WARNING: Failed to resolve packages from structure.yml: " + e.getMessage());
-        data.put("modelPackage", projectConfig.basePackage() + ".domain.model");
-        data.put("useCasesPackage", projectConfig.basePackage() + ".domain.usecases");
-        data.put("portsPackage", projectConfig.basePackage() + ".domain.ports");
+        data.put("modelPackage", basePackage + ".domain.model");
+        data.put("useCasesPackage", basePackage + ".domain.usecases");
+        data.put("portsPackage", basePackage + ".domain.ports");
+        data.put("useCaseInputPorts", true);
+      }
+
+      // Type entry points inject: the input port when the architecture has
+      // them, the use case class itself otherwise
+      String useCaseName = config.getUseCaseName();
+      if (direction == AdapterDirection.INPUT && useCaseName != null && !useCaseName.isBlank()) {
+        boolean inputPorts = (Boolean) data.get("useCaseInputPorts");
+        String useCaseType = (inputPorts ? "I" : "") + useCaseName + "UseCase";
+        data.put("useCaseType", useCaseType);
+        data.put("useCaseImport",
+            data.get(inputPorts ? "portsPackage" : "useCasesPackage") + "." + useCaseType);
       }
     }
 

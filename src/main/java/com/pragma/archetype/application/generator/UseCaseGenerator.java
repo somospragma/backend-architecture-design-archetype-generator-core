@@ -34,8 +34,8 @@ public class UseCaseGenerator {
     // Prepare template data
     Map<String, Object> data = prepareTemplateData(config);
 
-    // Generate port interface if requested
-    if (config.generatePort()) {
+    // Generate port interface if requested and the architecture uses input ports
+    if (config.generatePort() && structureMetadata.generatesUseCaseInputPorts()) {
       GeneratedFile portFile = generatePort(projectPath, config, data);
       generatedFiles.add(portFile);
     }
@@ -73,6 +73,11 @@ public class UseCaseGenerator {
   }
 
   private GeneratedFile generateImplementation(Path projectPath, UseCaseConfig config, Map<String, Object> data) {
+    // Without input ports the configured package already is the use cases package
+    if (!structureMetadata.generatesUseCaseInputPorts()) {
+      return writeImplementation(projectPath, config, data, config.packageName());
+    }
+
     // Calculate implementation package: replace ports with usecases in the package name
     String implPackage = config.packageName()
         .replace("domain.ports", "domain.usecases")
@@ -86,6 +91,11 @@ public class UseCaseGenerator {
       implPackage = config.packageName().replace(".ports", ".usecases");
     }
 
+    return writeImplementation(projectPath, config, data, implPackage);
+  }
+
+  private GeneratedFile writeImplementation(
+      Path projectPath, UseCaseConfig config, Map<String, Object> data, String implPackage) {
     // Update data with implementation package
     data.put("implPackage", implPackage);
 
@@ -147,6 +157,7 @@ public class UseCaseGenerator {
     data.put("methods", methodMaps);
 
     data.put("generatePort", config.generatePort());
+    data.put("inputPort", structureMetadata.generatesUseCaseInputPorts());
     data.put("generateImpl", config.generateImpl());
     return data;
   }

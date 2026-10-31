@@ -83,6 +83,9 @@ class UnifiedAdapterGeneratorTest {
     lenient().when(structureMetadata.getResourcesPath()).thenReturn("src/main/resources");
     lenient().when(structureMetadata.getSourceDirectory()).thenReturn("src/main/java");
     lenient().when(structureMetadata.modulePathForPackageType(anyString())).thenReturn(".");
+    lenient().when(structureMetadata.generatesUseCaseInputPorts()).thenReturn(true);
+    lenient().when(structureMetadata.packageForType(anyString(), anyString()))
+        .thenAnswer(inv -> inv.getArgument(0) + ".domain." + inv.getArgument(1));
     lenient().when(structureMetadata.adapterResourcesPath(anyString(), anyString())).thenReturn("src/main/resources");
     lenient().when(structureMetadata.getAdapterBaseDirectory(anyString())).thenReturn("infrastructure/entry-points");
     lenient().when(structureMetadata.findModuleForPath(anyString())).thenReturn(null);

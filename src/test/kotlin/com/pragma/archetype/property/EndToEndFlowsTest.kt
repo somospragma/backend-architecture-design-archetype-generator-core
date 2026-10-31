@@ -244,13 +244,17 @@ class EndToEndFlowsTest : StringSpec() {
             }
         }
 
-        "All structure.yml files that define useCaseModule should set it to domain" {
+        "All structure.yml files that define useCaseModule should point to the module holding use cases" {
             for (arch in architectures) {
                 val structure = loadStructureYaml(arch.templateDir)
                 val useCaseModule = structure["useCaseModule"] as? String
                 if (useCaseModule != null) {
-                    // hexagonal-multi-granular uses "usecases" module
-                    val expected = if (arch.name == "hexagonal-multi-granular") "usecases" else "domain"
+                    // granular has a "usecases" module; onion keeps use cases in the application ring
+                    val expected = when (arch.name) {
+                        "hexagonal-multi-granular" -> "usecases"
+                        "onion-single" -> "application"
+                        else -> "domain"
+                    }
                     useCaseModule shouldBe expected
                 }
             }

@@ -39,6 +39,7 @@ class UseCaseGeneratorTest {
                 // Mock structureMetadata to return default source directory
                 when(structureMetadata.getSourceDirectory()).thenReturn("src/main/java");
                 lenient().when(structureMetadata.modulePathForPackageType(anyString())).thenReturn(".");
+                lenient().when(structureMetadata.generatesUseCaseInputPorts()).thenReturn(true);
 
                 generator = new UseCaseGenerator(templateRepository, structureMetadata);
         }

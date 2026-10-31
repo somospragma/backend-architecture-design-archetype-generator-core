@@ -68,7 +68,7 @@ public class ValidateStructureTask extends DefaultTask {
       StructureMetadata metadata = templateRepository.loadStructureMetadata(archType);
 
       // 4. Copy ArchUnit tests from templates
-      copyArchUnitTests(templateRepository, metadata, projectPath, basePackage);
+      copyArchUnitTests(templateRepository, metadata, projectPath, config);
 
       // 5. Run architecture tests
       runArchitectureTests();
@@ -117,7 +117,7 @@ public class ValidateStructureTask extends DefaultTask {
       TemplateRepository templateRepository,
       StructureMetadata metadata,
       Path projectPath,
-      String basePackage) throws Exception {
+      ProjectConfig config) throws Exception {
 
     getLogger().lifecycle("Copying ArchUnit tests from templates...");
 
@@ -134,7 +134,13 @@ public class ValidateStructureTask extends DefaultTask {
 
     int copiedCount = 0;
     Map<String, Object> context = new HashMap<>();
+    String basePackage = config.basePackage();
     context.put("basePackage", basePackage);
+    // Same paradigm flags initCleanArch passes, so rules can differ by paradigm
+    String paradigm = config.paradigm().name().toLowerCase();
+    context.put("paradigm", paradigm);
+    context.put("isReactive", "reactive".equals(paradigm));
+    context.put("isImperative", "imperative".equals(paradigm));
 
     for (StaticFile testFile : archTests) {
       String source = "architectures/" + metadata.architectureType() + "/" + testFile.getSource();

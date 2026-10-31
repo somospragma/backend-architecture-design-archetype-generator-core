@@ -27,7 +27,8 @@ public record StructureMetadata(
     String testDirectory,
     java.util.List<String> folders,
     boolean adaptersAsModules,
-    Boolean multiModule) {
+    Boolean multiModule,
+    Boolean useCaseInputPorts) {
 
   private static final String DEFAULT_SOURCE_DIR = "src/main/java";
   private static final String DEFAULT_TEST_DIR = "src/test/java";
@@ -70,7 +71,64 @@ public record StructureMetadata(
       String testDirectory) {
     this(architectureType, resourcesPath, adapterPaths, templatePaths, packageMappings, namingConventions,
         layerDependencies, packages, moduleMetadata, entityModule, useCaseModule, staticFiles, sourceDirectory,
-        testDirectory, java.util.List.of(), false, null);
+        testDirectory, java.util.List.of(), false, null, null);
+  }
+
+  /**
+   * Creates metadata that generates use case input ports (the default when
+   * structure.yml omits {@code useCaseInputPorts}).
+   */
+  public StructureMetadata(
+      String architectureType,
+      String resourcesPath,
+      Map<String, String> adapterPaths,
+      TemplatePaths templatePaths,
+      PackageMappings packageMappings,
+      NamingConventions namingConventions,
+      LayerDependencies layerDependencies,
+      java.util.List<String> packages,
+      java.util.List<ModuleMetadata> moduleMetadata,
+      String entityModule,
+      String useCaseModule,
+      java.util.List<StaticFile> staticFiles,
+      String sourceDirectory,
+      String testDirectory,
+      java.util.List<String> folders,
+      boolean adaptersAsModules,
+      Boolean multiModule) {
+    this(architectureType, resourcesPath, adapterPaths, templatePaths, packageMappings, namingConventions,
+        layerDependencies, packages, moduleMetadata, entityModule, useCaseModule, staticFiles, sourceDirectory,
+        testDirectory, folders, adaptersAsModules, multiModule, null);
+  }
+
+  /**
+   * Whether use cases get an input port interface ({@code I<Name>UseCase}) that
+   * entry points depend on. Hexagonal architectures do; onion, meant for small
+   * projects, lets entry points call the use case class directly.
+   */
+  public boolean generatesUseCaseInputPorts() {
+    return useCaseInputPorts == null || useCaseInputPorts;
+  }
+
+  /**
+   * Java package of a package type ({@code model}, {@code ports},
+   * {@code usecases}...): the first module declaring it in its packageTypes,
+   * converted to package notation under the base package. Falls back to
+   * {@code domain.<type>} when no module declares it.
+   */
+  public String packageForType(String basePackage, String packageType) {
+    String path = null;
+    for (ModuleMetadata module : getModuleMetadata()) {
+      if (module.getPackageTypes() != null && module.getPackageTypes().containsKey(packageType)) {
+        path = module.getPackageTypes().get(packageType);
+        break;
+      }
+    }
+    if (path == null) {
+      path = "domain/" + packageType;
+    }
+    String suffix = path.replace('/', '.').replace("-", "");
+    return suffix.isBlank() ? basePackage : basePackage + "." + suffix;
   }
 
   /**

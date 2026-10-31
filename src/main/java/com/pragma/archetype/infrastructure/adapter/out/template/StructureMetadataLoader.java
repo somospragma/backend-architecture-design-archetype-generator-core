@@ -94,7 +94,8 @@ public class StructureMetadataLoader {
           testDirectory,
           extractFolders(data),
           Boolean.TRUE.equals(data.get("adaptersAsModules")),
-          data.get("multiModule") instanceof Boolean flag ? flag : null);
+          data.get("multiModule") instanceof Boolean flag ? flag : null,
+          data.get("useCaseInputPorts") instanceof Boolean inputPorts ? inputPorts : null);
 
       ValidationResult validation = metadata.validate();
       if (!validation.valid()) {
