@@ -249,14 +249,10 @@ public class GenerateOutputAdapterTask extends BaseCleanArchTask {
       // Get adapter base path for driven adapters (output)
       String adapterBasePath = structureMetadata.getAdapterBaseDirectory("driven");
 
-      // For multi-module, strip the module path prefix from the package
-      // e.g., "infrastructure/driven-adapters" with module "infrastructure" → "driven-adapters"
+      // The package always mirrors the full adapter path, also in multi-module
+      // projects: the owning module only decides the directory the files go to
+      // (e.g. "infrastructure/driven-adapters" → "infrastructure.drivenadapters")
       String packageRelativePath = adapterBasePath;
-      com.pragma.archetype.domain.model.structure.ModuleMetadata owningModule = 
-          structureMetadata.findModuleForPath(adapterBasePath);
-      if (owningModule != null) {
-        packageRelativePath = structureMetadata.stripModulePrefix(adapterBasePath, owningModule.getPath());
-      }
 
       // Transform path to package name using structure metadata
       String adapterPackageSuffix = structureMetadata.pathToPackageName(packageRelativePath);

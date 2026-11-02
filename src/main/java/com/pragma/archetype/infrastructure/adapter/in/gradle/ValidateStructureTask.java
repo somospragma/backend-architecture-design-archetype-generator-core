@@ -141,9 +141,11 @@ public class ValidateStructureTask extends DefaultTask {
     context.put("paradigm", paradigm);
     context.put("isReactive", "reactive".equals(paradigm));
     context.put("isImperative", "imperative".equals(paradigm));
+    context.put("framework", config.framework().name().toLowerCase());
 
     for (StaticFile testFile : archTests) {
-      String source = "architectures/" + metadata.architectureType() + "/" + testFile.getSource();
+      String source = testFile.resolveSource(metadata.architectureType(),
+          config.framework().name().toLowerCase(), paradigm);
       String destination = testFile.resolveDestination(basePackage);
 
       Path targetPath = projectPath.resolve(destination);

@@ -15,14 +15,13 @@ import java.io.StringWriter
  *
  * Tag: Feature: kb-alignment-hexagonal-architectures, Property 14: ArchUnit Rules Completeness
  *
- * For any valid basePackage and architecture type, the ArchitectureTest.java.ftl and
- * NamingConventionTest.java.ftl templates must include rules for:
- * - Domain layer isolation
- * - Application layer isolation
- * - I prefix on port interfaces
- * - *Gateway suffix on output ports
- * - *UseCase suffix on use case classes
- * - *Adapter suffix on adapter classes
+ * Generated projects get one ArchitectureTest per architecture plus rule sets shared by
+ * every architecture (templates/common), by framework (frameworks/{framework}/tests) and by
+ * paradigm (frameworks/{framework}/{paradigm}/tests). Together they must cover:
+ * - Framework-free domain and use cases, and no Reactor in imperative business logic
+ * - I prefix on port/gateway interfaces, *Gateway suffix on output interfaces
+ * - *UseCase suffix on use case classes, role suffix on adapter classes
+ * - The layer rules of each architecture
  * - No adapter.in or adapter.out package patterns
  *
  * **Validates: Requirements 22.1, 22.2, 22.3, 22.4, 22.5, 22.6, 22.7**
@@ -37,14 +36,7 @@ class ArchUnitRulesPropertyTest : PropertyTestBase() {
         templateExceptionHandler = TemplateExceptionHandler.RETHROW_HANDLER
     }
 
-    /**
-     * Architecture types mapped to their template directory names.
-     */
-    interface Arch {
-        val templateDir: String
-    }
-
-    enum class ArchType(override val templateDir: String) : Arch {
+    enum class ArchType(val templateDir: String) {
         HEXAGONAL_SINGLE("hexagonal-single"),
         HEXAGONAL_MULTI("hexagonal-multi"),
         HEXAGONAL_MULTI_GRANULAR("hexagonal-multi-granular"),
@@ -52,180 +44,152 @@ class ArchUnitRulesPropertyTest : PropertyTestBase() {
     }
 
     /** Architectures with input ports and use cases in domain.usecases. */
-    enum class HexagonalArchType(override val templateDir: String) : Arch {
+    enum class HexagonalArchType(val templateDir: String) {
         HEXAGONAL_SINGLE("hexagonal-single"),
         HEXAGONAL_MULTI("hexagonal-multi"),
         HEXAGONAL_MULTI_GRANULAR("hexagonal-multi-granular")
     }
 
-    private fun processArchitectureTestTemplate(basePackage: String, archType: Arch): String {
-        val template = freemarkerConfig.getTemplate(
-            "architectures/${archType.templateDir}/tests/architecture/ArchitectureTest.java.ftl"
-        )
-        val dataModel = mapOf("basePackage" to basePackage)
+    private fun render(templatePath: String, basePackage: String, reactive: Boolean = false): String {
         val writer = StringWriter()
-        template.process(dataModel, writer)
+        freemarkerConfig.getTemplate(templatePath)
+            .process(mapOf("basePackage" to basePackage, "isReactive" to reactive), writer)
         return writer.toString()
     }
 
-    private fun processNamingConventionTestTemplate(basePackage: String, archType: Arch): String {
-        val template = freemarkerConfig.getTemplate(
-            "architectures/${archType.templateDir}/tests/architecture/NamingConventionTest.java.ftl"
-        )
-        val dataModel = mapOf("basePackage" to basePackage)
-        val writer = StringWriter()
-        template.process(dataModel, writer)
-        return writer.toString()
-    }
+    private fun architectureTest(basePackage: String, templateDir: String) =
+        render("architectures/$templateDir/tests/architecture/ArchitectureTest.java.ftl", basePackage)
+
+    private fun commonTest(name: String, basePackage: String, reactive: Boolean = false) =
+        render("common/tests/architecture/$name.java.ftl", basePackage, reactive)
 
     init {
-        "Property 14.1: ArchitectureTest should include domain layer isolation rule" {
-            checkAll(
-                DomainModelGenerators.packageName(),
-                Arb.enum<HexagonalArchType>()
-            ) { basePackage, archType ->
-                val output = processArchitectureTestTemplate(basePackage, archType)
-                output shouldContain "domainLayerShouldBeIsolated"
-                output shouldContain "noClasses()"
+        "Property 14.1: DomainPurityTest should keep the domain free of frameworks and infrastructure" {
+            checkAll(DomainModelGenerators.packageName()) { basePackage ->
+                val output = commonTest("DomainPurityTest", basePackage)
+                output shouldContain "domainIsFreeOfFrameworks"
+                output shouldContain "domainDoesNotDependOnInfrastructure"
                 output shouldContain "resideInAPackage(\"..domain..\")"
+                output shouldContain "\"org.springframework..\""
             }
         }
 
-        "Property 14.2: ArchitectureTest should include application layer isolation rule" {
-            checkAll(
-                DomainModelGenerators.packageName(),
-                Arb.enum<HexagonalArchType>()
-            ) { basePackage, archType ->
-                val output = processArchitectureTestTemplate(basePackage, archType)
-                output shouldContain "applicationLayerShouldOnlyDependOnDomain"
+        "Property 14.2: DomainPurityTest should keep the application layer free of frameworks" {
+            checkAll(DomainModelGenerators.packageName()) { basePackage ->
+                val output = commonTest("DomainPurityTest", basePackage)
+                output shouldContain "applicationLayerIsFreeOfFrameworks"
                 output shouldContain "resideInAPackage(\"..application..\")"
             }
         }
 
-        "Property 14.3: NamingConventionTest should include I prefix rule for port interfaces" {
-            checkAll(
-                DomainModelGenerators.packageName(),
-                Arb.enum<HexagonalArchType>()
-            ) { basePackage, archType ->
-                val output = processNamingConventionTestTemplate(basePackage, archType)
-                output shouldContain "portInterfacesShouldHaveIPrefix"
+        "Property 14.3: NamingConventionTest should include I prefix rule for ports and gateways" {
+            checkAll(DomainModelGenerators.packageName()) { basePackage ->
+                val output = commonTest("NamingConventionTest", basePackage)
+                output shouldContain "domainInterfacesShouldHaveIPrefix"
                 output shouldContain "haveSimpleNameStartingWith(\"I\")"
-                output shouldContain "resideInAPackage(\"..ports..\")"
+                output shouldContain "\"..domain.ports..\", \"..domain.gateway..\""
             }
         }
 
-        "Property 14.4: NamingConventionTest should include Gateway suffix rule for output ports" {
-            checkAll(
-                DomainModelGenerators.packageName(),
-                Arb.enum<HexagonalArchType>()
-            ) { basePackage, archType ->
-                val output = processNamingConventionTestTemplate(basePackage, archType)
-                output shouldContain "outputPortsShouldHaveGatewaySuffix"
+        "Property 14.4: NamingConventionTest should include Gateway suffix rule for output interfaces" {
+            checkAll(DomainModelGenerators.packageName()) { basePackage ->
+                val output = commonTest("NamingConventionTest", basePackage)
+                output shouldContain "outputInterfacesShouldHaveGatewaySuffix"
                 output shouldContain "haveSimpleNameEndingWith(\"Gateway\")"
             }
         }
 
-        "Property 14.5: NamingConventionTest should include UseCase suffix rule" {
-            checkAll(
-                DomainModelGenerators.packageName(),
-                Arb.enum<HexagonalArchType>()
-            ) { basePackage, archType ->
-                val output = processNamingConventionTestTemplate(basePackage, archType)
+        "Property 14.5: NamingConventionTest should include UseCase suffix rule for both use case packages" {
+            checkAll(DomainModelGenerators.packageName()) { basePackage ->
+                val output = commonTest("NamingConventionTest", basePackage)
                 output shouldContain "useCasesShouldEndWithUseCaseSuffix"
                 output shouldContain "haveSimpleNameEndingWith(\"UseCase\")"
-                output shouldContain "resideInAPackage(\"..domain.usecases..\")"
+                output shouldContain "\"..domain.usecases..\", \"..application.usecase..\""
             }
         }
 
         "Property 14.6: NamingConventionTest should include Adapter suffix rule" {
-            checkAll(
-                DomainModelGenerators.packageName(),
-                Arb.enum<ArchType>()
-            ) { basePackage, archType ->
-                val output = processNamingConventionTestTemplate(basePackage, archType)
+            checkAll(DomainModelGenerators.packageName()) { basePackage ->
+                val output = commonTest("NamingConventionTest", basePackage)
                 output shouldContain "adapterClassesShouldEndWithAdapterSuffix"
                 output shouldContain "haveNameMatching(\".*(Adapter|"
             }
         }
 
         "Property 14.7: ArchitectureTest should NOT reference adapter.in or adapter.out patterns" {
-            checkAll(
-                DomainModelGenerators.packageName(),
-                Arb.enum<ArchType>()
-            ) { basePackage, archType ->
-                val output = processArchitectureTestTemplate(basePackage, archType)
+            checkAll(DomainModelGenerators.packageName(), Arb.enum<ArchType>()) { basePackage, archType ->
+                val output = architectureTest(basePackage, archType.templateDir)
                 output shouldNotContain "adapter.in"
                 output shouldNotContain "adapter.out"
-                output shouldNotContain "\"..infrastructure.adapter.in..\""
-                output shouldNotContain "\"..infrastructure.adapter.out..\""
             }
         }
 
-        "Property 14.8: ArchitectureTest should use entrypoints/drivenadapters in onion architecture rule" {
-            checkAll(
-                DomainModelGenerators.packageName(),
-                Arb.enum<ArchType>()
-            ) { basePackage, archType ->
-                val output = processArchitectureTestTemplate(basePackage, archType)
-                output shouldContain "entrypoints"
-                output shouldContain "drivenadapters"
+        "Property 14.8: ArchitectureTest should use entrypoints/drivenadapters packages" {
+            checkAll(DomainModelGenerators.packageName(), Arb.enum<ArchType>()) { basePackage, archType ->
+                val output = architectureTest(basePackage, archType.templateDir)
+                output shouldContain "..infrastructure.entrypoints.."
+                output shouldContain "..infrastructure.drivenadapters.."
             }
         }
 
         "Property 14.9: ArchitectureTest package declaration should match basePackage" {
-            checkAll(
-                DomainModelGenerators.packageName(),
-                Arb.enum<ArchType>()
-            ) { basePackage, archType ->
-                val output = processArchitectureTestTemplate(basePackage, archType)
-                output shouldContain "package $basePackage.architecture;"
+            checkAll(DomainModelGenerators.packageName(), Arb.enum<ArchType>()) { basePackage, archType ->
+                architectureTest(basePackage, archType.templateDir) shouldContain "package $basePackage.architecture;"
             }
         }
 
-        "Property 14.10: NamingConventionTest package declaration should match basePackage" {
-            checkAll(
-                DomainModelGenerators.packageName(),
-                Arb.enum<ArchType>()
-            ) { basePackage, archType ->
-                val output = processNamingConventionTestTemplate(basePackage, archType)
-                output shouldContain "package $basePackage.architecture;"
-            }
-        }
-
-        "Property 14.11: Onion ArchitectureTest should enforce rings and framework-free core" {
+        "Property 14.10: shared rule tests package declaration should match basePackage" {
             checkAll(DomainModelGenerators.packageName()) { basePackage ->
-                val output = processArchitectureTestTemplate(basePackage, ArchType.ONION_SINGLE)
+                for (name in listOf("DomainPurityTest", "AdapterRulesTest", "NamingConventionTest",
+                        "ImmutabilityTest", "CodingRulesTest")) {
+                    commonTest(name, basePackage) shouldContain "package $basePackage.architecture;"
+                }
+            }
+        }
+
+        "Property 14.11: Hexagonal ArchitectureTest should enforce ports and adapters layers" {
+            checkAll(DomainModelGenerators.packageName(), Arb.enum<HexagonalArchType>()) { basePackage, archType ->
+                val output = architectureTest(basePackage, archType.templateDir)
+                output shouldContain "layeredArchitecture()"
+                output shouldContain ".layer(\"Ports\").definedBy(\"..domain.ports..\")"
+                output shouldContain ".layer(\"UseCases\").definedBy(\"..domain.usecases..\")"
+                output shouldContain ".whereLayer(\"UseCases\").mayOnlyBeAccessedByLayers(\"Config\")"
+                output shouldContain "useCasesImplementAnInputPort"
+                output shouldNotContain "onionArchitecture()"
+            }
+        }
+
+        "Property 14.12: Onion ArchitectureTest should enforce its rings" {
+            checkAll(DomainModelGenerators.packageName()) { basePackage ->
+                val output = architectureTest(basePackage, ArchType.ONION_SINGLE.templateDir)
                 output shouldContain "onionArchitecture()"
                 output shouldContain ".domainModels(\"..domain.model..\")"
                 output shouldContain ".domainServices(\"..domain.gateway..\")"
                 output shouldContain ".applicationServices(\"..application..\")"
-                output shouldContain "domainIsFreeOfFrameworks"
-                output shouldContain "useCasesAreFreeOfFrameworks"
-                output shouldContain "drivenAdaptersImplementADomainGateway"
-                output shouldContain "drivenAdaptersDoNotCallUseCases"
+                output shouldNotContain "layeredArchitecture()"
             }
         }
 
-        "Property 14.12: Onion ArchitectureTest should forbid Reactor in the core only for imperative projects" {
+        "Property 14.13: DomainPurityTest should forbid Reactor in business logic only for imperative projects" {
             checkAll(DomainModelGenerators.packageName()) { basePackage ->
-                val template = freemarkerConfig.getTemplate(
-                    "architectures/onion-single/tests/architecture/ArchitectureTest.java.ftl"
-                )
-                fun render(reactive: Boolean) = StringWriter().also {
-                    template.process(mapOf("basePackage" to basePackage, "isReactive" to reactive), it)
-                }.toString()
-                render(reactive = false) shouldContain "\"reactor..\""
-                render(reactive = true) shouldNotContain "\"reactor..\""
+                commonTest("DomainPurityTest", basePackage, reactive = false) shouldContain "\"reactor..\""
+                commonTest("DomainPurityTest", basePackage, reactive = true) shouldNotContain "\"reactor..\""
             }
         }
 
-        "Property 14.13: Onion NamingConventionTest should check gateways and use cases in their rings" {
+        "Property 14.14: Spring rule sets should cover injection, stereotypes and each paradigm" {
             checkAll(DomainModelGenerators.packageName()) { basePackage ->
-                val output = processNamingConventionTestTemplate(basePackage, ArchType.ONION_SINGLE)
-                output shouldContain "resideInAPackage(\"..domain.gateway..\")"
-                output shouldContain "haveSimpleNameEndingWith(\"Gateway\")"
-                output shouldContain "resideInAPackage(\"..application.usecase..\")"
-                output shouldContain "haveSimpleNameEndingWith(\"UseCase\")"
+                val framework = render("frameworks/spring/tests/architecture/FrameworkRulesTest.java.ftl", basePackage)
+                framework shouldContain "noFieldInjection"
+                framework shouldContain "controllersLiveInEntryPoints"
+                framework shouldContain "repositoriesLiveInDrivenAdapters"
+
+                val reactive = render("frameworks/spring/reactive/tests/architecture/ParadigmRulesTest.java.ftl", basePackage)
+                reactive shouldContain "noBlockingCallsOnPublishers"
+                reactive shouldContain "noBlockingStacks"
+
+                val imperative = render("frameworks/spring/imperative/tests/architecture/ParadigmRulesTest.java.ftl", basePackage)
+                imperative shouldContain "noReactiveStack"
             }
         }
     }

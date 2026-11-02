@@ -16,8 +16,11 @@ import lombok.Value;
 @Builder
 public class StaticFile {
   /**
-   * Source path relative to architecture template directory.
-   * Example: "project/Dockerfile.ftl" or "project/gradlew"
+   * Source path relative to architecture template directory, or to the
+   * templates root when it starts with "/" (files shared by several
+   * architectures). Supports {framework} and {paradigm} placeholders.
+   * Example: "project/Dockerfile.ftl" or
+   * "/frameworks/{framework}/{paradigm}/tests/architecture/ParadigmRulesTest.java.ftl"
    */
   String source;
 
@@ -81,5 +84,21 @@ public class StaticFile {
     resolved = resolved.replace("{configPackagePath}", configPackagePath);
 
     return resolved;
+  }
+
+  /**
+   * Template path of the source inside the templates repository.
+   *
+   * @param architecture the architecture whose directory relative sources live in
+   * @param framework    framework of the project (e.g. "spring")
+   * @param paradigm     paradigm of the project (e.g. "reactive")
+   */
+  public String resolveSource(String architecture, String framework, String paradigm) {
+    String resolved = source
+        .replace("{framework}", framework)
+        .replace("{paradigm}", paradigm);
+    return resolved.startsWith("/")
+        ? resolved.substring(1)
+        : "architectures/" + architecture + "/" + resolved;
   }
 }

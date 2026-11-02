@@ -1,6 +1,7 @@
 package com.pragma.archetype.property
 
 import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.enum
@@ -49,7 +50,13 @@ class MandatoryStaticFilesPropertyTest : PropertyTestBase() {
      */
     private val mandatoryArchTestPatterns = listOf(
         "ArchitectureTest.java",
-        "NamingConventionTest.java"
+        "DomainPurityTest.java",
+        "AdapterRulesTest.java",
+        "NamingConventionTest.java",
+        "ImmutabilityTest.java",
+        "CodingRulesTest.java",
+        "FrameworkRulesTest.java",
+        "ParadigmRulesTest.java"
     )
 
     @Suppress("UNCHECKED_CAST")
@@ -139,15 +146,18 @@ class MandatoryStaticFilesPropertyTest : PropertyTestBase() {
                 val staticFiles = loadStaticFiles(archType)
                 for (entry in staticFiles) {
                     val source = entry["source"] as? String ?: continue
-                    val isBinary = entry["binary"] as? Boolean ?: false
-                    // Check in architecture-specific directory first, then common
-                    val archFile = File(templatesRoot, "architectures/${archType.templateDir}/$source")
-                    val commonFile = File(templatesRoot, "common/$source")
-                    val exists = archFile.exists() || commonFile.exists()
-                    if (!exists && !isBinary) {
-                        // Binary files like gradle-wrapper.jar may not exist in templates
-                        // but non-binary template sources should exist
-                        // Relaxed: some templates may be shared across architectures
+                    // Same resolution as StaticFile.resolveSource: "/" means the templates
+                    // root; {framework} and {paradigm} expand to every supported value
+                    for (paradigm in listOf("imperative", "reactive")) {
+                        val resolved = source.replace("{framework}", "spring").replace("{paradigm}", paradigm)
+                        val file = if (resolved.startsWith("/")) {
+                            File(templatesRoot, resolved.removePrefix("/"))
+                        } else {
+                            File(templatesRoot, "architectures/${archType.templateDir}/$resolved")
+                        }
+                        withClue("${archType.templateDir}: $source ($paradigm)") {
+                            file.exists() shouldBe true
+                        }
                     }
                 }
             }

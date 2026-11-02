@@ -203,12 +203,17 @@ public class AdapterConfigurationService {
 
                     logger.debug("Processing configuration class template from: {}", configTemplatePath);
 
+                    // Configuration classes live inside their adapter (e.g. <adapter>.config),
+                    // so each adapter stays self-contained and its package matches its folder
+                    String ownerPackage = config.packageName() != null && !config.packageName().isBlank()
+                            ? config.packageName()
+                            : basePackage;
+                    String fullPackage = ownerPackage + "." + configClass.packagePath();
+                    String packagePath = fullPackage.replace('.', '/');
+                    templateContext.put("configClassPackage", fullPackage);
+
                     // Process the template
                     String processedContent = templateRepository.processTemplate(configTemplatePath, templateContext);
-
-                    // Resolve package path for the configuration class
-                    String fullPackage = basePackage + "." + configClass.packagePath();
-                    String packagePath = fullPackage.replace('.', '/');
 
                     // Build file path using dynamic source directory from metadata
                     String sourceDir = structureMetadata.getSourceDirectory();
@@ -492,7 +497,9 @@ public class AdapterConfigurationService {
         Map<String, Object> context = new HashMap<>();
         context.put("adapterName", config.name());
         context.put("adapterType", config.type().toLowerCase());
-        context.put("packageName", projectConfig.basePackage());
+        context.put("packageName", config.packageName() != null && !config.packageName().isBlank()
+                ? config.packageName()
+                : projectConfig.basePackage());
         context.put("useCaseName", config.useCaseName());
         context.put("entityName", config.entityName());
         context.put("basePackage", projectConfig.basePackage());

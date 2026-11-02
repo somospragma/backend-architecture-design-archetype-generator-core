@@ -661,16 +661,15 @@ public class UnifiedAdapterGenerator {
       // The adapter path from structure.yml (e.g., "infrastructure/driven-adapters/account-postgresql")
       String adapterPathStr = adapterBasePath.toString();
 
-      // For multi-module architectures, check if the adapter path starts with a module path
-      // If so, use the module path as a filesystem prefix and strip it from the package path
+      // For multi-module architectures the module containing the adapter path
+      // is the filesystem prefix; the package keeps the full adapter path
       String modulePath = ".";
       String packageRelativePath = adapterPathStr;
 
-      com.pragma.archetype.domain.model.structure.ModuleMetadata owningModule = 
+      com.pragma.archetype.domain.model.structure.ModuleMetadata owningModule =
           structureMetadata.findModuleForPath(adapterPathStr);
       if (owningModule != null) {
         modulePath = owningModule.getPath();
-        packageRelativePath = structureMetadata.stripModulePrefix(adapterPathStr, modulePath);
       }
 
       // Convert adapter path to Java-compatible directory (remove hyphens)

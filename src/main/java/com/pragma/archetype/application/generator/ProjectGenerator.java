@@ -732,13 +732,15 @@ public class ProjectGenerator {
                                 return files;
                         }
 
-                        String architecturePath = "architectures/" + config.architecture().getValue();
 
                         // Process each static file
                         for (StaticFile staticFile : structureMetadata.getStaticFiles()) {
                                 try {
-                                        // Build source template path
-                                        String templatePath = architecturePath + "/" + staticFile.getSource();
+                                        // Build source template path (architecture folder or shared)
+                                        String templatePath = staticFile.resolveSource(
+                                                        config.architecture().getValue(),
+                                                        config.framework().name().toLowerCase(),
+                                                        config.paradigm().name().toLowerCase());
 
                                         // Resolve destination path (replace {basePackage} placeholder)
                                         String destination = staticFile.resolveDestination(config.basePackage());
