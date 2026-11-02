@@ -70,8 +70,9 @@ class InitCleanArchTaskTest {
   }
 
   @Test
-  void shouldFailWithInvalidArchitecture() {
+  void shouldFailWithInvalidArchitecture() throws Exception {
     // Given
+    useLocalTemplates();
     task.setPackageName("com.test.project");
     task.setArchitecture("invalid-arch");
 
@@ -109,5 +110,16 @@ class InitCleanArchTaskTest {
     });
     assertTrue(exception.getMessage().contains("Invalid framework") ||
         exception.getCause() != null && exception.getCause().getMessage().contains("Invalid framework"));
+  }
+
+  /**
+   * Points the project at the sibling templates repository, so architecture
+   * validation reads its real index.yml instead of the network.
+   */
+  private void useLocalTemplates() throws java.io.IOException {
+    String templates = new java.io.File("../backend-architecture-design-archetype-generator-templates/templates")
+        .getCanonicalPath();
+    java.nio.file.Files.writeString(project.getProjectDir().toPath().resolve(".cleanarch.yml"),
+        "templates:\n  mode: developer\n  localPath: " + templates + "\n  cache: false\n");
   }
 }

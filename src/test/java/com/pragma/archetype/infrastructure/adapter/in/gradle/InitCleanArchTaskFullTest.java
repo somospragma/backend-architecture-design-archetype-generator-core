@@ -75,8 +75,9 @@ class InitCleanArchTaskFullTest {
   }
 
   @Test
-  void testInitializeProject_invalidArchitecture() {
+  void testInitializeProject_invalidArchitecture() throws Exception {
     // Given
+    useLocalTemplates();
     task.setArchitecture("invalid-architecture");
     task.setParadigm("reactive");
     task.setFramework("spring");
@@ -317,5 +318,16 @@ class InitCleanArchTaskFullTest {
         assertNotNull(e);
       }
     }
+  }
+
+  /**
+   * Points the project at the sibling templates repository, so architecture
+   * validation reads its real index.yml instead of the network.
+   */
+  private void useLocalTemplates() throws java.io.IOException {
+    String templates = new java.io.File("../backend-architecture-design-archetype-generator-templates/templates")
+        .getCanonicalPath();
+    java.nio.file.Files.writeString(project.getProjectDir().toPath().resolve(".cleanarch.yml"),
+        "templates:\n  mode: developer\n  localPath: " + templates + "\n  cache: false\n");
   }
 }

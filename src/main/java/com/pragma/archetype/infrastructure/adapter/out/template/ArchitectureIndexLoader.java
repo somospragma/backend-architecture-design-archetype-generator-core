@@ -25,6 +25,7 @@ public class ArchitectureIndexLoader {
   private final TemplateContentProvider contentProvider;
   private final Yaml yaml;
   private List<ArchitectureType> cached;
+  private Integer schemaVersion;
 
   public ArchitectureIndexLoader(TemplateContentProvider contentProvider) {
     this.contentProvider = contentProvider;
@@ -43,6 +44,17 @@ public class ArchitectureIndexLoader {
     return cached;
   }
 
+  /**
+   * schemaVersion declared by index.yml, or empty when the templates predate
+   * the index.
+   *
+   * @throws TemplateNotFoundException if index.yml exists but is invalid
+   */
+  public java.util.OptionalInt schemaVersion() {
+    load();
+    return schemaVersion == null ? java.util.OptionalInt.empty() : java.util.OptionalInt.of(schemaVersion);
+  }
+
   @SuppressWarnings("unchecked")
   private List<ArchitectureType> read() {
     if (!contentProvider.templateExists(INDEX_PATH)) {
@@ -55,6 +67,10 @@ public class ArchitectureIndexLoader {
       if (data == null || !(data.get("architectures") instanceof List<?> entries) || entries.isEmpty()) {
         throw new IllegalArgumentException("'architectures' must be a non-empty list");
       }
+      if (!(data.get("schemaVersion") instanceof Integer declared) || declared < 1) {
+        throw new IllegalArgumentException("'schemaVersion' must be a positive integer");
+      }
+      schemaVersion = declared;
 
       List<ArchitectureType> architectures = new ArrayList<>();
       for (Object entry : entries) {

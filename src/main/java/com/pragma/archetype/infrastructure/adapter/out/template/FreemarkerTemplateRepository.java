@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.pragma.archetype.domain.model.config.TemplateConfig;
+import com.pragma.archetype.domain.model.template.TemplatesContract;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.model.structure.StructureMetadata;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
@@ -56,6 +57,7 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
   private final StructureMetadataLoader structureMetadataLoader;
   private final TemplateVersionsLoader versionsLoader;
   private final ArchitectureIndexLoader architectureIndexLoader;
+  private boolean compatibilityChecked;
   private AdapterMetadataLoader adapterMetadataLoader;
   private final TemplateSourceResolver sourceResolver;
 
@@ -266,17 +268,51 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
 
   @Override
   public StructureMetadata loadStructureMetadata(ArchitectureType architecture) {
+    ensureCompatibleTemplates();
     return structureMetadataLoader.loadStructureMetadata(architecture);
   }
 
   @Override
   public com.pragma.archetype.domain.model.template.TemplateVersions loadVersions() {
+    ensureCompatibleTemplates();
     return versionsLoader.load();
   }
 
   @Override
   public List<ArchitectureType> listArchitectures() {
+    ensureCompatibleTemplates();
     return architectureIndexLoader.load();
+  }
+
+  /**
+   * Refuses templates whose schemaVersion this plugin does not understand,
+   * before anything is generated from them. Templates that predate the index
+   * have no schema and are accepted with a warning.
+   */
+  private void ensureCompatibleTemplates() {
+    if (compatibilityChecked) {
+      return;
+    }
+    var declared = architectureIndexLoader.schemaVersion();
+    if (declared.isPresent()) {
+      TemplatesContract.requireCompatible(declared.getAsInt(), describeSource());
+    } else if (sourceResolver != null && !sourceResolver.isLocalMode()) {
+      // Every published templates branch has an index, so a missing one means
+      // the branch does not exist (e.g. no templates line yet for this major)
+      throw new TemplateNotFoundException(String.format(
+          "No %s found at %s. Check that the branch exists, or set templates.branch in .cleanarch.yml.",
+          ArchitectureIndexLoader.INDEX_PATH, describeSource()));
+    } else {
+      logger.warn("Templates at {} declare no schemaVersion; assuming they are compatible", describeSource());
+    }
+    compatibilityChecked = true;
+  }
+
+  private String describeSource() {
+    if (sourceResolver != null) {
+      return sourceResolver.getSourceDescription();
+    }
+    return templatesBasePath != null ? templatesBasePath.toString() : "the configured template repository";
   }
 
   @Override

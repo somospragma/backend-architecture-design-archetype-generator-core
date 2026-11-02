@@ -24,40 +24,7 @@ public abstract class BaseCleanArchTask extends DefaultTask {
    */
   @Internal
   protected String getPluginVersion() {
-    try {
-      // First try: read from plugin's properties file
-      try (var stream = getClass().getClassLoader().getResourceAsStream("plugin.properties")) {
-        if (stream != null) {
-          var props = new java.util.Properties();
-          props.load(stream);
-          String version = props.getProperty("version");
-          if (version != null && !version.isBlank()) {
-            getLogger().debug("Plugin version from plugin.properties: {}", version);
-            return version;
-          }
-        }
-      }
-
-      // Second try: get version from plugin's implementation version
-      var pluginManager = getProject().getPluginManager();
-      var plugin = pluginManager.findPlugin("co.com.pragma.archetype-generator");
-
-      if (plugin != null) {
-        String version = plugin.getClass().getPackage().getImplementationVersion();
-        if (version != null && !version.isBlank()) {
-          getLogger().debug("Plugin version from implementation: {}", version);
-          return version;
-        }
-      }
-
-      // Last resort: use a default version
-      getLogger().warn("Could not determine plugin version, using default: 1.3.5-SNAPSHOT");
-      return "1.3.5-SNAPSHOT";
-
-    } catch (Exception e) {
-      getLogger().warn("Error determining plugin version: {}", e.getMessage());
-      return "1.3.5-SNAPSHOT";
-    }
+    return com.pragma.archetype.domain.model.config.PluginVersion.current();
   }
 
   /**

@@ -14,6 +14,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import com.pragma.archetype.domain.model.config.PluginVersion;
+import com.pragma.archetype.domain.model.template.TemplatesContract;
 import com.pragma.archetype.domain.model.config.TemplateConfig;
 import com.pragma.archetype.domain.model.config.TemplateMode;
 
@@ -93,7 +95,9 @@ class YamlConfigurationAdapterTest {
     assertNotNull(config);
     assertEquals(TemplateMode.PRODUCTION, config.mode());
     assertEquals("https://github.com/test/templates", config.repository());
-    assertEquals("main", config.branch());
+    // No branch configured: the plugin reads the branch of its major version
+    assertNull(config.branch());
+    assertEquals(TemplatesContract.branchFor(PluginVersion.current()), config.getEffectiveBranch());
     assertNull(config.version());
     assertNull(config.localPath());
     assertTrue(config.cache());
@@ -127,7 +131,9 @@ class YamlConfigurationAdapterTest {
     assertEquals(TemplateMode.PRODUCTION, config.mode());
     assertEquals("https://github.com/somospragma/backend-architecture-design-archetype-generator-templates",
         config.repository());
-    assertEquals("main", config.branch());
+    // No branch configured: the plugin reads the branch of its major version
+    assertNull(config.branch());
+    assertEquals(TemplatesContract.branchFor(PluginVersion.current()), config.getEffectiveBranch());
     assertNull(config.version());
     assertNull(config.localPath());
     assertTrue(config.cache());
@@ -146,7 +152,9 @@ class YamlConfigurationAdapterTest {
     assertEquals(TemplateMode.PRODUCTION, config.mode());
     assertEquals("https://github.com/somospragma/backend-architecture-design-archetype-generator-templates",
         config.repository());
-    assertEquals("main", config.branch());
+    // No branch configured: the plugin reads the branch of its major version
+    assertNull(config.branch());
+    assertEquals(TemplatesContract.branchFor(PluginVersion.current()), config.getEffectiveBranch());
     assertNull(config.version());
     assertNull(config.localPath());
     assertTrue(config.cache());

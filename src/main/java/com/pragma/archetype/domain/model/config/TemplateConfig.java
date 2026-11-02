@@ -1,8 +1,12 @@
 package com.pragma.archetype.domain.model.config;
 
+import com.pragma.archetype.domain.model.template.TemplatesContract;
+
 /**
  * Configuration for template repository.
  * Supports both production mode (GitHub) and developer mode (local path).
+ * Without an explicit branch or version, the plugin reads the templates branch
+ * of its major version (see {@link TemplatesContract}).
  */
 public record TemplateConfig(
     TemplateMode mode,
@@ -19,7 +23,7 @@ public record TemplateConfig(
     return new TemplateConfig(
         TemplateMode.PRODUCTION,
         "https://github.com/somospragma/backend-architecture-design-archetype-generator-templates",
-        "main",
+        null,
         null,
         null,
         true);
@@ -66,9 +70,13 @@ public record TemplateConfig(
   }
 
   /**
-   * Gets the effective branch to use.
+   * Gets the effective branch to use: the pinned version, the configured
+   * branch, or the branch of this plugin's major version.
    */
   public String getEffectiveBranch() {
-    return version != null ? version : (branch != null ? branch : "main");
+    if (version != null) {
+      return version;
+    }
+    return branch != null ? branch : TemplatesContract.branchFor(PluginVersion.current());
   }
 }

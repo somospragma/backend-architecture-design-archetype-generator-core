@@ -331,7 +331,7 @@ public class YamlConfigurationAdapter implements ConfigurationPort {
         templateMode,
         repository != null ? repository
             : "https://github.com/somospragma/backend-architecture-design-archetype-generator-templates",
-        branch != null ? branch : "main",
+        branch,
         version,
         localPath,
         cache != null ? cache : true);
