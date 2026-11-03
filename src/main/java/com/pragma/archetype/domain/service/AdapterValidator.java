@@ -195,17 +195,4 @@ public class AdapterValidator {
     }
     return true;
   }
-
-  private boolean isValidPackageName(String packageName) {
-    if (packageName == null || packageName.isEmpty()) {
-      return false;
-    }
-    String[] parts = packageName.split("\\.");
-    for (String part : parts) {
-      if (!isValidJavaIdentifier(part)) {
-        return false;
-      }
-    }
-    return true;
-  }
 }

@@ -422,16 +422,6 @@ public class ConfigurationValidator {
   }
 
   /**
-   * Validates an adapter type.
-   */
-  private boolean isValidAdapterType(String type) {
-    if (type == null || type.isBlank()) {
-      return false;
-    }
-    return type.equals("driven") || type.equals("driving");
-  }
-
-  /**
    * Validates a Java class name.
    */
   private boolean isValidJavaClassName(String className) {

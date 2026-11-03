@@ -88,79 +88,6 @@ class GenerateOutputAdapterTaskDeepTest {
   }
 
   @Test
-  void testParseAdapterType_redis() throws Exception {
-    // When
-    Object adapterType = invokeParseAdapterType("redis");
-
-    // Then
-    assertNotNull(adapterType);
-    assertEquals("redis", adapterType);
-  }
-
-  @Test
-  void testParseAdapterType_mongodb() throws Exception {
-    // When
-    Object adapterType = invokeParseAdapterType("mongodb");
-
-    // Then
-    assertEquals("mongodb", adapterType);
-  }
-
-  @Test
-  void testParseAdapterType_mongo() throws Exception {
-    // When
-    Object adapterType = invokeParseAdapterType("mongo");
-
-    // Then
-    assertEquals("mongodb", adapterType);
-  }
-
-  @Test
-  void testParseAdapterType_postgresql() throws Exception {
-    // When
-    Object adapterType = invokeParseAdapterType("postgresql");
-
-    // Then
-    assertEquals("postgresql", adapterType);
-  }
-
-  @Test
-  void testParseAdapterType_postgres() throws Exception {
-    // When
-    Object adapterType = invokeParseAdapterType("postgres");
-
-    // Then
-    assertEquals("postgresql", adapterType);
-  }
-
-  @Test
-  void testParseAdapterType_restClient() throws Exception {
-    // When
-    Object adapterType = invokeParseAdapterType("rest-client");
-
-    // Then
-    assertEquals("rest-client", adapterType);
-  }
-
-  @Test
-  void testParseAdapterType_rest() throws Exception {
-    // When
-    Object adapterType = invokeParseAdapterType("rest");
-
-    // Then
-    assertEquals("rest-client", adapterType);
-  }
-
-  @Test
-  void testParseAdapterType_kafka() throws Exception {
-    // When
-    Object adapterType = invokeParseAdapterType("kafka");
-
-    // Then
-    assertEquals("kafka", adapterType);
-  }
-
-  @Test
   void testResolvePackageName_withCustomPackage() throws Exception {
     // Given
     createBasicConfiguration();
@@ -292,12 +219,6 @@ class GenerateOutputAdapterTaskDeepTest {
     Method method = GenerateOutputAdapterTask.class.getDeclaredMethod("parseMethods", String.class);
     method.setAccessible(true);
     return (List<AdapterMethod>) method.invoke(task, methodsStr);
-  }
-
-  private Object invokeParseAdapterType(String typeStr) throws Exception {
-    Method method = GenerateOutputAdapterTask.class.getDeclaredMethod("parseAdapterType", String.class);
-    method.setAccessible(true);
-    return method.invoke(task, typeStr);
   }
 
   private String invokeResolvePackageName(String adapterType) throws Exception {

@@ -23,7 +23,6 @@ import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.usecase.UseCaseConfig;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateUseCaseUseCase.GenerationResult;
-import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.service.UseCaseValidator;
 
@@ -37,16 +36,13 @@ class GenerateUseCaseUseCaseImplTest {
   private UseCaseGenerator generator;
 
   @Mock
-  private ConfigurationPort configurationPort;
-
-  @Mock
   private FileSystemPort fileSystemPort;
 
   private GenerateUseCaseUseCaseImpl useCase;
 
   @BeforeEach
   void setUp() {
-    useCase = new GenerateUseCaseUseCaseImpl(validator, generator, configurationPort, fileSystemPort);
+    useCase = new GenerateUseCaseUseCaseImpl(validator, generator, fileSystemPort);
   }
 
   @Test

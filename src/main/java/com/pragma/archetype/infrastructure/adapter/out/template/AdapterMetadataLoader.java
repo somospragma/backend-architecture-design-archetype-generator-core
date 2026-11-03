@@ -64,9 +64,7 @@ public class AdapterMetadataLoader {
    * @throws TemplateNotFoundException if metadata.yml cannot be found or parsed
    */
   public AdapterMetadata loadMetadata(String metadataPath) {
-    // Extract adapter name from path (last directory before metadata.yml)
-    String adapterName = extractAdapterNameFromPath(metadataPath);
-    return loadMetadataFromPath(metadataPath, adapterName);
+    return loadMetadataFromPath(metadataPath);
   }
 
   /**
@@ -97,12 +95,12 @@ public class AdapterMetadataLoader {
         adapterName.toLowerCase());
 
     try {
-      return loadMetadataFromPath(metadataPath, adapterName);
+      return loadMetadataFromPath(metadataPath);
     } catch (Exception e) {
       // Try legacy path as fallback
       String legacyPath = "adapters/" + adapterName + "/metadata.yml";
       try {
-        return loadMetadataFromPath(legacyPath, adapterName);
+        return loadMetadataFromPath(legacyPath);
       } catch (Exception legacyError) {
         throw new TemplateNotFoundException(
             "Failed to load adapter metadata for: " + adapterName +
@@ -114,19 +112,9 @@ public class AdapterMetadataLoader {
   }
 
   /**
-   * Extracts adapter name from metadata path.
-   * Example: "adapters/rest/metadata.yml" → "rest"
-   */
-  private String extractAdapterNameFromPath(String metadataPath) {
-    String pathWithoutFile = metadataPath.substring(0, metadataPath.lastIndexOf("/metadata.yml"));
-    int lastSlash = pathWithoutFile.lastIndexOf("/");
-    return lastSlash >= 0 ? pathWithoutFile.substring(lastSlash + 1) : pathWithoutFile;
-  }
-
-  /**
    * Loads metadata from a specific path.
    */
-  private AdapterMetadata loadMetadataFromPath(String metadataPath, String adapterName) {
+  private AdapterMetadata loadMetadataFromPath(String metadataPath) {
     try {
       String yamlContent = contentProvider.getTemplateContent(metadataPath);
       Map<String, Object> data = yaml.load(yamlContent);

@@ -114,36 +114,6 @@ class GenerateInputAdapterTaskDeepTest {
   }
 
   @Test
-  void testParseAdapterType_rest() throws Exception {
-    // Given
-    task.setType("rest");
-
-    // When
-    Object adapterType = invokeParseAdapterType("rest");
-
-    // Then
-    assertNotNull(adapterType);
-  }
-
-  @Test
-  void testParseAdapterType_graphql() throws Exception {
-    // When
-    Object adapterType = invokeParseAdapterType("graphql");
-
-    // Then
-    assertNotNull(adapterType);
-  }
-
-  @Test
-  void testParseAdapterType_grpc() throws Exception {
-    // When
-    Object adapterType = invokeParseAdapterType("grpc");
-
-    // Then
-    assertNotNull(adapterType);
-  }
-
-  @Test
   void testValidateInputs_validInputs() throws Exception {
     // Given
     task.setAdapterName("UserController");
@@ -223,12 +193,6 @@ class GenerateInputAdapterTaskDeepTest {
     Method method = GenerateInputAdapterTask.class.getDeclaredMethod("parseEndpoints", String.class);
     method.setAccessible(true);
     return (List<Endpoint>) method.invoke(task, endpointsStr);
-  }
-
-  private Object invokeParseAdapterType(String typeStr) throws Exception {
-    Method method = GenerateInputAdapterTask.class.getDeclaredMethod("parseAdapterType", String.class);
-    method.setAccessible(true);
-    return method.invoke(task, typeStr);
   }
 
   private void invokeValidateInputs() throws Exception {

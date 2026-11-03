@@ -22,10 +22,8 @@ import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.PathResolver;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 import com.pragma.archetype.domain.service.ConfigurationValidator;
-import com.pragma.archetype.domain.service.InputAdapterValidator;
 import com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter;
 import com.pragma.archetype.infrastructure.adapter.out.filesystem.LocalFileSystemAdapter;
-import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTemplateRepository;
 
 /**
  * Gradle task for generating input adapters (entry points: REST controllers,
@@ -122,7 +120,7 @@ public class GenerateInputAdapterTask extends BaseCleanArchTask {
 
       // 2. Infer package name if not provided
       if (packageName == null || packageName.isBlank()) {
-        packageName = inferPackageName(projectPath, fileSystemPort, configurationPort);
+        packageName = inferPackageName(projectPath, configurationPort);
         getLogger().lifecycle("  Inferred package: {}", packageName);
       }
 
@@ -159,8 +157,6 @@ public class GenerateInputAdapterTask extends BaseCleanArchTask {
           templateRepository, fileSystemPort);
 
       // 8. Setup use case
-      com.pragma.archetype.domain.service.PackageValidator packageValidator = new com.pragma.archetype.domain.service.PackageValidator();
-      InputAdapterValidator validator = new InputAdapterValidator(fileSystemPort, configurationPort, packageValidator);
       // Create content provider that delegates to template repository
       com.pragma.archetype.infrastructure.adapter.out.template.TemplateContentProvider contentProvider = new com.pragma.archetype.infrastructure.adapter.out.template.TemplateContentProvider() {
         @Override
@@ -219,8 +215,7 @@ public class GenerateInputAdapterTask extends BaseCleanArchTask {
    * adapterPaths.
    * This eliminates the need for users to specify --packageName explicitly.
    */
-  private String inferPackageName(Path projectPath, FileSystemPort fileSystemPort,
-      ConfigurationPort configurationPort) {
+  private String inferPackageName(Path projectPath, ConfigurationPort configurationPort) {
     try {
       // Read project configuration to get basePackage and architecture
       var projectConfig = configurationPort.readConfiguration(projectPath)
@@ -283,7 +278,7 @@ public class GenerateInputAdapterTask extends BaseCleanArchTask {
    * Some adapter types (scheduled, messaging) don't need direct use case
    * invocation.
    */
-  private boolean requiresUseCase(String adapterType) {
+  private boolean requiresUseCase() {
     // Use case is now optional for all adapter types
     // Controllers can inject multiple use cases or none initially
     return false;
@@ -307,7 +302,7 @@ public class GenerateInputAdapterTask extends BaseCleanArchTask {
     }
 
     // Only require use case for certain adapter types
-    if (requiresUseCase(type) && useCaseName.isBlank()) {
+    if (requiresUseCase() && useCaseName.isBlank()) {
       throw new IllegalArgumentException(
           "Use case name is required for " + type + " adapters. Use --useCase=CreateUserUseCase");
     }
@@ -324,14 +319,6 @@ public class GenerateInputAdapterTask extends BaseCleanArchTask {
       throw new IllegalArgumentException(
           "Package name could not be inferred. Please provide --packageName explicitly.");
     }
-  }
-
-  /**
-   * Normalizes adapter type string to lowercase.
-   */
-  private String parseAdapterType(String typeStr) {
-    // Simply normalize to lowercase - validation happens in generator
-    return typeStr.toLowerCase().trim();
   }
 
   /**

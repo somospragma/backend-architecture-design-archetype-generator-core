@@ -93,7 +93,7 @@ public class InputAdapterValidator {
     }
 
     // Validate use case name (only required for certain adapter types)
-    boolean requiresUseCase = requiresUseCase(config.type());
+    boolean requiresUseCase = requiresUseCase();
     if (requiresUseCase && (config.useCaseName() == null || config.useCaseName().isBlank())) {
       errors.add("Use case name is required for " + config.type() + " adapters");
     }
@@ -114,7 +114,7 @@ public class InputAdapterValidator {
    * Use case is now optional for all adapter types since controllers
    * can inject multiple use cases or none initially.
    */
-  private boolean requiresUseCase(String type) {
+  private boolean requiresUseCase() {
     return false;
   }
 
@@ -178,19 +178,6 @@ public class InputAdapterValidator {
     }
     for (int i = 1; i < name.length(); i++) {
       if (!Character.isJavaIdentifierPart(name.charAt(i))) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  private boolean isValidPackageName(String packageName) {
-    if (packageName == null || packageName.isEmpty()) {
-      return false;
-    }
-    String[] parts = packageName.split("\\.");
-    for (String part : parts) {
-      if (!isValidJavaIdentifier(part)) {
         return false;
       }
     }

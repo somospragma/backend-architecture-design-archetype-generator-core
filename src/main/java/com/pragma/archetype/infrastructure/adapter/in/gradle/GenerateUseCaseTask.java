@@ -25,7 +25,6 @@ import com.pragma.archetype.domain.service.ConfigurationValidator;
 import com.pragma.archetype.domain.service.UseCaseValidator;
 import com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter;
 import com.pragma.archetype.infrastructure.adapter.out.filesystem.LocalFileSystemAdapter;
-import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTemplateRepository;
 
 /**
  * Gradle task for generating use cases.
@@ -153,7 +152,6 @@ public class GenerateUseCaseTask extends DefaultTask {
       GenerateUseCaseUseCase useCase = new GenerateUseCaseUseCaseImpl(
           validator,
           generator,
-          configurationPort,
           fileSystemPort);
 
       // 8. Execute use case

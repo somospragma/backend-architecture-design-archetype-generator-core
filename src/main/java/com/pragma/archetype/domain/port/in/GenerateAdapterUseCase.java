@@ -4,7 +4,6 @@ import java.nio.file.Path;
 import java.util.List;
 
 import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
-import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.file.GeneratedFile;
 
 /**

@@ -16,7 +16,6 @@ public class BuildFileMerger {
   private static final Logger logger = LoggerFactory.getLogger(BuildFileMerger.class);
 
   private static final String PLUGINS_BLOCK_START = "plugins {";
-  private static final String CLOSING_BRACE = "}";
   private static final String BUILD_CONFIG_COMMENT = "\n// Configuration added by adapter\n";
 
   /**

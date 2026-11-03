@@ -315,7 +315,7 @@ public abstract class AbstractGenerateAdapterUseCase {
 
     // 3-4. Entity and Mapper templates exist (if needsMapper)
     if (metadata.isNeedsMapper()) {
-      validateMapperTemplates(config, metadata, errors);
+      validateMapperTemplates(config, errors);
     }
 
     // 5. Application properties template exists (if specified)
@@ -332,7 +332,6 @@ public abstract class AbstractGenerateAdapterUseCase {
    */
   private void validateMapperTemplates(
       UnifiedAdapterGenerator.AdapterConfig config,
-      AdapterMetadata metadata,
       List<String> errors) {
     // Entity.java.ftl is handled by a dedicated generator (not in discoveredTemplates),
     // so we check if the template file exists directly via the template repository

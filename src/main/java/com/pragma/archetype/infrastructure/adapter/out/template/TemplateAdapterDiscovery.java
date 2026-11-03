@@ -64,7 +64,7 @@ public class TemplateAdapterDiscovery implements AdapterDiscoveryPort {
           AdapterMetadata metadata = metadataLoader.loadMetadata(metadataPath);
 
           // Enrich with index information
-          metadata = enrichMetadata(metadata, entry, framework, paradigm, direction);
+          metadata = enrichMetadata(metadata, entry);
           adapters.add(metadata);
 
           logger.debug("Discovered {} adapter: {}", direction, entry.getName());
@@ -116,7 +116,7 @@ public class TemplateAdapterDiscovery implements AdapterDiscoveryPort {
       List<TemplateFile> templates = discoverTemplates(framework, paradigm, direction, adapterName);
 
       // 5. Enrich metadata with discovered templates and index info
-      metadata = enrichMetadata(metadata, entryOpt.get(), framework, paradigm, direction);
+      metadata = enrichMetadata(metadata, entryOpt.get());
       metadata = metadata.toBuilder()
           .discoveredTemplates(templates)
           .build();
@@ -311,10 +311,7 @@ public class TemplateAdapterDiscovery implements AdapterDiscoveryPort {
   }
 
   private AdapterMetadata enrichMetadata(AdapterMetadata metadata,
-      AdapterIndex.AdapterIndexEntry entry,
-      String framework,
-      String paradigm,
-      AdapterDirection direction) {
+      AdapterIndex.AdapterIndexEntry entry) {
     // Enrich metadata with information from index.json
     return metadata.toBuilder()
         .displayName(entry.getDisplayName() != null ? entry.getDisplayName() : metadata.getDisplayName())

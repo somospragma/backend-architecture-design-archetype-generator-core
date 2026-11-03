@@ -4,9 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.model.structure.StructureMetadata;
@@ -19,7 +16,6 @@ import com.pragma.archetype.domain.port.out.TemplateRepository;
  */
 public class TemplateValidator {
 
-  private static final Logger logger = LoggerFactory.getLogger(TemplateValidator.class);
   private final TemplateRepository templateRepository;
 
   public TemplateValidator(TemplateRepository templateRepository) {

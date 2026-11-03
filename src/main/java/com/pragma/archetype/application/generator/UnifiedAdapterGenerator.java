@@ -382,11 +382,8 @@ public class UnifiedAdapterGenerator {
       ProjectConfig projectConfig,
       StructureMetadata structureMetadata) {
 
-    // Get metadata
-    AdapterMetadata metadata = getAdapterMetadata(config, direction);
-
     // Get entity template
-    String templatePath = getDataEntityTemplatePath(config, direction, metadata);
+    String templatePath = getDataEntityTemplatePath(config, direction);
 
     // Add entity-specific package to data
     var entityData = new HashMap<>(data);
@@ -576,7 +573,7 @@ public class UnifiedAdapterGenerator {
    * Gets the data entity template path.
    * First tries the adapter-specific Entity.java.ftl, then falls back to the generic one.
    */
-  private String getDataEntityTemplatePath(AdapterConfig config, AdapterDirection direction, AdapterMetadata metadata) {
+  private String getDataEntityTemplatePath(AdapterConfig config, AdapterDirection direction) {
     String adapterDir = resolveAdapterDirectory(direction);
 
     // Try adapter-specific Entity.java.ftl first

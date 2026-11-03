@@ -1,6 +1,5 @@
 package com.pragma.archetype.infrastructure.adapter.in.gradle;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -13,7 +12,6 @@ import com.pragma.archetype.application.generator.ProjectGenerator;
 import com.pragma.archetype.application.usecase.InitializeProjectUseCaseImpl;
 import com.pragma.archetype.application.usecase.InitializeProjectUseCaseImpl.InitializationResult;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
-import com.pragma.archetype.domain.model.config.TemplateConfig;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.model.project.Framework;
 import com.pragma.archetype.domain.model.project.Paradigm;
@@ -23,7 +21,6 @@ import com.pragma.archetype.domain.port.out.TemplateRepository;
 import com.pragma.archetype.domain.service.ProjectValidator;
 import com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter;
 import com.pragma.archetype.infrastructure.adapter.out.filesystem.LocalFileSystemAdapter;
-import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTemplateRepository;
 
 /**
  * Gradle task for initializing a clean architecture project.

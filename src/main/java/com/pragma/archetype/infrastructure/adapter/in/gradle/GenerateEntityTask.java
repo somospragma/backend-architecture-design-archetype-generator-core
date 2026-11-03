@@ -25,7 +25,6 @@ import com.pragma.archetype.domain.service.ConfigurationValidator;
 import com.pragma.archetype.domain.service.EntityValidator;
 import com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter;
 import com.pragma.archetype.infrastructure.adapter.out.filesystem.LocalFileSystemAdapter;
-import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTemplateRepository;
 
 /**
  * Gradle task for generating domain entities.
@@ -141,7 +140,7 @@ public class GenerateEntityTask extends DefaultTask {
       TemplateRepository templateRepository = createTemplateRepository();
 
       // 8. Setup use case
-      EntityValidator validator = new EntityValidator(fileSystemPort, configurationPort);
+      EntityValidator validator = new EntityValidator(fileSystemPort);
       EntityGenerator generator = new EntityGenerator(templateRepository, fileSystemPort);
       GenerateEntityUseCase useCase = new GenerateEntityUseCaseImpl(
           validator,

@@ -39,6 +39,7 @@ public record EntityConfig(
      */
     public static class EntityConfigBuilder {
         // Lombok generates the builder, we just need to set defaults
+        @SuppressWarnings("PMD.UnusedPrivateField") // read by the Lombok-generated build() as the hasId default
         private boolean hasId = DEFAULT_HAS_ID;
     }
 }

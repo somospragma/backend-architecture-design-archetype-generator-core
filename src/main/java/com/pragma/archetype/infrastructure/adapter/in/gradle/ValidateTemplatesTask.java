@@ -14,7 +14,6 @@ import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.ValidateTemplateUseCase;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 import com.pragma.archetype.domain.service.TemplateValidator;
-import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTemplateRepository;
 
 /**
  * Gradle task for validating templates.

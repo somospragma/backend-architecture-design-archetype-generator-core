@@ -8,7 +8,6 @@ import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.usecase.UseCaseConfig;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateUseCaseUseCase;
-import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.service.UseCaseValidator;
 
@@ -20,17 +19,14 @@ public class GenerateUseCaseUseCaseImpl implements GenerateUseCaseUseCase {
 
   private final UseCaseValidator validator;
   private final UseCaseGenerator generator;
-  private final ConfigurationPort configurationPort;
   private final FileSystemPort fileSystemPort;
 
   public GenerateUseCaseUseCaseImpl(
       UseCaseValidator validator,
       UseCaseGenerator generator,
-      ConfigurationPort configurationPort,
       FileSystemPort fileSystemPort) {
     this.validator = validator;
     this.generator = generator;
-    this.configurationPort = configurationPort;
     this.fileSystemPort = fileSystemPort;
   }
 

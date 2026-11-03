@@ -21,11 +21,9 @@ import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.PathResolver;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
-import com.pragma.archetype.domain.service.AdapterValidator;
 import com.pragma.archetype.domain.service.ConfigurationValidator;
 import com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter;
 import com.pragma.archetype.infrastructure.adapter.out.filesystem.LocalFileSystemAdapter;
-import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTemplateRepository;
 
 /**
  * Gradle task for generating output adapters (driven adapters: Redis, MongoDB,
@@ -157,9 +155,6 @@ public class GenerateOutputAdapterTask extends BaseCleanArchTask {
           templateRepository, fileSystemPort);
 
       // 8. Setup use case
-      com.pragma.archetype.domain.service.PackageValidator packageValidator = new com.pragma.archetype.domain.service.PackageValidator();
-      AdapterValidator validator = new AdapterValidator(fileSystemPort, configurationPort, packageValidator,
-          templateRepository);
       // Create content provider that delegates to template repository
       com.pragma.archetype.infrastructure.adapter.out.template.TemplateContentProvider contentProvider = new com.pragma.archetype.infrastructure.adapter.out.template.TemplateContentProvider() {
         @Override
@@ -280,22 +275,6 @@ public class GenerateOutputAdapterTask extends BaseCleanArchTask {
     }
     // Remove hyphens and convert to lowercase
     return adapterType.replace("-", "").toLowerCase();
-  }
-
-  /**
-   * Normalizes adapter type string to lowercase and handles aliases.
-   */
-  private String parseAdapterType(String typeStr) {
-    // Normalize to lowercase and handle common aliases
-    String normalized = typeStr.toLowerCase().trim();
-
-    // Handle aliases
-    return switch (normalized) {
-      case "mongo" -> "mongodb";
-      case "postgres" -> "postgresql";
-      case "rest" -> "rest-client";
-      default -> normalized;
-    };
   }
 
   /**

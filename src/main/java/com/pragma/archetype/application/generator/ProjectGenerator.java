@@ -55,7 +55,7 @@ public class ProjectGenerator {
                 } else {
                         // 3b. Generate single-module structure
                         generatedFiles.addAll(generateFrameworkFiles(projectPath, config, context));
-                        generatedFiles.addAll(generateArchitectureStructure(projectPath, config, context));
+                        generatedFiles.addAll(generateArchitectureStructure(projectPath, config));
                 }
 
                 // 4. Generate static files from structure.yml
@@ -376,13 +376,11 @@ public class ProjectGenerator {
          *
          * @param projectPath the project root path
          * @param config      the project configuration
-         * @param context     the template context
          * @return list of generated files (empty for now, just creates directories)
          */
         private List<GeneratedFile> generateArchitectureStructure(
                         Path projectPath,
-                        ProjectConfig config,
-                        Map<String, Object> context) {
+                        ProjectConfig config) {
 
                 List<GeneratedFile> files = new ArrayList<>();
 
