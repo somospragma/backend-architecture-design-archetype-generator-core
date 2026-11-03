@@ -20,14 +20,14 @@ public final class TemplatesContract {
   public static final int SCHEMA_VERSION = 1;
 
   /** Branch used when the plugin version cannot be parsed (local builds). */
-  static final String FALLBACK_BRANCH = "main";
+  static final String FALLBACK_BRANCH = "develop";
 
   private TemplatesContract() {
   }
 
   /**
-   * Templates branch for a plugin version: {@code v<major>}, or {@code main}
-   * when the version has no numeric major.
+   * Templates branch for a plugin version: {@code v<major>}, or {@code develop}
+   * (the integration branch) when the version has no numeric major.
    *
    * @param pluginVersion plugin version such as "1.4.0" or "2.0.0-SNAPSHOT"
    */

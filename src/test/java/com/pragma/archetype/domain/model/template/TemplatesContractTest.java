@@ -18,8 +18,8 @@ class TemplatesContractTest {
 
   @Test
   void shouldFallBackToMainWhenTheVersionHasNoNumericMajor() {
-    assertEquals("main", TemplatesContract.branchFor(null));
-    assertEquals("main", TemplatesContract.branchFor("0.0.0-unknown".replace("0.0.0", "dev")));
+    assertEquals("develop", TemplatesContract.branchFor(null));
+    assertEquals("develop", TemplatesContract.branchFor("0.0.0-unknown".replace("0.0.0", "dev")));
   }
 
   @Test

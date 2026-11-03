@@ -1,6 +1,7 @@
 # Plugin CI. Tests and the smoke generation run against the templates branch
-# of this plugin major (v1 for 1.x), falling back to templates main until that
-# branch exists.
+# of this plugin major (v1 for 1.x), falling back to templates develop (the
+# integration branch) until that branch exists. Templates main is frozen for
+# the 1.0.x plugins.
 name: CI
 
 on:
@@ -45,8 +46,8 @@ jobs:
           if git ls-remote --exit-code --heads "https://github.com/$TEMPLATES_REPOSITORY" "$branch" > /dev/null; then
             ref=$branch
           else
-            ref=main
-            echo "::warning::Templates branch $branch does not exist yet, testing against main"
+            ref=develop
+            echo "::warning::Templates branch $branch does not exist yet, testing against develop"
           fi
           echo "Templates ref: $ref"
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
