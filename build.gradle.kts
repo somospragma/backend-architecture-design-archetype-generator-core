@@ -5,11 +5,11 @@ plugins {
     id("com.gradle.plugin-publish") version "1.2.1"
     id("org.sonarqube") version "4.4.1.3373"
     jacoco
+    pmd
     kotlin("jvm") version "1.9.21"
 }
 
 group = "co.com.pragma"
-version = "1.3.5-SNAPSHOT"
 
 java {
     toolchain {
@@ -123,6 +123,7 @@ tasks.jacocoTestReport {
 }
 
 tasks.jacocoTestCoverageVerification {
+    classDirectories.setFrom(tasks.jacocoTestReport.get().classDirectories)
     violationRules {
         rule {
             limit {
@@ -130,6 +131,20 @@ tasks.jacocoTestCoverageVerification {
             }
         }
     }
+}
+
+pmd {
+    toolVersion = "7.28.0"
+    ruleSetFiles = files("config/pmd/dead-code.xml")
+    ruleSets = listOf()
+    isConsoleOutput = true
+}
+
+// Dead code only matters in production sources
+tasks.named("pmdTest") { enabled = false }
+
+tasks.check {
+    dependsOn(tasks.jacocoTestCoverageVerification)
 }
 
 tasks.withType<JavaCompile> {
