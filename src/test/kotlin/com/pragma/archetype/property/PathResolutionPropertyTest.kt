@@ -28,14 +28,22 @@ class PathResolutionPropertyTest : PropertyTestBase() {
         ArchitectureType.values().forEach { arch ->
             val metadata = StructureMetadata(
                 arch.value,
+                "src/main/resources", // resourcesPath
                 mapOf(
                     "driven" to "infrastructure/adapter/out/{name}",
                     "driving" to "infrastructure/adapter/in/{name}"
                 ),
+                null, // templatePaths
+                null, // packageMappings
                 null, // namingConventions
                 null, // layerDependencies
                 emptyList(), // packages
-                emptyList() // modules
+                null, // moduleMetadata
+                null, // entityModule
+                null, // useCaseModule
+                emptyList(), // staticFiles
+                "src/main/java", // sourceDirectory
+                "src/test/java" // testDirectory
             )
             `when`(loadStructureMetadata(arch)).thenReturn(metadata)
         }

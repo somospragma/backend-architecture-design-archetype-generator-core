@@ -7,6 +7,7 @@ import org.gradle.api.tasks.TaskAction;
 
 import com.pragma.archetype.domain.model.config.TemplateConfig;
 import com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter;
+import com.pragma.archetype.infrastructure.adapter.out.template.GitHubTemplateTagResolver;
 import com.pragma.archetype.infrastructure.adapter.out.template.TemplateCache;
 
 /**
@@ -32,7 +33,7 @@ public class UpdateTemplatesTask extends DefaultTask {
     getLogger().lifecycle("Template configuration:");
     getLogger().lifecycle("  Mode: {}", templateConfig.mode());
     getLogger().lifecycle("  Repository: {}", templateConfig.repository());
-    getLogger().lifecycle("  Branch: {}", templateConfig.getEffectiveBranch());
+    getLogger().lifecycle("  Ref: {}", templateConfig.describeRef());
 
     if (templateConfig.isLocalMode()) {
       getLogger().lifecycle("  Local path: {}", templateConfig.localPath());
@@ -46,13 +47,14 @@ public class UpdateTemplatesTask extends DefaultTask {
     TemplateCache cache = new TemplateCache();
     long sizeBefore = cache.getCacheSize();
     cache.clear();
+    GitHubTemplateTagResolver.clear();
 
     getLogger().lifecycle("");
     getLogger().lifecycle("✓ Template cache cleared");
     getLogger().lifecycle("  Freed: {}", formatBytes(sizeBefore));
     getLogger().lifecycle("");
     getLogger().lifecycle("Templates will be re-downloaded on next use from:");
-    getLogger().lifecycle("  {}/{}", templateConfig.repository(), templateConfig.getEffectiveBranch());
+    getLogger().lifecycle("  {} ({})", templateConfig.repository(), templateConfig.describeRef());
   }
 
   /**

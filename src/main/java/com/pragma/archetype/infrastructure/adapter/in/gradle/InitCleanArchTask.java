@@ -1,9 +1,9 @@
 package com.pragma.archetype.infrastructure.adapter.in.gradle;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.options.Option;
@@ -12,7 +12,6 @@ import com.pragma.archetype.application.generator.ProjectGenerator;
 import com.pragma.archetype.application.usecase.InitializeProjectUseCaseImpl;
 import com.pragma.archetype.application.usecase.InitializeProjectUseCaseImpl.InitializationResult;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
-import com.pragma.archetype.domain.model.config.TemplateConfig;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.model.project.Framework;
 import com.pragma.archetype.domain.model.project.Paradigm;
@@ -22,13 +21,12 @@ import com.pragma.archetype.domain.port.out.TemplateRepository;
 import com.pragma.archetype.domain.service.ProjectValidator;
 import com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter;
 import com.pragma.archetype.infrastructure.adapter.out.filesystem.LocalFileSystemAdapter;
-import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTemplateRepository;
 
 /**
  * Gradle task for initializing a clean architecture project.
  * This is an input adapter that drives the use case.
  */
-public class InitCleanArchTask extends DefaultTask {
+public class InitCleanArchTask extends BaseCleanArchTask {
 
   private String architecture = "hexagonal-single";
   private String paradigm = "reactive";
@@ -65,7 +63,7 @@ public class InitCleanArchTask extends DefaultTask {
     return framework;
   }
 
-  @Option(option = "packageName", description = "Base package name (e.g., com.company.service)")
+  @Option(option = "package", description = "Base package name (e.g., com.company.service)")
   public void setPackageName(String packageName) {
     this.packageName = packageName;
   }
@@ -83,13 +81,13 @@ public class InitCleanArchTask extends DefaultTask {
       // 1. Validate inputs
       validateInputs();
 
-      // 2. Create configuration
-      ProjectConfig config = createProjectConfig();
-
-      // 3. Setup dependencies (adapters)
+      // 2. Setup dependencies (adapters)
       FileSystemPort fileSystemPort = new LocalFileSystemAdapter();
       ConfigurationPort configurationPort = new YamlConfigurationAdapter();
       TemplateRepository templateRepository = createTemplateRepository();
+
+      // 3. Create configuration (architectures come from the templates)
+      ProjectConfig config = createProjectConfig(templateRepository);
 
       // 4. Setup use case
       ProjectValidator validator = new ProjectValidator(fileSystemPort, configurationPort);
@@ -133,16 +131,16 @@ public class InitCleanArchTask extends DefaultTask {
   private void validateInputs() {
     if (packageName == null || packageName.isBlank()) {
       throw new IllegalArgumentException(
-          "Package name is required. Use --packageName=com.company.service");
+          "Package name is required. Use --package=com.company.service");
     }
 
-    // Validate architecture
+    // Validate architecture name format; availability is checked against the
+    // templates in createProjectConfig
     try {
-      ArchitectureType.valueOf(architecture.toUpperCase().replace('-', '_'));
+      ArchitectureType.fromValue(architecture);
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException(
-          "Invalid architecture: " + architecture + ". " +
-              "Valid values: hexagonal-single, hexagonal-multi, hexagonal-multi-granular, onion-single, onion-multi");
+          "Invalid architecture: " + architecture + ". Use a name like hexagonal-single");
     }
 
     // Validate paradigm
@@ -165,12 +163,22 @@ public class InitCleanArchTask extends DefaultTask {
   /**
    * Creates project configuration from task inputs.
    */
-  private ProjectConfig createProjectConfig() {
+  private ProjectConfig createProjectConfig(TemplateRepository templateRepository) {
     String projectName = getProject().getName();
-    ArchitectureType archType = ArchitectureType.valueOf(architecture.toUpperCase().replace('-', '_'));
+    ArchitectureType archType = ArchitectureType.fromValue(architecture);
 
-    // Automatically enable adaptersAsModules for hexagonal-multi-granular
-    boolean adaptersAsModules = (archType == ArchitectureType.HEXAGONAL_MULTI_GRANULAR);
+    List<ArchitectureType> available = templateRepository.listArchitectures();
+    if (!available.contains(archType)) {
+      throw new IllegalArgumentException(
+          "Invalid architecture: " + architecture + ". Valid values: "
+              + available.stream().map(ArchitectureType::getValue).collect(Collectors.joining(", ")));
+    }
+
+    // structure.yml decides whether adapters are generated as Gradle modules
+    boolean adaptersAsModules = templateRepository.loadStructureMetadata(archType).adaptersAsModules();
+
+    // Get plugin version from the base class method
+    String pluginVersion = getPluginVersion();
 
     return ProjectConfig.builder()
         .name(projectName)
@@ -178,50 +186,17 @@ public class InitCleanArchTask extends DefaultTask {
         .architecture(archType)
         .paradigm(Paradigm.valueOf(paradigm.toUpperCase()))
         .framework(Framework.valueOf(framework.toUpperCase()))
-        .pluginVersion("0.1.15-SNAPSHOT")
+        .pluginVersion(pluginVersion)
         .adaptersAsModules(adaptersAsModules)
         .build();
   }
 
   /**
    * Creates template repository.
-   * Reads configuration from .cleanarch.yml or uses environment variables.
-   * Falls back to local development path if available.
+   * Delegates to TemplateRepositoryFactory for centralized resolution logic.
    */
   private TemplateRepository createTemplateRepository() {
     Path projectDir = getProject().getProjectDir().toPath();
-    YamlConfigurationAdapter configAdapter = new YamlConfigurationAdapter();
-
-    // 1. Check for .cleanarch.yml configuration (highest priority)
-    if (configAdapter.configurationExists(projectDir)) {
-      TemplateConfig templateConfig = configAdapter.readTemplateConfiguration(projectDir);
-
-      if (templateConfig.isLocalMode()) {
-        Path localPath = Path.of(templateConfig.localPath());
-        if (Files.exists(localPath)) {
-          getLogger().lifecycle("✓ Using local templates from .cleanarch.yml: {}", localPath.toAbsolutePath());
-          return new FreemarkerTemplateRepository(localPath);
-        } else {
-          getLogger().error("✗ Template localPath in .cleanarch.yml does not exist: {}", localPath);
-          throw new RuntimeException("Template path not found: " + localPath);
-        }
-      }
-    }
-
-    // 2. Try to auto-detect local templates (for plugin development only)
-    Path autoDetectPath = projectDir
-        .resolve("../../backend-architecture-design-archetype-generator-templates/templates")
-        .normalize();
-
-    if (Files.exists(autoDetectPath)) {
-      getLogger().lifecycle("✓ Auto-detected local templates (development mode): {}", autoDetectPath.toAbsolutePath());
-      getLogger()
-          .lifecycle("  Tip: Configure templates.localPath in .cleanarch.yml for explicit control");
-      return new FreemarkerTemplateRepository(autoDetectPath);
-    }
-
-    // 3. Fall back to embedded templates (in JAR) - production mode
-    getLogger().lifecycle("✓ Using embedded templates from plugin JAR (production mode)");
-    return new FreemarkerTemplateRepository("embedded");
+    return TemplateRepositoryFactory.create(projectDir, getLogger());
   }
 }

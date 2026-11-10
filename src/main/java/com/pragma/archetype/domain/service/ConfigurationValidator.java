@@ -248,41 +248,49 @@ public class ConfigurationValidator {
     }
 
     // Validate adapter name
-    if (metadata.name() == null || metadata.name().isBlank()) {
+    if (metadata.getName() == null || metadata.getName().isBlank()) {
       errors.add("Adapter name is required in metadata.yml");
       errors.add("Example: name: mongodb-adapter");
-    } else if (!isValidAdapterName(metadata.name())) {
-      errors.add("Invalid adapter name: " + metadata.name());
+    } else if (!isValidAdapterName(metadata.getName())) {
+      errors.add("Invalid adapter name: " + metadata.getName());
       errors.add("Adapter name must contain only lowercase letters, numbers, and hyphens");
     }
 
-    // Validate adapter type
-    if (metadata.type() == null || metadata.type().isBlank()) {
+    // Validate adapter direction
+    if (metadata.getDirection() == null) {
       errors.add("Adapter type is required in metadata.yml");
-      errors.add("Valid types: driven, driving");
-      errors.add("Example: type: driven");
-    } else if (!isValidAdapterType(metadata.type())) {
-      errors.add("Invalid adapter type: " + metadata.type());
-      errors.add("Valid types: driven, driving");
+      errors.add("Valid directions: INPUT, OUTPUT");
+      errors.add("Example: direction: INPUT");
     }
 
-    // Validate dependencies
-    if (metadata.dependencies() != null) {
-      for (int i = 0; i < metadata.dependencies().size(); i++) {
-        var dep = metadata.dependencies().get(i);
-        if (dep.group() == null || dep.group().isBlank()) {
-          errors.add("Dependency " + (i + 1) + " is missing 'group' field");
-        }
-        if (dep.artifact() == null || dep.artifact().isBlank()) {
-          errors.add("Dependency " + (i + 1) + " is missing 'artifact' field");
+    // Validate dependencies (new String format: "group:artifact:version")
+    if (metadata.getDependencies() != null) {
+      for (int i = 0; i < metadata.getDependencies().size(); i++) {
+        String dep = metadata.getDependencies().get(i);
+        ValidationResult depValidation = validateDependencyString(dep);
+        if (depValidation.isInvalid()) {
+          errors.add("Dependency " + (i + 1) + ": " + String.join(", ", depValidation.errors()));
         }
       }
     }
 
-    // Validate test dependencies
-    if (metadata.testDependencies() != null) {
-      for (int i = 0; i < metadata.testDependencies().size(); i++) {
-        var dep = metadata.testDependencies().get(i);
+    // Validate deprecated runtime dependencies for backward compatibility
+    if (metadata.getRuntimeDependencies() != null) {
+      for (int i = 0; i < metadata.getRuntimeDependencies().size(); i++) {
+        var dep = metadata.getRuntimeDependencies().get(i);
+        if (dep.group() == null || dep.group().isBlank()) {
+          errors.add("Runtime dependency " + (i + 1) + " is missing 'group' field");
+        }
+        if (dep.artifact() == null || dep.artifact().isBlank()) {
+          errors.add("Runtime dependency " + (i + 1) + " is missing 'artifact' field");
+        }
+      }
+    }
+
+    // Validate deprecated test dependencies for backward compatibility
+    if (metadata.getTestDependencies() != null) {
+      for (int i = 0; i < metadata.getTestDependencies().size(); i++) {
+        var dep = metadata.getTestDependencies().get(i);
         if (dep.group() == null || dep.group().isBlank()) {
           errors.add("Test dependency " + (i + 1) + " is missing 'group' field");
         }
@@ -293,8 +301,8 @@ public class ConfigurationValidator {
     }
 
     // Validate configuration classes
-    if (metadata.configurationClasses() != null) {
-      for (var configClass : metadata.configurationClasses()) {
+    if (metadata.getConfigurationClasses() != null) {
+      for (var configClass : metadata.getConfigurationClasses()) {
         if (configClass.name() == null || configClass.name().isBlank()) {
           errors.add("Configuration class is missing 'name' field");
         } else if (!isValidJavaClassName(configClass.name())) {
@@ -339,8 +347,38 @@ public class ConfigurationValidator {
         return false;
       }
     }
-
     return true;
+  }
+
+  /**
+   * Validates a dependency string in format "group:artifact:version".
+   * 
+   * @param dependency The dependency string to validate
+   * @return ValidationResult with success or error messages
+   */
+  private ValidationResult validateDependencyString(String dependency) {
+    if (dependency == null || dependency.isBlank()) {
+      return ValidationResult.failure("Dependency string cannot be empty");
+    }
+
+    String[] parts = dependency.split(":");
+    if (parts.length < 2) {
+      return ValidationResult
+          .failure("Invalid dependency format. Expected 'group:artifact' or 'group:artifact:version'");
+    }
+
+    String group = parts[0].trim();
+    String artifact = parts[1].trim();
+
+    if (group.isEmpty()) {
+      return ValidationResult.failure("Dependency is missing 'group' field");
+    }
+
+    if (artifact.isEmpty()) {
+      return ValidationResult.failure("Dependency is missing 'artifact' field");
+    }
+
+    return ValidationResult.success();
   }
 
   /**
@@ -381,16 +419,6 @@ public class ConfigurationValidator {
       return false;
     }
     return name.matches("[a-z][a-z0-9-]*");
-  }
-
-  /**
-   * Validates an adapter type.
-   */
-  private boolean isValidAdapterType(String type) {
-    if (type == null || type.isBlank()) {
-      return false;
-    }
-    return type.equals("driven") || type.equals("driving");
   }
 
   /**

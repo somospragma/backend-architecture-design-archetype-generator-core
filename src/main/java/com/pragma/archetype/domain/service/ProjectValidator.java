@@ -48,10 +48,17 @@ public class ProjectValidator {
     }
 
     // 2. Check if project is already initialized
+    // Only consider it initialized if .cleanarch.yml contains a 'project' section
+    // (written by initCleanArch). A file with only 'templates' section is just
+    // pre-configuration and should not block initialization.
     if (configurationPort.configurationExists(projectPath)) {
-      errors.add("Project is already initialized. Found .cleanarch.yml file.");
-      errors.add("If you want to reinitialize, delete the .cleanarch.yml file first.");
-      return ValidationResult.failure(errors);
+      var existingConfig = configurationPort.readConfiguration(projectPath);
+      if (existingConfig.isPresent()) {
+        errors.add("Project is already initialized. Found .cleanarch.yml with project configuration.");
+        errors.add("If you want to reinitialize, delete the .cleanarch.yml file first.");
+        return ValidationResult.failure(errors);
+      }
+      // .cleanarch.yml exists but has no project section — just templates config, allow init
     }
 
     // 3. Check if project is mostly empty
@@ -122,7 +129,9 @@ public class ProjectValidator {
         ".gitignore",
         ".git",
         "gradle",
-        ".gradle");
+        ".gradle",
+        "build",
+        ".cleanarch.yml");
 
     List<Path> unexpectedFiles = files.stream()
         .filter(file -> {

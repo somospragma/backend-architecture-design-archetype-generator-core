@@ -1,0 +1,245 @@
+# Publishes the plugin when a vX.Y.Z tag is pushed. The tag version is the
+# release version (gradle.properties keeps the next -SNAPSHOT).
+#
+# Quality (CI)   the tag is on main (or release/X.x), a templates release
+#                vX.y.z exists and its latest one has the schemaVersion this
+#                plugin reads, and check is green against it. Templates go
+#                first: a plugin without a templates release fails for every user.
+# Security (CI)  vulnerable dependencies (OSV, with the SBOM) and secrets on the
+#                tagged commit
+# Build          the jars that will be published, with build provenance
+# Deploy (CD)    waits for approval in the `release` environment (the only place
+#                with the publishing secrets), then publishes those same jars
+#                and creates the GitHub release
+name: Release
+
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  CORE_DIR: backend-architecture-design-archetype-generator-core
+  TEMPLATES_DIR: backend-architecture-design-archetype-generator-templates
+  TEMPLATES_REPOSITORY: somospragma/backend-architecture-design-archetype-generator-templates
+  CONTRACT: src/main/java/com/pragma/archetype/domain/model/template/TemplatesContract.java
+  FAIL_ON_CVSS: '7.0'
+
+jobs:
+  verify:
+    name: Quality (CI) · Verify and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      templates: ${{ steps.templates.outputs.tag }}
+    defaults:
+      run:
+        working-directory: ${{ env.CORE_DIR }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: ${{ env.CORE_DIR }}
+          fetch-depth: 0
+          persist-credentials: false
+      - id: version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version=${TAG#v}
+          major=${version%%.*}
+          if ! git branch -r --contains "$GITHUB_SHA" | grep -Eq "origin/(main|release/$major\.x)$"; then
+            echo "::error::$TAG is not on main or release/$major.x"; exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - id: templates
+        name: Latest templates release v{major}.x.y has this plugin's schema
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          major=${VERSION%%.*}
+          tag=$(git ls-remote --tags --refs "https://github.com/$TEMPLATES_REPOSITORY" "refs/tags/v$major.*" \
+            | sed 's#.*refs/tags/##' | grep -E "^v$major\.[0-9]+\.[0-9]+$" | sort -V | tail -n 1)
+          [[ -n $tag ]] || { echo "::error::No templates release v$major.x.y. Publish the templates first."; exit 1; }
+          expected=$(sed -n 's/.*SCHEMA_VERSION = \([0-9]*\);.*/\1/p' "$CONTRACT")
+          actual=$(curl -fsSL "https://raw.githubusercontent.com/$TEMPLATES_REPOSITORY/$tag/templates/architectures/index.yml" \
+            | yq '.schemaVersion')
+          [[ $actual == "$expected" ]] \
+            || { echo "::error::Templates $tag has schemaVersion $actual, this plugin reads $expected"; exit 1; }
+          echo "Templates release: $tag" >> "$GITHUB_STEP_SUMMARY"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.TEMPLATES_REPOSITORY }}
+          ref: ${{ steps.templates.outputs.tag }}
+          path: ${{ env.TEMPLATES_DIR }}
+          persist-credentials: false
+      - uses: gradle/actions/wrapper-validation@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-disabled: true # a release never reads a cache a PR could have written
+      - env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: ./gradlew check -Pversion="$VERSION" --console=plain
+
+  dependencies:
+    name: Security (CI) · Vulnerable dependencies (OSV)
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: ${{ env.CORE_DIR }}
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.TEMPLATES_REPOSITORY }}
+          ref: ${{ needs.verify.outputs.templates }}
+          path: ${{ env.TEMPLATES_DIR }}
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-disabled: true
+      - run: '"$TEMPLATES_DIR/scripts/ci/install-tools.sh" "$RUNNER_TEMP/bin" osv-scanner'
+      - run: |
+          "$TEMPLATES_DIR/scripts/ci/scan-dependencies.sh" --project "$CORE_DIR" \
+            --fail-on-cvss "$FAIL_ON_CVSS" --out "$RUNNER_TEMP/scan"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sbom
+          path: ${{ runner.temp }}/scan/sbom.cdx.json
+          retention-days: 30
+
+  secrets:
+    name: Security (CI) · Secrets (gitleaks)
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: ${{ env.CORE_DIR }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.TEMPLATES_REPOSITORY }}
+          ref: ${{ needs.verify.outputs.templates }}
+          path: ${{ env.TEMPLATES_DIR }}
+          persist-credentials: false
+      - run: '"$TEMPLATES_DIR/scripts/ci/install-tools.sh" "$RUNNER_TEMP/bin" gitleaks'
+      - run: gitleaks git --redact --no-banner --verbose --exit-code 1 "$CORE_DIR"
+
+  build:
+    name: Build · Jars and provenance
+    needs: [verify, dependencies, secrets]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write # provenance
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-disabled: true # nothing cached may end up in a published artifact
+      - env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: ./gradlew jar sourcesJar javadocJar -Pversion="$VERSION" --console=plain
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sbom
+          path: build/libs
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            build/libs/*.jar
+            build/libs/sbom.cdx.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release
+          path: build/libs
+          retention-days: 30
+
+  deploy:
+    name: Deploy (CD) · Gradle Plugin Portal
+    needs: [verify, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: release
+      url: https://plugins.gradle.org/plugin/co.com.pragma.archetype-generator
+    permissions:
+      contents: write # GitHub release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-disabled: true
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: build/libs
+      # The jar tasks are excluded so Gradle publishes the attested jars from
+      # the build stage instead of rebuilding them
+      - name: Publish to the Gradle Plugin Portal
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+          GRADLE_PUBLISH_KEY: ${{ secrets.GRADLE_PUBLISH_KEY }}
+          GRADLE_PUBLISH_SECRET: ${{ secrets.GRADLE_PUBLISH_SECRET }}
+        run: ./gradlew publishPlugins -Pversion="$VERSION" -x jar -x sourcesJar -x javadocJar --console=plain
+      - name: Maven Central (repository variable PUBLISH_MAVEN_CENTRAL=true)
+        if: vars.PUBLISH_MAVEN_CENTRAL == 'true'
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
+          CENTRAL_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          CENTRAL_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+        run: |
+          ORG_GRADLE_PROJECT_signingKey=$(base64 --decode <<< "$GPG_PRIVATE_KEY")
+          export ORG_GRADLE_PROJECT_signingKey
+          ./gradlew publishPluginMavenPublicationToBuildRepository -Pversion="$VERSION" \
+            -x jar -x sourcesJar -x javadocJar --console=plain
+          (cd build/repo && zip -qr ../../central-bundle.zip .)
+          token=$(printf '%s:%s' "$CENTRAL_USERNAME" "$CENTRAL_PASSWORD" | base64 -w0)
+          curl -fsS --request POST "https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC" \
+            --header "Authorization: Bearer $token" --form bundle=@central-bundle.zip
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" build/libs/*.jar build/libs/sbom.cdx.json --verify-tag --generate-notes --title "$TAG"

@@ -1,0 +1,314 @@
+# Plugin CI, in stages:
+#
+# Quality (CI)   tests with 60% coverage (and Sonar when configured), dead code
+# Security (CI)  secrets, dependency review, vulnerable dependencies (OSV, full
+#                tree), CodeQL and security lint of the workflows
+# Build          the plugin of this PR generates and builds real projects
+#
+# Tests and the smoke generation run against the templates this plugin major
+# reads: the latest templates tag v<major>.x.y, falling back to templates main
+# until the first one exists. While both repos change together, the repository
+# variable TEMPLATES_REF points every job at a templates branch instead.
+name: CI
+
+on:
+  pull_request:
+    branches: [main, 'release/**']
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CORE_DIR: backend-architecture-design-archetype-generator-core
+  TEMPLATES_DIR: backend-architecture-design-archetype-generator-templates
+  TEMPLATES_REPOSITORY: somospragma/backend-architecture-design-archetype-generator-templates
+  FAIL_ON_CVSS: '7.0'
+  ACTIONLINT_VERSION: 1.7.12
+  ZIZMOR_VERSION: 1.31.1
+
+jobs:
+  templates-ref:
+    name: Quality (CI) · Templates release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      ref: ${{ steps.ref.outputs.ref }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: ref
+        env:
+          OVERRIDE: ${{ vars.TEMPLATES_REF }}
+        run: |
+          if [[ -n $OVERRIDE ]]; then
+            echo "::warning::Testing against templates $OVERRIDE (repository variable TEMPLATES_REF)"
+            echo "ref=$OVERRIDE" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          version=$(sed -n 's/^version=//p' gradle.properties)
+          major=${version%%.*}
+          ref=$(git ls-remote --tags --refs "https://github.com/$TEMPLATES_REPOSITORY" "refs/tags/v$major.*" \
+            | sed 's#.*refs/tags/##' | grep -E "^v$major\.[0-9]+\.[0-9]+$" | sort -V | tail -n 1)
+          if [[ -z $ref ]]; then
+            ref=main
+            echo "::warning::No templates release v$major.x.y yet, testing against main"
+          fi
+          echo "Templates ref: $ref"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+  tests:
+    name: Quality (CI) · Tests and coverage
+    needs: templates-ref
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ env.CORE_DIR }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: ${{ env.CORE_DIR }}
+          fetch-depth: 0 # Sonar blame
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.TEMPLATES_REPOSITORY }}
+          ref: ${{ needs.templates-ref.outputs.ref }}
+          path: ${{ env.TEMPLATES_DIR }}
+          persist-credentials: false
+      - uses: gradle/actions/wrapper-validation@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - run: ./gradlew test jacocoTestCoverageVerification --console=plain
+      - id: sonar
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: echo "enabled=${SONAR_TOKEN:+true}" >> "$GITHUB_OUTPUT"
+      - name: SonarCloud
+        # Skipped on forks and until SONAR_TOKEN is configured. Informative: an
+        # expired token or a SonarCloud outage must not block the pipeline, the
+        # gates are the tests, coverage and the security stage
+        if: steps.sonar.outputs.enabled == 'true'
+        continue-on-error: true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: ./gradlew sonar -Dsonar.host.url=https://sonarcloud.io --console=plain
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: reports
+          path: ${{ env.CORE_DIR }}/build/reports
+          retention-days: 7
+
+  dead-code:
+    name: Quality (CI) · Dead code (PMD)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - run: ./gradlew pmdMain --console=plain
+
+  secrets:
+    name: Security (CI) · Secrets (gitleaks)
+    needs: [templates-ref, tests, dead-code]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: ${{ env.CORE_DIR }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.TEMPLATES_REPOSITORY }}
+          ref: ${{ needs.templates-ref.outputs.ref }}
+          path: ${{ env.TEMPLATES_DIR }}
+          persist-credentials: false
+      - run: '"$TEMPLATES_DIR/scripts/ci/install-tools.sh" "$RUNNER_TEMP/bin" gitleaks'
+      - run: gitleaks git --redact --no-banner --verbose --exit-code 1 "$CORE_DIR"
+
+  dependency-review:
+    name: Security (CI) · Dependency review
+    # Needs the Dependency graph (Settings → Advanced Security); turn it on with
+    # the repository variable DEPENDENCY_REVIEW=true. OSV covers the full tree meanwhile
+    if: github.event_name == 'pull_request' && vars.DEPENDENCY_REVIEW == 'true'
+    needs: [tests, dead-code]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: moderate
+
+  dependencies:
+    name: Security (CI) · Vulnerable dependencies (OSV)
+    needs: [templates-ref, tests, dead-code]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write # OSV results in the Security tab
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: ${{ env.CORE_DIR }}
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.TEMPLATES_REPOSITORY }}
+          ref: ${{ needs.templates-ref.outputs.ref }}
+          path: ${{ env.TEMPLATES_DIR }}
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - run: '"$TEMPLATES_DIR/scripts/ci/install-tools.sh" "$RUNNER_TEMP/bin" osv-scanner'
+      - run: |
+          "$TEMPLATES_DIR/scripts/ci/scan-dependencies.sh" --project "$CORE_DIR" \
+            --fail-on-cvss "$FAIL_ON_CVSS" --out scan-results
+      - name: Publish to the Security tab
+        # Fork PRs get no security-events permission
+        if: >-
+          always() && hashFiles('scan-results/osv.sarif') != ''
+          && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          sarif_file: scan-results/osv.sarif
+          category: osv-dependencies
+          checkout_path: ${{ github.workspace }}/${{ env.CORE_DIR }}
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dependencies
+          path: scan-results
+          if-no-files-found: ignore
+          retention-days: 30
+
+  codeql:
+    name: Security (CI) · CodeQL
+    needs: [tests, dead-code]
+    uses: ./.github/workflows/codeql.yml
+    permissions:
+      contents: read
+      security-events: write
+
+  workflows:
+    name: Security (CI) · Workflows (actionlint, zizmor)
+    needs: [tests, dead-code]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: actionlint (checksum verified)
+        run: |
+          base=https://github.com/rhysd/actionlint/releases/download/v$ACTIONLINT_VERSION
+          file=actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz
+          curl -fsSLO "$base/$file" -O "$base/actionlint_${ACTIONLINT_VERSION}_checksums.txt"
+          grep " $file\$" "actionlint_${ACTIONLINT_VERSION}_checksums.txt" | sha256sum -c -
+          tar -xzf "$file" actionlint
+          ./actionlint -color
+      - run: pipx run "zizmor==$ZIZMOR_VERSION" --persona=regular --min-severity=medium .github/workflows
+
+  smoke:
+    # The plugin from this PR generates real projects with the templates it reads
+    name: Build · ${{ matrix.architecture }} ${{ matrix.paradigm }}
+    needs: [templates-ref, secrets, dependency-review, dependencies, codeql, workflows]
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: hexagonal-multi
+            paradigm: imperative
+          - architecture: onion-single
+            paradigm: reactive
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: ${{ env.CORE_DIR }}
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.TEMPLATES_REPOSITORY }}
+          ref: ${{ needs.templates-ref.outputs.ref }}
+          path: ${{ env.TEMPLATES_DIR }}
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - id: gradle
+        run: echo "version=$(yq '.gradle' "$TEMPLATES_DIR/templates/versions.yml")" >> "$GITHUB_OUTPUT"
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          gradle-version: ${{ steps.gradle.outputs.version }}
+      - name: Publish plugin to mavenLocal
+        working-directory: ${{ env.CORE_DIR }}
+        run: ./gradlew publishToMavenLocal -x test -x javadoc --console=plain
+      - name: Generate and build
+        env:
+          ARCHITECTURE: ${{ matrix.architecture }}
+          PARADIGM: ${{ matrix.paradigm }}
+        run: |
+          version=$(sed -n 's/^version=//p' "$CORE_DIR/gradle.properties")
+          "$TEMPLATES_DIR/scripts/ci/generate-and-build.sh" --architecture "$ARCHITECTURE" --paradigm "$PARADIGM" \
+            --plugin-version "$version" --templates "$TEMPLATES_DIR/templates" --out "$RUNNER_TEMP/generated"
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: smoke-logs-${{ matrix.architecture }}-${{ matrix.paradigm }}
+          path: ${{ runner.temp }}/generated/logs
+          retention-days: 7
+
+  ci-ok:
+    # Single required check for rulesets
+    if: always()
+    needs: [templates-ref, tests, dead-code, secrets, dependency-review, dependencies, codeql, workflows, smoke]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "$RESULTS"
+          for r in $RESULTS; do [[ $r == success || $r == skipped ]] || exit 1; done

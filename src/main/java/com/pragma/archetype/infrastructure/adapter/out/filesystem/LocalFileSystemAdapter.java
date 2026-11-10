@@ -30,6 +30,11 @@ public class LocalFileSystemAdapter implements FileSystemPort {
       Files.move(tempFile, file.path(), java.nio.file.StandardCopyOption.REPLACE_EXISTING,
           java.nio.file.StandardCopyOption.ATOMIC_MOVE);
 
+      // Apply executable permissions if needed
+      if (file.executable()) {
+        setExecutable(file.path());
+      }
+
     } catch (IOException e) {
       throw new FileWriteException(
           "Failed to write file: " + file.path(),
@@ -137,6 +142,21 @@ public class LocalFileSystemAdapter implements FileSystemPort {
     } catch (IOException e) {
       throw new FileWriteException(
           "Failed to append to file: " + path,
+          e);
+    }
+  }
+
+  @Override
+  public void setExecutable(Path path) {
+    try {
+      // Set executable permissions (Unix/Linux/Mac only)
+      // On Windows, this is a no-op
+      if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+        path.toFile().setExecutable(true, false);
+      }
+    } catch (Exception e) {
+      throw new FileWriteException(
+          "Failed to set executable permissions on file: " + path,
           e);
     }
   }

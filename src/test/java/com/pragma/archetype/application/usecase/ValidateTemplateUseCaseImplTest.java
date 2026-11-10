@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.nio.file.Path;
@@ -32,6 +33,8 @@ class ValidateTemplateUseCaseImplTest {
   @BeforeEach
   void setUp() {
     useCase = new ValidateTemplateUseCaseImpl(templateValidator);
+    lenient().when(templateValidator.availableArchitectures())
+        .thenReturn(List.of(ArchitectureType.values()));
   }
 
   @Test

@@ -25,7 +25,6 @@ import com.pragma.archetype.domain.service.ConfigurationValidator;
 import com.pragma.archetype.domain.service.EntityValidator;
 import com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter;
 import com.pragma.archetype.infrastructure.adapter.out.filesystem.LocalFileSystemAdapter;
-import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTemplateRepository;
 
 /**
  * Gradle task for generating domain entities.
@@ -141,7 +140,7 @@ public class GenerateEntityTask extends DefaultTask {
       TemplateRepository templateRepository = createTemplateRepository();
 
       // 8. Setup use case
-      EntityValidator validator = new EntityValidator(fileSystemPort, configurationPort);
+      EntityValidator validator = new EntityValidator(fileSystemPort);
       EntityGenerator generator = new EntityGenerator(templateRepository, fileSystemPort);
       GenerateEntityUseCase useCase = new GenerateEntityUseCaseImpl(
           validator,
@@ -193,14 +192,35 @@ public class GenerateEntityTask extends DefaultTask {
       return packageName;
     }
 
-    // Otherwise, read from .cleanarch.yml
+    // Otherwise, read from .cleanarch.yml and structure.yml
     try {
       ConfigurationPort configurationPort = new YamlConfigurationAdapter();
       Path projectPath = getProject().getProjectDir().toPath();
       ProjectConfig projectConfig = configurationPort.readConfiguration(projectPath)
           .orElseThrow(() -> new IllegalArgumentException(".cleanarch.yml not found"));
 
-      // For hexagonal-single, entities go in domain.model
+      // Load StructureMetadata to get module-aware package resolution
+      TemplateRepository templateRepository = createTemplateRepository();
+      com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
+          .loadStructureMetadata(projectConfig.architecture());
+
+      // Use the entityModule's packageTypes to resolve the model package
+      try {
+        com.pragma.archetype.domain.model.structure.ModuleMetadata entityModule = structureMetadata.getEntityModule();
+        if (entityModule != null) {
+          String modelPackage = entityModule.getPackage("model");
+          // Convert filesystem path to package notation: "domain/model" → "domain.model", "model" → "model"
+          String packageSuffix = modelPackage.replace("/", ".").replace("-", "");
+          if (packageSuffix.isBlank()) {
+            return projectConfig.basePackage();
+          }
+          return projectConfig.basePackage() + "." + packageSuffix;
+        }
+      } catch (IllegalStateException | IllegalArgumentException e) {
+        // Fall through to default
+      }
+
+      // Fallback: entities go in domain.model
       return projectConfig.basePackage() + ".domain.model";
     } catch (Exception e) {
       throw new IllegalArgumentException(
@@ -243,18 +263,7 @@ public class GenerateEntityTask extends DefaultTask {
    * Creates template repository.
    */
   private TemplateRepository createTemplateRepository() {
-    // Try to find templates in project directory first (for development)
     Path projectDir = getProject().getProjectDir().toPath();
-    Path localTemplates = projectDir
-        .resolve("../../backend-architecture-design-archetype-generator-templates/templates").normalize();
-
-    if (java.nio.file.Files.exists(localTemplates)) {
-      getLogger().info("Using local templates from: {}", localTemplates.toAbsolutePath());
-      return new FreemarkerTemplateRepository(localTemplates);
-    }
-
-    // Fall back to embedded templates (in JAR)
-    getLogger().info("Using embedded templates");
-    return new FreemarkerTemplateRepository("embedded");
+    return TemplateRepositoryFactory.create(projectDir, getLogger());
   }
 }

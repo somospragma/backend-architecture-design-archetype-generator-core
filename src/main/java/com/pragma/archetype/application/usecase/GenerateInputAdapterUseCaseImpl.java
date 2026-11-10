@@ -1,60 +1,67 @@
 package com.pragma.archetype.application.usecase;
 
 import java.nio.file.Path;
-import java.util.List;
 
-import com.pragma.archetype.application.generator.InputAdapterGenerator;
+import com.pragma.archetype.application.generator.InputAdapterConfigAdapter;
+import com.pragma.archetype.application.generator.UnifiedAdapterGenerator;
+import com.pragma.archetype.application.port.out.AdapterDiscoveryPort;
+import com.pragma.archetype.domain.model.adapter.AdapterDirection;
 import com.pragma.archetype.domain.model.adapter.InputAdapterConfig;
-import com.pragma.archetype.domain.model.file.GeneratedFile;
-import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateInputAdapterUseCase;
+import com.pragma.archetype.domain.port.out.BackupPort;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
-import com.pragma.archetype.domain.service.InputAdapterValidator;
+import com.pragma.archetype.domain.port.out.TemplateRepository;
+import com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter;
 
 /**
  * Implementation of the GenerateInputAdapterUseCase.
- * Orchestrates the input adapter generation process.
+ * 
+ * <p>
+ * This class extends {@link AbstractGenerateAdapterUseCase} and only needs to
+ * specify that it generates INPUT adapters. All the generation logic is
+ * inherited from the parent class.
+ * 
+ * <p>
+ * The complete generation flow (16 steps) is handled by the parent class:
+ * validation, backup, generation, configuration, and cleanup.
+ * 
+ * @see AbstractGenerateAdapterUseCase
+ * @see AdapterDirection#INPUT
  */
-public class GenerateInputAdapterUseCaseImpl implements GenerateInputAdapterUseCase {
-
-  private final InputAdapterValidator validator;
-  private final InputAdapterGenerator generator;
-  private final ConfigurationPort configurationPort;
-  private final FileSystemPort fileSystemPort;
+public class GenerateInputAdapterUseCaseImpl extends AbstractGenerateAdapterUseCase
+    implements GenerateInputAdapterUseCase {
 
   public GenerateInputAdapterUseCaseImpl(
-      InputAdapterValidator validator,
-      InputAdapterGenerator generator,
+      UnifiedAdapterGenerator generator,
       ConfigurationPort configurationPort,
-      FileSystemPort fileSystemPort) {
-    this.validator = validator;
-    this.generator = generator;
-    this.configurationPort = configurationPort;
-    this.fileSystemPort = fileSystemPort;
+      FileSystemPort fileSystemPort,
+      AdapterDiscoveryPort adapterDiscovery,
+      TemplateRepository templateRepository,
+      YamlConfigurationAdapter yamlConfigurationAdapter,
+      BackupPort backupPort) {
+    super(generator, configurationPort, fileSystemPort, adapterDiscovery, templateRepository,
+        yamlConfigurationAdapter, backupPort);
   }
 
   @Override
   public GenerationResult execute(Path projectPath, InputAdapterConfig config) {
-    // 1. Validate configuration
-    ValidationResult validationResult = validator.validate(projectPath, config);
-    if (!validationResult.valid()) {
-      return GenerationResult.failure(validationResult.errors());
+    // Wrap InputAdapterConfig in the unified adapter config
+    var unifiedConfig = new InputAdapterConfigAdapter(config);
+
+    // Call parent's execute and convert result
+    var parentResult = super.execute(projectPath, unifiedConfig);
+
+    // Convert from parent's GenerationResult to this interface's GenerationResult
+    if (parentResult.success()) {
+      return GenerationResult.success(parentResult.generatedFiles());
+    } else {
+      return GenerationResult.failure(parentResult.errors());
     }
+  }
 
-    try {
-      // 2. Generate input adapter files
-      List<GeneratedFile> generatedFiles = generator.generate(projectPath, config);
-
-      // 3. Write files to disk
-      for (GeneratedFile file : generatedFiles) {
-        fileSystemPort.writeFile(file);
-      }
-
-      return GenerationResult.success(generatedFiles);
-
-    } catch (Exception e) {
-      return GenerationResult.failure(List.of("Failed to generate input adapter: " + e.getMessage()));
-    }
+  @Override
+  protected AdapterDirection getDirection() {
+    return AdapterDirection.INPUT;
   }
 }

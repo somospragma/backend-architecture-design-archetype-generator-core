@@ -25,6 +25,7 @@ import com.pragma.archetype.domain.model.structure.StructureMetadata;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.PathResolver;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
+import com.pragma.archetype.test.StructureMetadataTestHelper;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("PathResolverImpl Tests")
@@ -49,14 +50,11 @@ class PathResolverImplTest {
     String name = "mongodb";
     Map<String, String> context = Map.of("basePackage", "com.example.service");
 
-    StructureMetadata metadata = new StructureMetadata(
+    StructureMetadata metadata = StructureMetadataTestHelper.createMinimal(
         "hexagonal-single",
         Map.of(
             "driven", "src/main/java/{basePackage}/infrastructure/adapter/out/{name}",
-            "driving", "src/main/java/{basePackage}/infrastructure/adapter/in/{name}"),
-        null,
-        null,
-        null, null);
+            "driving", "src/main/java/{basePackage}/infrastructure/adapter/in/{name}"));
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 
@@ -79,14 +77,11 @@ class PathResolverImplTest {
     String name = "rest-controller";
     Map<String, String> context = Map.of("basePackage", "com.example.api");
 
-    StructureMetadata metadata = new StructureMetadata(
+    StructureMetadata metadata = StructureMetadataTestHelper.createMinimal(
         "onion-single",
         Map.of(
             "driven", "infrastructure/adapter/out/{name}",
-            "driving", "infrastructure/adapter/in/{name}"),
-        null,
-        null,
-        null, null);
+            "driving", "infrastructure/adapter/in/{name}"));
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 
@@ -156,12 +151,9 @@ class PathResolverImplTest {
     String name = "test";
     Map<String, String> context = Map.of();
 
-    StructureMetadata metadata = new StructureMetadata(
+    StructureMetadata metadata = StructureMetadataTestHelper.createMinimal(
         "hexagonal-single",
-        Map.of("driven", "path/to/{name}"),
-        null,
-        null,
-        null, null);
+        Map.of("driven", "path/to/{name}"));
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 
@@ -181,12 +173,9 @@ class PathResolverImplTest {
     ArchitectureType architecture = ArchitectureType.HEXAGONAL_SINGLE;
     Path path = Paths.get("src/main/java/infrastructure/adapter/out/mongodb");
 
-    StructureMetadata metadata = new StructureMetadata(
+    StructureMetadata metadata = StructureMetadataTestHelper.createMinimal(
         "hexagonal-single",
-        Map.of("driven", "path/{name}"),
-        null,
-        null,
-        null, null);
+        Map.of("driven", "path/{name}"));
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 
@@ -211,12 +200,10 @@ class PathResolverImplTest {
             "application", List.of("domain"),
             "infrastructure", List.of("domain", "application")));
 
-    StructureMetadata metadata = new StructureMetadata(
+    StructureMetadata metadata = StructureMetadataTestHelper.withLayerDependencies(
         "onion-single",
         Map.of("driven", "infrastructure/adapter/out/{name}"),
-        null,
-        layerDeps,
-        null, null);
+        layerDeps);
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 
@@ -237,12 +224,10 @@ class PathResolverImplTest {
     LayerDependencies layerDeps = new LayerDependencies(
         Map.of("domain", List.of()));
 
-    StructureMetadata metadata = new StructureMetadata(
+    StructureMetadata metadata = StructureMetadataTestHelper.withLayerDependencies(
         "hexagonal-single",
         Map.of("driven", "path/{name}"),
-        null,
-        layerDeps,
-        null, null);
+        layerDeps);
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 
@@ -265,12 +250,10 @@ class PathResolverImplTest {
     LayerDependencies layerDeps = new LayerDependencies(
         Map.of("domain", List.of()));
 
-    StructureMetadata metadata = new StructureMetadata(
+    StructureMetadata metadata = StructureMetadataTestHelper.withLayerDependencies(
         "hexagonal-single",
         Map.of("driven", "path/{name}"),
-        null,
-        layerDeps,
-        null, null);
+        layerDeps);
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 
@@ -333,12 +316,9 @@ class PathResolverImplTest {
         "basePackage", "com.example",
         "module", "infrastructure");
 
-    StructureMetadata metadata = new StructureMetadata(
+    StructureMetadata metadata = StructureMetadataTestHelper.createMinimal(
         "hexagonal-multi",
-        Map.of("driven", "{module}/src/main/java/{basePackage}/adapter/{name}"),
-        null,
-        null,
-        null, null);
+        Map.of("driven", "{module}/src/main/java/{basePackage}/adapter/{name}"));
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 
@@ -361,12 +341,10 @@ class PathResolverImplTest {
     LayerDependencies layerDeps = new LayerDependencies(
         Map.of("domain", List.of()));
 
-    StructureMetadata metadata = new StructureMetadata(
+    StructureMetadata metadata = StructureMetadataTestHelper.withLayerDependencies(
         "hexagonal-single",
         Map.of("driven", "path/{name}"),
-        null,
-        layerDeps,
-        null, null);
+        layerDeps);
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 
@@ -387,12 +365,10 @@ class PathResolverImplTest {
     LayerDependencies layerDeps = new LayerDependencies(
         Map.of("application", List.of("domain")));
 
-    StructureMetadata metadata = new StructureMetadata(
+    StructureMetadata metadata = StructureMetadataTestHelper.withLayerDependencies(
         "hexagonal-single",
         Map.of("driven", "path/{name}"),
-        null,
-        layerDeps,
-        null, null);
+        layerDeps);
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 
@@ -413,12 +389,10 @@ class PathResolverImplTest {
     LayerDependencies layerDeps = new LayerDependencies(
         Map.of("core", List.of()));
 
-    StructureMetadata metadata = new StructureMetadata(
+    StructureMetadata metadata = StructureMetadataTestHelper.withLayerDependencies(
         "onion-single",
         Map.of("driven", "path/{name}"),
-        null,
-        layerDeps,
-        null, null);
+        layerDeps);
 
     when(templateRepository.loadStructureMetadata(architecture)).thenReturn(metadata);
 

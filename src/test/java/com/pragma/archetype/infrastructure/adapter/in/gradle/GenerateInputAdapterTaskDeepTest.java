@@ -105,47 +105,12 @@ class GenerateInputAdapterTaskDeepTest {
     // Given
     String endpointsStr = "";
 
-    // When/Then - empty string should throw exception (wrapped in
-    // InvocationTargetException)
-    try {
-      invokeParseEndpoints(endpointsStr);
-      fail("Expected IllegalArgumentException to be thrown");
-    } catch (Exception e) {
-      // Reflection wraps the exception in InvocationTargetException
-      assertTrue(e.getCause() instanceof IllegalArgumentException ||
-          e instanceof IllegalArgumentException,
-          "Expected IllegalArgumentException but got: " + e.getClass());
-    }
-  }
-
-  @Test
-  void testParseAdapterType_rest() throws Exception {
-    // Given
-    task.setType("rest");
-
-    // When
-    Object adapterType = invokeParseAdapterType("rest");
+    // When - empty string now returns empty list (endpoints are optional for some adapter types)
+    List<Endpoint> endpoints = invokeParseEndpoints(endpointsStr);
 
     // Then
-    assertNotNull(adapterType);
-  }
-
-  @Test
-  void testParseAdapterType_graphql() throws Exception {
-    // When
-    Object adapterType = invokeParseAdapterType("graphql");
-
-    // Then
-    assertNotNull(adapterType);
-  }
-
-  @Test
-  void testParseAdapterType_grpc() throws Exception {
-    // When
-    Object adapterType = invokeParseAdapterType("grpc");
-
-    // Then
-    assertNotNull(adapterType);
+    assertNotNull(endpoints);
+    assertEquals(0, endpoints.size());
   }
 
   @Test
@@ -202,6 +167,9 @@ class GenerateInputAdapterTaskDeepTest {
 
   @Test
   void testCreateTemplateRepository() throws Exception {
+    // Given - only the templates release, so the test does not ask GitHub for the latest tag
+    Files.writeString(tempDir.resolve(".cleanarch.yml"), "templates:\n  version: v1.0.0\n");
+
     // When
     Object repository = invokeCreateTemplateRepository();
 
@@ -228,12 +196,6 @@ class GenerateInputAdapterTaskDeepTest {
     Method method = GenerateInputAdapterTask.class.getDeclaredMethod("parseEndpoints", String.class);
     method.setAccessible(true);
     return (List<Endpoint>) method.invoke(task, endpointsStr);
-  }
-
-  private Object invokeParseAdapterType(String typeStr) throws Exception {
-    Method method = GenerateInputAdapterTask.class.getDeclaredMethod("parseAdapterType", String.class);
-    method.setAccessible(true);
-    return method.invoke(task, typeStr);
   }
 
   private void invokeValidateInputs() throws Exception {
@@ -263,6 +225,8 @@ class GenerateInputAdapterTaskDeepTest {
           paradigm: reactive
           framework: spring
           adaptersAsModules: false
+        templates:
+          version: v1.0.0
         """;
     Files.writeString(tempDir.resolve(".cleanarch.yml"), yamlContent);
   }

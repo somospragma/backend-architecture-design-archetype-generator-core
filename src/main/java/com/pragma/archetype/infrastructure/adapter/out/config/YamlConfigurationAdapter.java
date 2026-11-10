@@ -84,7 +84,7 @@ public class YamlConfigurationAdapter implements ConfigurationPort {
       String content = Files.readString(configFile);
       Map<String, Object> data = yaml.load(content);
 
-      return Optional.of(parseConfiguration(data));
+      return Optional.ofNullable(parseConfiguration(data));
 
     } catch (IOException e) {
       throw new RuntimeException("Failed to read configuration file: " + configFile, e);
@@ -97,6 +97,20 @@ public class YamlConfigurationAdapter implements ConfigurationPort {
 
     try {
       Map<String, Object> data = toYamlMap(config);
+
+      // Preserve existing 'templates' section if present
+      if (Files.exists(configFile)) {
+        try {
+          String existingContent = Files.readString(configFile);
+          Map<String, Object> existingData = yaml.load(existingContent);
+          if (existingData != null && existingData.containsKey("templates")) {
+            data.put("templates", existingData.get("templates"));
+          }
+        } catch (Exception e) {
+          // If we can't read existing file, just overwrite
+        }
+      }
+
       String yamlContent = yaml.dump(data);
 
       // Atomic write: write to temporary file first, then rename
@@ -309,7 +323,7 @@ public class YamlConfigurationAdapter implements ConfigurationPort {
     Boolean cache = (Boolean) templatesSection.get("cache");
 
     TemplateMode templateMode = TemplateMode.PRODUCTION;
-    if ("developer".equalsIgnoreCase(mode)) {
+    if ("developer".equalsIgnoreCase(mode) || "local".equalsIgnoreCase(mode)) {
       templateMode = TemplateMode.DEVELOPER;
     }
 
@@ -317,7 +331,7 @@ public class YamlConfigurationAdapter implements ConfigurationPort {
         templateMode,
         repository != null ? repository
             : "https://github.com/somospragma/backend-architecture-design-archetype-generator-templates",
-        branch != null ? branch : "main",
+        branch,
         version,
         localPath,
         cache != null ? cache : true);
@@ -330,6 +344,11 @@ public class YamlConfigurationAdapter implements ConfigurationPort {
     @SuppressWarnings("unchecked")
     Map<String, Object> project = (Map<String, Object>) data.get("project");
 
+    // If no project section exists, the file only has templates config — not initialized
+    if (project == null) {
+      return null;
+    }
+
     String name = (String) project.get("name");
     String basePackage = (String) project.get("basePackage");
     String pluginVersion = (String) project.get("pluginVersion");
@@ -338,10 +357,41 @@ public class YamlConfigurationAdapter implements ConfigurationPort {
     @SuppressWarnings("unchecked")
     Map<String, Object> architecture = (Map<String, Object>) data.get("architecture");
 
-    String architectureType = (String) architecture.get("type");
-    String paradigm = (String) architecture.get("paradigm");
-    String framework = (String) architecture.get("framework");
-    Boolean adaptersAsModules = (Boolean) architecture.get("adaptersAsModules");
+    ArchitectureType architectureTypeEnum = null;
+    Paradigm paradigmEnum = null;
+    Framework frameworkEnum = null;
+    Boolean adaptersAsModules = null;
+
+    if (architecture != null) {
+      String architectureType = (String) architecture.get("type");
+      String paradigm = (String) architecture.get("paradigm");
+      String framework = (String) architecture.get("framework");
+      adaptersAsModules = (Boolean) architecture.get("adaptersAsModules");
+
+      if (architectureType != null && !architectureType.isBlank()) {
+        try {
+          architectureTypeEnum = ArchitectureType.valueOf(architectureType.toUpperCase().replace('-', '_'));
+        } catch (IllegalArgumentException e) {
+          // Invalid architecture type — will be caught by validator
+        }
+      }
+
+      if (paradigm != null && !paradigm.isBlank()) {
+        try {
+          paradigmEnum = Paradigm.valueOf(paradigm.toUpperCase());
+        } catch (IllegalArgumentException e) {
+          // Invalid paradigm — will be caught by validator
+        }
+      }
+
+      if (framework != null && !framework.isBlank()) {
+        try {
+          frameworkEnum = Framework.valueOf(framework.toUpperCase());
+        } catch (IllegalArgumentException e) {
+          // Invalid framework — will be caught by validator
+        }
+      }
+    }
 
     // Parse dependency overrides if present
     @SuppressWarnings("unchecked")
@@ -350,14 +400,23 @@ public class YamlConfigurationAdapter implements ConfigurationPort {
       dependencyOverrides = Map.of();
     }
 
+    LocalDateTime createdAt = null;
+    if (createdAtStr != null && !createdAtStr.isBlank()) {
+      try {
+        createdAt = LocalDateTime.parse(createdAtStr, DATE_FORMATTER);
+      } catch (Exception e) {
+        // Invalid date format — non-critical, leave as null
+      }
+    }
+
     return ProjectConfig.builder()
         .name(name)
         .basePackage(basePackage)
-        .architecture(ArchitectureType.valueOf(architectureType.toUpperCase().replace('-', '_')))
-        .paradigm(Paradigm.valueOf(paradigm.toUpperCase()))
-        .framework(Framework.valueOf(framework.toUpperCase()))
+        .architecture(architectureTypeEnum)
+        .paradigm(paradigmEnum)
+        .framework(frameworkEnum)
         .pluginVersion(pluginVersion)
-        .createdAt(LocalDateTime.parse(createdAtStr, DATE_FORMATTER))
+        .createdAt(createdAt)
         .adaptersAsModules(adaptersAsModules != null && adaptersAsModules)
         .dependencyOverrides(dependencyOverrides)
         .build();

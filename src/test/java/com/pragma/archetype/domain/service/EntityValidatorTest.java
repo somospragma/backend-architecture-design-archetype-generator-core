@@ -17,7 +17,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.pragma.archetype.domain.model.entity.EntityConfig;
 import com.pragma.archetype.domain.model.entity.EntityField;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
-import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 
 @ExtendWith(MockitoExtension.class)
@@ -26,14 +25,11 @@ class EntityValidatorTest {
   @Mock
   private FileSystemPort fileSystemPort;
 
-  @Mock
-  private ConfigurationPort configurationPort;
-
   private EntityValidator validator;
 
   @BeforeEach
   void setUp() {
-    validator = new EntityValidator(fileSystemPort, configurationPort);
+    validator = new EntityValidator(fileSystemPort);
   }
 
   @Test

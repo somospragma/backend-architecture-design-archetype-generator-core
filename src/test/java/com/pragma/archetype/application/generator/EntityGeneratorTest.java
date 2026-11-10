@@ -25,8 +25,11 @@ import com.pragma.archetype.domain.model.file.GeneratedFile;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.model.project.Framework;
 import com.pragma.archetype.domain.model.project.Paradigm;
+import com.pragma.archetype.domain.model.structure.ModuleMetadata;
+import com.pragma.archetype.domain.model.structure.StructureMetadata;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
+import com.pragma.archetype.test.StructureMetadataTestHelper;
 
 @ExtendWith(MockitoExtension.class)
 class EntityGeneratorTest {
@@ -39,9 +42,35 @@ class EntityGeneratorTest {
 
     private EntityGenerator generator;
 
+    private StructureMetadata singleModuleMetadata;
+    private StructureMetadata multiModuleMetadata;
+
     @BeforeEach
     void setUp() {
         generator = new EntityGenerator(templateRepository, fileSystemPort);
+
+        singleModuleMetadata = StructureMetadataTestHelper.createMinimal(
+                "hexagonal-single",
+                java.util.Map.of(
+                        "driven", "infrastructure/driven-adapters/{name}",
+                        "driving", "infrastructure/entry-points/{name}"));
+
+        var domainModule = ModuleMetadata.builder()
+                .name("domain")
+                .path("domain")
+                .packageTypes(java.util.Map.of("model", "domain.model"))
+                .build();
+        multiModuleMetadata = new StructureMetadata(
+                "hexagonal-multi",
+                "src/main/resources",
+                java.util.Map.of(
+                        "driven", "infrastructure/driven-adapters/{name}",
+                        "driving", "infrastructure/entry-points/{name}"),
+                null, null, null, null, null,
+                List.of(domainModule),
+                "domain", // entityModule
+                null, // useCaseModule
+                null, null, null);
     }
 
     @Test
@@ -66,6 +95,8 @@ class EntityGeneratorTest {
                         new EntityField("email", "String", false)))
                 .build();
 
+        when(templateRepository.loadStructureMetadata(ArchitectureType.HEXAGONAL_SINGLE))
+                .thenReturn(singleModuleMetadata);
         when(templateRepository.processTemplate(anyString(), anyMap()))
                 .thenReturn("public class User {}");
 
@@ -104,6 +135,8 @@ class EntityGeneratorTest {
                         new EntityField("price", "BigDecimal", false)))
                 .build();
 
+        when(templateRepository.loadStructureMetadata(ArchitectureType.HEXAGONAL_MULTI))
+                .thenReturn(multiModuleMetadata);
         when(templateRepository.processTemplate(anyString(), anyMap()))
                 .thenReturn("public class Product {}");
 
@@ -141,6 +174,8 @@ class EntityGeneratorTest {
                         new EntityField("createdAt", "LocalDateTime", false)))
                 .build();
 
+        when(templateRepository.loadStructureMetadata(ArchitectureType.HEXAGONAL_SINGLE))
+                .thenReturn(singleModuleMetadata);
         when(templateRepository.processTemplate(anyString(), anyMap()))
                 .thenReturn("public class Event {}");
 
@@ -176,6 +211,8 @@ class EntityGeneratorTest {
                         new EntityField("date", "LocalDate", false)))
                 .build();
 
+        when(templateRepository.loadStructureMetadata(ArchitectureType.HEXAGONAL_SINGLE))
+                .thenReturn(singleModuleMetadata);
         when(templateRepository.processTemplate(anyString(), anyMap()))
                 .thenReturn("public class Booking {}");
 

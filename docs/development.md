@@ -53,7 +53,7 @@ src/
 1. Create structure in `templates/architectures/{name}/`
 2. Add `structure.yml` with path mappings
 3. Create project templates
-4. Update `ArchitectureType` enum
+4. List it in `templates/architectures/index.yml` (no core change: `ArchitectureType` is an open set validated against that index)
 5. Add integration tests
 
 ### 3. Add New Framework

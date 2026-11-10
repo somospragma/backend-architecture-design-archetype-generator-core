@@ -102,6 +102,73 @@ class StructureMetadataLoaderTest {
   }
 
   @Test
+  void loadStructureMetadata_withFoldersAndAdaptersAsModules_shouldParseThem() {
+    // Given
+    ArchitectureType architecture = ArchitectureType.HEXAGONAL_MULTI_GRANULAR;
+    String yamlContent = """
+        architecture: hexagonal-multi-granular
+        multiModule: true
+        adaptersAsModules: true
+        adapterPaths:
+          driven: "infrastructure/driven-adapters/{name}"
+          driving: "infrastructure/entry-points/{name}"
+        folders:
+          - "domain"
+          - "infrastructure/entry-points"
+        """;
+
+    when(contentProvider.getTemplateContent("architectures/hexagonal-multi-granular/structure.yml"))
+        .thenReturn(yamlContent);
+
+    // When
+    StructureMetadata metadata = loader.loadStructureMetadata(architecture);
+
+    // Then
+    assertTrue(metadata.adaptersAsModules());
+    assertEquals(java.util.List.of("domain", "infrastructure/entry-points"), metadata.folders());
+    assertTrue(metadata.generatesMultiModuleProject());
+  }
+
+  @Test
+  void loadStructureMetadata_singleModuleWithModuleMetadata_shouldNotBeMultiModuleProject() {
+    // Given single-module architectures list moduleMetadata only to locate packages
+    when(contentProvider.getTemplateContent("architectures/hexagonal-single/structure.yml"))
+        .thenReturn("""
+            architecture: hexagonal-single
+            multiModule: false
+            adapterPaths:
+              driven: "infrastructure/driven-adapters/{name}"
+            moduleMetadata:
+              - name: domain
+                path: domain
+            """);
+
+    // When
+    StructureMetadata metadata = loader.loadStructureMetadata(ArchitectureType.HEXAGONAL_SINGLE);
+
+    // Then
+    assertFalse(metadata.generatesMultiModuleProject());
+  }
+
+  @Test
+  void loadStructureMetadata_withoutFolders_shouldDefaultToNoneAndAdaptersAsPackages() {
+    // Given
+    when(contentProvider.getTemplateContent("architectures/onion-single/structure.yml"))
+        .thenReturn("""
+            architecture: onion-single
+            adapterPaths:
+              driven: "infrastructure/adapter/out/{name}"
+            """);
+
+    // When
+    StructureMetadata metadata = loader.loadStructureMetadata(ArchitectureType.ONION_SINGLE);
+
+    // Then
+    assertFalse(metadata.adaptersAsModules());
+    assertTrue(metadata.folders().isEmpty());
+  }
+
+  @Test
   void loadStructureMetadata_withEmptyYaml_shouldThrowException() {
     // Given
     ArchitectureType architecture = ArchitectureType.HEXAGONAL_SINGLE;
@@ -313,5 +380,123 @@ class StructureMetadataLoaderTest {
     assertTrue(metadata.hasLayerDependencies());
     assertEquals(0, metadata.layerDependencies().getAllowedDependenciesFor("domain").size());
     assertEquals(1, metadata.layerDependencies().getAllowedDependenciesFor("application").size());
+  }
+
+  @Test
+  void load_withPackageMappings_parsesCorrectly() {
+    // Given
+    ArchitectureType architecture = ArchitectureType.HEXAGONAL_SINGLE;
+    String yamlContent = """
+        architecture: hexagonal-single
+        adapterPaths:
+          driven: "infrastructure/driven-adapters/{name}"
+          driving: "infrastructure/entry-points/{name}"
+        packageMappings:
+          rules:
+            removeHyphens: "true"
+            slashToDot: "true"
+          replacements:
+            entry-points: "entrypoints"
+            driven-adapters: "drivenadapters"
+        """;
+
+    when(contentProvider.getTemplateContent("architectures/hexagonal-single/structure.yml"))
+        .thenReturn(yamlContent);
+
+    // When
+    StructureMetadata metadata = loader.loadStructureMetadata(architecture);
+
+    // Then
+    assertNotNull(metadata);
+    assertNotNull(metadata.packageMappings());
+    assertTrue(metadata.packageMappings().getRules().containsKey("removeHyphens"));
+    assertTrue(metadata.packageMappings().getReplacements().containsKey("entry-points"));
+    assertEquals("entrypoints", metadata.packageMappings().getReplacements().get("entry-points"));
+  }
+
+  @Test
+  void load_withEntityModule_parsesCorrectly() {
+    // Given
+    ArchitectureType architecture = ArchitectureType.HEXAGONAL_SINGLE;
+    String yamlContent = """
+        architecture: hexagonal-single
+        adapterPaths:
+          driven: "infrastructure/driven-adapters/{name}"
+          driving: "infrastructure/entry-points/{name}"
+        entityModule: "domain"
+        modules:
+          - name: "domain"
+            path: "domain"
+        """;
+
+    when(contentProvider.getTemplateContent("architectures/hexagonal-single/structure.yml"))
+        .thenReturn(yamlContent);
+
+    // When
+    StructureMetadata metadata = loader.loadStructureMetadata(architecture);
+
+    // Then
+    assertNotNull(metadata);
+    assertEquals("domain", metadata.entityModule());
+  }
+
+  @Test
+  void load_withUseCaseModule_parsesCorrectly() {
+    // Given
+    ArchitectureType architecture = ArchitectureType.HEXAGONAL_SINGLE;
+    String yamlContent = """
+        architecture: hexagonal-single
+        adapterPaths:
+          driven: "infrastructure/driven-adapters/{name}"
+          driving: "infrastructure/entry-points/{name}"
+        useCaseModule: "application"
+        modules:
+          - name: "application"
+            path: "application"
+        """;
+
+    when(contentProvider.getTemplateContent("architectures/hexagonal-single/structure.yml"))
+        .thenReturn(yamlContent);
+
+    // When
+    StructureMetadata metadata = loader.loadStructureMetadata(architecture);
+
+    // Then
+    assertNotNull(metadata);
+    assertEquals("application", metadata.useCaseModule());
+  }
+
+  @Test
+  void load_withModulePackageTypes_parsesCorrectly() {
+    // Given
+    ArchitectureType architecture = ArchitectureType.HEXAGONAL_SINGLE;
+    String yamlContent = """
+        architecture: hexagonal-single
+        adapterPaths:
+          driven: "infrastructure/driven-adapters/{name}"
+          driving: "infrastructure/entry-points/{name}"
+        modules:
+          - name: "domain"
+            path: "domain"
+            packageTypes:
+              model: "model"
+              portIn: "port/in"
+              portOut: "port/out"
+        """;
+
+    when(contentProvider.getTemplateContent("architectures/hexagonal-single/structure.yml"))
+        .thenReturn(yamlContent);
+
+    // When
+    StructureMetadata metadata = loader.loadStructureMetadata(architecture);
+
+    // Then
+    assertNotNull(metadata);
+    assertNotNull(metadata.moduleMetadata());
+    assertFalse(metadata.moduleMetadata().isEmpty());
+    var domainModule = metadata.getModule("domain");
+    assertNotNull(domainModule);
+    assertTrue(domainModule.getPackageTypes().containsKey("model"));
+    assertEquals("model", domainModule.getPackageTypes().get("model"));
   }
 }

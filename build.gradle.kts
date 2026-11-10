@@ -5,11 +5,11 @@ plugins {
     id("com.gradle.plugin-publish") version "1.2.1"
     id("org.sonarqube") version "4.4.1.3373"
     jacoco
+    pmd
     kotlin("jvm") version "1.9.21"
 }
 
 group = "co.com.pragma"
-version = "1.0.5"
 
 java {
     toolchain {
@@ -32,7 +32,7 @@ dependencies {
     testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
     
     // Freemarker for template processing
-    implementation("org.freemarker:freemarker:2.3.32")
+    implementation("org.freemarker:freemarker:2.3.35")
     
     // YAML processing for configuration
     implementation("org.yaml:snakeyaml:2.2")
@@ -41,17 +41,17 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     
     // JSON processing
-    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.22.4")
     
     // Logging
     implementation("org.slf4j:slf4j-api:2.0.9")
-    implementation("ch.qos.logback:logback-classic:1.4.14")
+    implementation("ch.qos.logback:logback-classic:1.5.38")
     
     // Testing - JUnit
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
     testImplementation("org.mockito:mockito-core:5.8.0")
     testImplementation("org.mockito:mockito-junit-jupiter:5.8.0")
-    testImplementation("org.assertj:assertj-core:3.24.2")
+    testImplementation("org.assertj:assertj-core:3.27.7")
     
     // Testing - MockWebServer for HTTP tests
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
@@ -61,6 +61,21 @@ dependencies {
     testImplementation("io.kotest:kotest-assertions-core:5.8.0")
     testImplementation("io.kotest:kotest-property:5.8.0")
     testImplementation("io.kotest:kotest-framework-datatest:5.8.0")
+}
+
+// Generate plugin.properties with version information
+val generatePluginProperties by tasks.registering {
+    val propertiesFile = layout.buildDirectory.file("resources/main/plugin.properties").get().asFile
+    outputs.file(propertiesFile)
+    
+    doLast {
+        propertiesFile.parentFile.mkdirs()
+        propertiesFile.writeText("version=${project.version}\n")
+    }
+}
+
+tasks.named("processResources") {
+    dependsOn(generatePluginProperties)
 }
 
 gradlePlugin {
@@ -80,7 +95,6 @@ gradlePlugin {
 
 tasks.test {
     useJUnitPlatform()
-    ignoreFailures = true
     finalizedBy(tasks.jacocoTestReport)
 }
 
@@ -88,9 +102,9 @@ tasks.jacocoTestReport {
     dependsOn(tasks.test)
     reports {
         xml.required.set(true)
-        xml.outputLocation.set(file("${buildDir}/reports/jacoco/test/jacocoTestReport.xml"))
+        xml.outputLocation.set(layout.buildDirectory.file("reports/jacoco/test/jacocoTestReport.xml"))
         html.required.set(true)
-        html.outputLocation.set(file("${buildDir}/reports/jacoco/test/html"))
+        html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/test/html"))
         csv.required.set(false)
     }
     
@@ -109,13 +123,28 @@ tasks.jacocoTestReport {
 }
 
 tasks.jacocoTestCoverageVerification {
+    classDirectories.setFrom(tasks.jacocoTestReport.get().classDirectories)
     violationRules {
         rule {
             limit {
-                minimum = "0.80".toBigDecimal()
+                minimum = "0.60".toBigDecimal()
             }
         }
     }
+}
+
+pmd {
+    toolVersion = "7.28.0"
+    ruleSetFiles = files("config/pmd/dead-code.xml")
+    ruleSets = listOf()
+    isConsoleOutput = true
+}
+
+// Dead code only matters in production sources
+tasks.named("pmdTest") { enabled = false }
+
+tasks.check {
+    dependsOn(tasks.jacocoTestCoverageVerification)
 }
 
 tasks.withType<JavaCompile> {

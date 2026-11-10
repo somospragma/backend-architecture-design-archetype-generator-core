@@ -7,7 +7,6 @@ import java.util.List;
 import com.pragma.archetype.domain.model.entity.EntityConfig;
 import com.pragma.archetype.domain.model.entity.EntityField;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
-import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 
 /**
@@ -16,11 +15,9 @@ import com.pragma.archetype.domain.port.out.FileSystemPort;
 public class EntityValidator {
 
   private final FileSystemPort fileSystemPort;
-  private final ConfigurationPort configurationPort;
 
-  public EntityValidator(FileSystemPort fileSystemPort, ConfigurationPort configurationPort) {
+  public EntityValidator(FileSystemPort fileSystemPort) {
     this.fileSystemPort = fileSystemPort;
-    this.configurationPort = configurationPort;
   }
 
   /**

@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.pragma.archetype.domain.model.config.TemplateConfig;
+import com.pragma.archetype.domain.model.template.TemplatesContract;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.model.structure.StructureMetadata;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
@@ -54,6 +55,9 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
   private final TemplateConfig templateConfig;
   private final GitHubTemplateDownloader downloader;
   private final StructureMetadataLoader structureMetadataLoader;
+  private final TemplateVersionsLoader versionsLoader;
+  private final ArchitectureIndexLoader architectureIndexLoader;
+  private boolean compatibilityChecked;
   private AdapterMetadataLoader adapterMetadataLoader;
   private final TemplateSourceResolver sourceResolver;
 
@@ -69,6 +73,8 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
     this.sourceResolver = null;
     this.freemarkerConfig = createFreemarkerConfiguration();
     this.structureMetadataLoader = new StructureMetadataLoader(this);
+    this.versionsLoader = new TemplateVersionsLoader(this);
+    this.architectureIndexLoader = new ArchitectureIndexLoader(this);
   }
 
   /**
@@ -107,6 +113,8 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
 
     this.freemarkerConfig = createFreemarkerConfiguration();
     this.structureMetadataLoader = new StructureMetadataLoader(this);
+    this.versionsLoader = new TemplateVersionsLoader(this);
+    this.architectureIndexLoader = new ArchitectureIndexLoader(this);
   }
 
   /**
@@ -124,6 +132,8 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
     this.sourceResolver = null;
     this.freemarkerConfig = createFreemarkerConfiguration();
     this.structureMetadataLoader = new StructureMetadataLoader(this);
+    this.versionsLoader = new TemplateVersionsLoader(this);
+    this.architectureIndexLoader = new ArchitectureIndexLoader(this);
   }
 
   @Override
@@ -211,6 +221,44 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
         null);
   }
 
+  @Override
+  public void copyBinaryFile(String templatePath, Path destination) {
+    try {
+      // Create parent directories if they don't exist
+      Path parent = destination.getParent();
+      if (parent != null && !Files.exists(parent)) {
+        Files.createDirectories(parent);
+      }
+
+      // Try local filesystem first
+      if (templatesBasePath != null) {
+        Path sourcePath = templatesBasePath.resolve(templatePath);
+        if (Files.exists(sourcePath)) {
+          Files.copy(sourcePath, destination,
+              java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+          return;
+        }
+      }
+
+      // Try embedded resources as fallback
+      var resource = getClass().getClassLoader().getResourceAsStream("templates/" + templatePath);
+      if (resource != null) {
+        Files.copy(resource, destination,
+            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        return;
+      }
+
+      throw new TemplateProcessingException(
+          "Binary file not found: " + templatePath,
+          null);
+
+    } catch (IOException e) {
+      throw new TemplateProcessingException(
+          "Failed to copy binary file: " + templatePath,
+          e);
+    }
+  }
+
   /**
    * Gets the downloader instance (for testing or cache management).
    */
@@ -220,15 +268,51 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
 
   @Override
   public StructureMetadata loadStructureMetadata(ArchitectureType architecture) {
+    ensureCompatibleTemplates();
     return structureMetadataLoader.loadStructureMetadata(architecture);
   }
 
   @Override
-  public com.pragma.archetype.domain.model.adapter.AdapterMetadata loadAdapterMetadata(String adapterName) {
-    if (adapterMetadataLoader == null) {
-      adapterMetadataLoader = new AdapterMetadataLoader(this);
+  public com.pragma.archetype.domain.model.template.TemplateVersions loadVersions() {
+    ensureCompatibleTemplates();
+    return versionsLoader.load();
+  }
+
+  @Override
+  public List<ArchitectureType> listArchitectures() {
+    ensureCompatibleTemplates();
+    return architectureIndexLoader.load();
+  }
+
+  /**
+   * Refuses templates whose schemaVersion this plugin does not understand,
+   * before anything is generated from them. Templates that predate the index
+   * have no schema and are accepted with a warning.
+   */
+  private void ensureCompatibleTemplates() {
+    if (compatibilityChecked) {
+      return;
     }
-    return adapterMetadataLoader.loadAdapterMetadata(adapterName);
+    var declared = architectureIndexLoader.schemaVersion();
+    if (declared.isPresent()) {
+      TemplatesContract.requireCompatible(declared.getAsInt(), describeSource());
+    } else if (sourceResolver != null && !sourceResolver.isLocalMode()) {
+      // Every published templates branch has an index, so a missing one means
+      // the branch does not exist (e.g. no templates line yet for this major)
+      throw new TemplateNotFoundException(String.format(
+          "No %s found at %s. Check that the branch exists, or set templates.branch in .cleanarch.yml.",
+          ArchitectureIndexLoader.INDEX_PATH, describeSource()));
+    } else {
+      logger.warn("Templates at {} declare no schemaVersion; assuming they are compatible", describeSource());
+    }
+    compatibilityChecked = true;
+  }
+
+  private String describeSource() {
+    if (sourceResolver != null) {
+      return sourceResolver.getSourceDescription();
+    }
+    return templatesBasePath != null ? templatesBasePath.toString() : "the configured template repository";
   }
 
   @Override
@@ -369,6 +453,63 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
           String.format("Failed to validate template variables for '%s': %s",
               templatePath, e.getMessage()));
     }
+  }
+
+  @Override
+  public String processInlineTemplate(String templateContent, Map<String, Object> context) {
+    try {
+      // Create a template from the string content
+      Template template = new Template("inline", templateContent, freemarkerConfig);
+
+      // Process template with context
+      StringWriter writer = new StringWriter();
+      template.process(context, writer);
+
+      return writer.toString();
+
+    } catch (IOException e) {
+      throw new TemplateProcessingException(
+          "Failed to create inline template",
+          e);
+    } catch (TemplateException e) {
+      throw new TemplateProcessingException(
+          "Failed to process inline template",
+          e);
+    }
+  }
+
+  @Override
+  public List<String> listTemplatesInDirectory(String directoryPath) {
+    List<String> templateFiles = new ArrayList<>();
+
+    try {
+      // Try local filesystem first
+      if (templatesBasePath != null) {
+        Path fullPath = templatesBasePath.resolve(directoryPath);
+        if (Files.exists(fullPath) && Files.isDirectory(fullPath)) {
+          try (var stream = Files.list(fullPath)) {
+            stream.filter(Files::isRegularFile)
+                .filter(path -> path.toString().endsWith(".ftl"))
+                .forEach(path -> templateFiles.add(path.getFileName().toString()));
+          }
+          logger.debug("Found {} template files in local directory: {}", templateFiles.size(), directoryPath);
+          return templateFiles;
+        }
+      }
+
+      // Try remote if configured
+      if (downloader != null && templateConfig != null) {
+        // For remote mode, we would need to implement directory listing in
+        // GitHubTemplateDownloader
+        // For now, fall back to empty list
+        logger.warn("Directory listing not yet supported for remote templates: {}", directoryPath);
+      }
+
+    } catch (IOException e) {
+      logger.error("Failed to list templates in directory: {}", directoryPath, e);
+    }
+
+    return templateFiles;
   }
 
   /**

@@ -4,9 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
 import com.pragma.archetype.domain.model.project.ArchitectureType;
 import com.pragma.archetype.domain.model.structure.StructureMetadata;
@@ -19,11 +16,17 @@ import com.pragma.archetype.domain.port.out.TemplateRepository;
  */
 public class TemplateValidator {
 
-  private static final Logger logger = LoggerFactory.getLogger(TemplateValidator.class);
   private final TemplateRepository templateRepository;
 
   public TemplateValidator(TemplateRepository templateRepository) {
     this.templateRepository = Objects.requireNonNull(templateRepository, "Template repository cannot be null");
+  }
+
+  /**
+   * Architectures declared by the template repository.
+   */
+  public java.util.List<ArchitectureType> availableArchitectures() {
+    return templateRepository.listArchitectures();
   }
 
   /**
@@ -79,6 +82,21 @@ public class TemplateValidator {
    * @return ValidationResult with success status and any error messages
    */
   public ValidationResult validateAdapterTemplates(String adapterName) {
+    // Default to spring/reactive/driven-adapters for backward compatibility
+    return validateAdapterTemplates(adapterName, "spring", "reactive", "driven-adapters");
+  }
+
+  /**
+   * Validates all templates for an adapter with full framework context.
+   *
+   * @param adapterName the adapter name to validate
+   * @param framework   the framework (e.g., "spring")
+   * @param paradigm    the paradigm (e.g., "reactive", "imperative")
+   * @param adapterType the adapter type (e.g., "driven-adapters", "entry-points")
+   * @return ValidationResult with success status and any error messages
+   */
+  public ValidationResult validateAdapterTemplates(String adapterName, String framework,
+      String paradigm, String adapterType) {
     Objects.requireNonNull(adapterName, "Adapter name cannot be null");
 
     List<String> errors = new ArrayList<>();
@@ -86,7 +104,7 @@ public class TemplateValidator {
 
     try {
       // 1. Load and validate adapter metadata
-      AdapterMetadata metadata = templateRepository.loadAdapterMetadata(adapterName);
+      AdapterMetadata metadata = templateRepository.loadAdapterMetadata(adapterName, framework, paradigm, adapterType);
       ValidationResult metadataValidation = metadata.validate();
       if (!metadataValidation.valid()) {
         errors.add("Adapter metadata validation failed for " + adapterName);
@@ -116,7 +134,7 @@ public class TemplateValidator {
 
       // 5. Validate application properties template if specified
       if (metadata.hasApplicationProperties()) {
-        String propsTemplate = "adapters/" + adapterName + "/" + metadata.applicationPropertiesTemplate();
+        String propsTemplate = "adapters/" + adapterName + "/" + metadata.getEffectiveApplicationPropertiesTemplate();
         ValidationResult propsValidation = templateRepository.validateTemplate(propsTemplate);
         if (!propsValidation.valid()) {
           errors.add("Application properties template not found or invalid: " + propsTemplate);
@@ -125,7 +143,7 @@ public class TemplateValidator {
 
       // 6. Validate configuration class templates if specified
       if (metadata.hasConfigurationClasses()) {
-        for (AdapterMetadata.ConfigurationClass configClass : metadata.configurationClasses()) {
+        for (AdapterMetadata.ConfigurationClass configClass : metadata.getConfigurationClasses()) {
           String configTemplate = "adapters/" + adapterName + "/" + configClass.templatePath();
           ValidationResult configValidation = templateRepository.validateTemplate(configTemplate);
           if (!configValidation.valid()) {

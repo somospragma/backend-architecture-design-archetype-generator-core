@@ -47,3 +47,6 @@ bin/
 *.bak
 *.swp
 *~.nib
+
+tmp
+.kiro/**

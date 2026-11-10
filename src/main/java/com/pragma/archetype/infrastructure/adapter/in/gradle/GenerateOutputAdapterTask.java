@@ -4,18 +4,15 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.options.Option;
 
-import com.pragma.archetype.application.generator.AdapterGenerator;
 import com.pragma.archetype.application.usecase.GenerateAdapterUseCaseImpl;
-import com.pragma.archetype.domain.model.adapter.AdapterConfig;
 import com.pragma.archetype.domain.model.adapter.AdapterMethod;
-import com.pragma.archetype.domain.model.adapter.AdapterType;
 import com.pragma.archetype.domain.model.adapter.MethodParameter;
+import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.config.ProjectConfig;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.GenerateAdapterUseCase;
@@ -24,11 +21,9 @@ import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.PathResolver;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
-import com.pragma.archetype.domain.service.AdapterValidator;
 import com.pragma.archetype.domain.service.ConfigurationValidator;
 import com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter;
 import com.pragma.archetype.infrastructure.adapter.out.filesystem.LocalFileSystemAdapter;
-import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTemplateRepository;
 
 /**
  * Gradle task for generating output adapters (driven adapters: Redis, MongoDB,
@@ -39,7 +34,7 @@ import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTempla
  * --entity=User --type=redis
  * --packageName=com.pragma.infrastructure.driven-adapters.redis
  */
-public class GenerateOutputAdapterTask extends DefaultTask {
+public class GenerateOutputAdapterTask extends BaseCleanArchTask {
 
   private String adapterName = "";
   private String entityName = "";
@@ -103,6 +98,9 @@ public class GenerateOutputAdapterTask extends DefaultTask {
     getLogger().lifecycle("Generating {} adapter: {}", type, adapterName);
 
     try {
+      // 0. Update plugin version in .cleanarch.yml if needed
+      updatePluginVersionIfNeeded();
+
       // 1. Validate project configuration exists
       Path projectPath = getProject().getProjectDir().toPath();
       FileSystemPort fileSystemPort = new LocalFileSystemAdapter();
@@ -120,46 +118,72 @@ public class GenerateOutputAdapterTask extends DefaultTask {
       // 2. Validate inputs
       validateInputs();
 
-      // 3. Resolve package name (auto-detect if not provided)
+      // 3. Read framework and paradigm from project config
+      var projectConfig = configurationPort.readConfiguration(projectPath)
+          .orElseThrow(() -> new RuntimeException("Project configuration not found"));
+      String framework = projectConfig.framework().getValue();
+      String paradigm = projectConfig.paradigm().getValue();
+
+      // 4. Resolve package name (auto-detect if not provided)
       String resolvedPackageName = resolvePackageName(type);
 
-      // 4. Parse adapter type
-      AdapterType adapterType = parseAdapterType(type);
+      // 5. Use adapter type as String (no need to parse to enum)
+      String adapterType = type;
 
-      // 5. Parse methods (if provided)
+      // 6. Parse methods (if provided)
       List<AdapterMethod> adapterMethods = new ArrayList<>();
       if (!methods.isBlank()) {
         adapterMethods = parseMethods(methods);
       }
 
-      // 6. Create configuration
-      AdapterConfig config = AdapterConfig.builder()
+      // 7. Create configuration
+      OutputAdapterConfig config = OutputAdapterConfig.builder()
           .name(adapterName)
           .entityName(entityName)
           .type(adapterType)
           .packageName(resolvedPackageName)
           .methods(adapterMethods)
+          .framework(framework)
+          .paradigm(paradigm)
           .build();
 
       // 7. Setup dependencies (reuse instances from validation)
       YamlConfigurationAdapter yamlConfigurationAdapter = (YamlConfigurationAdapter) configurationPort;
       TemplateRepository templateRepository = createTemplateRepository();
       PathResolver pathResolver = new com.pragma.archetype.domain.service.PathResolverImpl(templateRepository);
+      com.pragma.archetype.application.generator.ProjectGenerator projectGenerator = new com.pragma.archetype.application.generator.ProjectGenerator(
+          templateRepository, fileSystemPort);
 
       // 8. Setup use case
-      com.pragma.archetype.domain.service.PackageValidator packageValidator = new com.pragma.archetype.domain.service.PackageValidator();
-      AdapterValidator validator = new AdapterValidator(fileSystemPort, configurationPort, packageValidator);
-      AdapterGenerator generator = new AdapterGenerator(templateRepository, fileSystemPort, pathResolver);
-      com.pragma.archetype.domain.service.BackupService backupService = new com.pragma.archetype.domain.service.BackupService(
-          fileSystemPort);
+      // Create content provider that delegates to template repository
+      com.pragma.archetype.infrastructure.adapter.out.template.TemplateContentProvider contentProvider = new com.pragma.archetype.infrastructure.adapter.out.template.TemplateContentProvider() {
+        @Override
+        public String getTemplateContent(String templatePath) {
+          return templateRepository.getTemplateContent(templatePath);
+        }
+
+        @Override
+        public boolean templateExists(String templatePath) {
+          return templateRepository.templateExists(templatePath);
+        }
+      };
+      com.pragma.archetype.infrastructure.adapter.out.template.AdapterMetadataLoader metadataLoader = new com.pragma.archetype.infrastructure.adapter.out.template.AdapterMetadataLoader(
+          contentProvider);
+      com.pragma.archetype.infrastructure.adapter.out.template.TemplateAdapterDiscovery adapterDiscovery = new com.pragma.archetype.infrastructure.adapter.out.template.TemplateAdapterDiscovery(
+          templateRepository, metadataLoader);
+
+      // Use UnifiedAdapterGenerator instead of OutputAdapterGenerator
+      com.pragma.archetype.application.generator.UnifiedAdapterGenerator generator = new com.pragma.archetype.application.generator.UnifiedAdapterGenerator(
+          templateRepository, pathResolver, adapterDiscovery, projectGenerator);
+
       GenerateAdapterUseCase useCase = new GenerateAdapterUseCaseImpl(
-          validator,
           generator,
           configurationPort,
           fileSystemPort,
+          adapterDiscovery,
           templateRepository,
           yamlConfigurationAdapter,
-          backupService);
+          new com.pragma.archetype.infrastructure.adapter.out.filesystem.FileSystemBackupAdapter());
 
       // 9. Execute use case
       GenerationResult result = useCase.execute(projectPath, config);
@@ -205,16 +229,33 @@ public class GenerateOutputAdapterTask extends DefaultTask {
       return packageName;
     }
 
-    // Otherwise, read from .cleanarch.yml
+    // Otherwise, read from .cleanarch.yml and structure.yml
     try {
       ConfigurationPort configurationPort = new YamlConfigurationAdapter();
       Path projectPath = getProject().getProjectDir().toPath();
       ProjectConfig projectConfig = configurationPort.readConfiguration(projectPath)
           .orElseThrow(() -> new IllegalArgumentException(".cleanarch.yml not found"));
 
-      // For hexagonal-single, driven adapters go in
-      // infrastructure.drivenadapters.{type}
-      return projectConfig.basePackage() + ".infrastructure.drivenadapters." + adapterType.toLowerCase();
+      // Load StructureMetadata to get dynamic adapter paths
+      TemplateRepository templateRepository = createTemplateRepository();
+      com.pragma.archetype.domain.model.structure.StructureMetadata structureMetadata = templateRepository
+          .loadStructureMetadata(projectConfig.architecture());
+
+      // Get adapter base path for driven adapters (output)
+      String adapterBasePath = structureMetadata.getAdapterBaseDirectory("driven");
+
+      // The package always mirrors the full adapter path, also in multi-module
+      // projects: the owning module only decides the directory the files go to
+      // (e.g. "infrastructure/driven-adapters" → "infrastructure.drivenadapters")
+      String packageRelativePath = adapterBasePath;
+
+      // Transform path to package name using structure metadata
+      String adapterPackageSuffix = structureMetadata.pathToPackageName(packageRelativePath);
+
+      // Construct full package: basePackage + adapterPackageSuffix + name + type
+      String sanitizedName = adapterName.toLowerCase().replace("-", "");
+      String sanitizedType = sanitizeAdapterType(adapterType);
+      return projectConfig.basePackage() + "." + adapterPackageSuffix + "." + sanitizedName + sanitizedType;
     } catch (Exception e) {
       throw new IllegalArgumentException(
           "Could not auto-detect package name. Please provide --packageName or ensure .cleanarch.yml exists", e);
@@ -222,18 +263,18 @@ public class GenerateOutputAdapterTask extends DefaultTask {
   }
 
   /**
-   * Parses adapter type string.
+   * Sanitizes adapter type for use in Java package names.
+   * Removes hyphens and converts to lowercase.
+   * 
+   * @param adapterType the adapter type (e.g., "sqs-consumer", "postgresql")
+   * @return sanitized type (e.g., "sqsconsumer", "postgresql")
    */
-  private AdapterType parseAdapterType(String typeStr) {
-    return switch (typeStr.toLowerCase()) {
-      case "redis" -> AdapterType.REDIS;
-      case "mongodb", "mongo" -> AdapterType.MONGODB;
-      case "postgresql", "postgres" -> AdapterType.POSTGRESQL;
-      case "rest-client", "rest" -> AdapterType.REST_CLIENT;
-      case "kafka" -> AdapterType.KAFKA;
-      default -> throw new IllegalArgumentException(
-          "Invalid adapter type: " + typeStr + ". Valid values: redis, mongodb, postgresql, rest-client, kafka");
-    };
+  private String sanitizeAdapterType(String adapterType) {
+    if (adapterType == null) {
+      return "";
+    }
+    // Remove hyphens and convert to lowercase
+    return adapterType.replace("-", "").toLowerCase();
   }
 
   /**
@@ -276,18 +317,7 @@ public class GenerateOutputAdapterTask extends DefaultTask {
    * Creates template repository.
    */
   private TemplateRepository createTemplateRepository() {
-    // Try to find templates in project directory first (for development)
     Path projectDir = getProject().getProjectDir().toPath();
-    Path localTemplates = projectDir
-        .resolve("../../backend-architecture-design-archetype-generator-templates/templates").normalize();
-
-    if (java.nio.file.Files.exists(localTemplates)) {
-      getLogger().info("Using local templates from: {}", localTemplates.toAbsolutePath());
-      return new FreemarkerTemplateRepository(localTemplates);
-    }
-
-    // Fall back to embedded templates (in JAR)
-    getLogger().info("Using embedded templates");
-    return new FreemarkerTemplateRepository("embedded");
+    return TemplateRepositoryFactory.create(projectDir, getLogger());
   }
 }

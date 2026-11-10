@@ -1,5 +1,6 @@
 package com.pragma.archetype.domain.port.out;
 
+import java.nio.file.Path;
 import java.util.Map;
 
 import com.pragma.archetype.domain.model.project.ArchitectureType;
@@ -58,6 +59,16 @@ public interface TemplateRepository {
   String getTemplateContent(String templatePath);
 
   /**
+   * Copies a binary file from the template directory to a destination.
+   * Used for files like gradle-wrapper.jar that cannot be read as text.
+   *
+   * @param templatePath path to the template file (relative to templates root)
+   * @param destination  destination path where the file should be copied
+   * @throws TemplateNotFoundException if template is not found
+   */
+  void copyBinaryFile(String templatePath, Path destination);
+
+  /**
    * Loads structure metadata for a given architecture type.
    *
    * @param architecture the architecture type
@@ -67,18 +78,26 @@ public interface TemplateRepository {
   StructureMetadata loadStructureMetadata(ArchitectureType architecture);
 
   /**
-   * Loads adapter metadata for a given adapter name (legacy method).
-   * This method uses the legacy flat structure:
-   * adapters/{adapterName}/metadata.yml
+   * Loads the versions declared by the template repository in versions.yml.
+   * Templates are the single source of truth for versions, so a version bump
+   * never requires a plugin release.
    *
-   * @param adapterName the name of the adapter
-   * @return adapter metadata for the adapter
-   * @throws TemplateNotFoundException if metadata.yml is not found
-   * @deprecated Use {@link #loadAdapterMetadata(String, String, String, String)}
-   *             instead
+   * @return template versions, empty when the templates predate versions.yml
    */
-  @Deprecated
-  com.pragma.archetype.domain.model.adapter.AdapterMetadata loadAdapterMetadata(String adapterName);
+  default com.pragma.archetype.domain.model.template.TemplateVersions loadVersions() {
+    return com.pragma.archetype.domain.model.template.TemplateVersions.empty();
+  }
+
+  /**
+   * Lists the architectures the template repository provides
+   * (architectures/index.yml), so new architectures need no plugin release.
+   *
+   * @return available architectures, the built-in ones when the templates
+   *         predate the index
+   */
+  default java.util.List<ArchitectureType> listArchitectures() {
+    return java.util.List.of(ArchitectureType.values());
+  }
 
   /**
    * Loads adapter metadata for a given adapter using framework-aware structure.
@@ -116,4 +135,26 @@ public interface TemplateRepository {
    * @throws TemplateNotFoundException if template is not found
    */
   java.util.Set<String> extractRequiredVariables(String templatePath);
+
+  /**
+   * Processes an inline template string with the given context.
+   * Used for processing configuration templates that are stored as strings
+   * rather than files (e.g., buildConfiguration in adapter metadata).
+   *
+   * @param templateContent template content as string
+   * @param context         context data for template processing
+   * @return processed template content
+   * @throws TemplateProcessingException if template processing fails
+   */
+  String processInlineTemplate(String templateContent, java.util.Map<String, Object> context);
+
+  /**
+   * Lists all template files in a directory.
+   * Used for dynamic template discovery without hardcoding file names.
+   *
+   * @param directoryPath path to the directory (relative to templates root)
+   * @return list of template file names in the directory (not full paths, just
+   *         names)
+   */
+  java.util.List<String> listTemplatesInDirectory(String directoryPath);
 }

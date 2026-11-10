@@ -14,7 +14,6 @@ import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.in.ValidateTemplateUseCase;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 import com.pragma.archetype.domain.service.TemplateValidator;
-import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTemplateRepository;
 
 /**
  * Gradle task for validating templates.
@@ -120,29 +119,10 @@ public class ValidateTemplatesTask extends DefaultTask {
 
   /**
    * Creates a template repository instance.
-   * Uses the same logic as other tasks to determine template source.
+   * Delegates to TemplateRepositoryFactory for centralized resolution logic.
    */
   private TemplateRepository createTemplateRepository() {
     Path projectPath = Paths.get(getProject().getProjectDir().getAbsolutePath());
-
-    // Try to read template configuration from .cleanarch.yml
-    try {
-      var configAdapter = new com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter();
-      var configOpt = configAdapter.readConfiguration(projectPath);
-
-      if (configOpt.isPresent()) {
-        var templateConfig = configAdapter.readTemplateConfiguration(projectPath);
-        if (templateConfig != null) {
-          return new FreemarkerTemplateRepository(templateConfig);
-        }
-      }
-    } catch (Exception e) {
-      getLogger().debug("Could not read template configuration: {}", e.getMessage());
-    }
-
-    // Fallback to default remote repository
-    String defaultRepo = "https://github.com/somospragma/backend-architecture-design-archetype-generator-templates";
-    getLogger().debug("Using default template repository: {}", defaultRepo);
-    return new FreemarkerTemplateRepository(defaultRepo);
+    return TemplateRepositoryFactory.create(projectPath, getLogger());
   }
 }

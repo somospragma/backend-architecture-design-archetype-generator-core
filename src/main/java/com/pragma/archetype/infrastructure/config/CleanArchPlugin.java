@@ -9,7 +9,9 @@ import com.pragma.archetype.infrastructure.adapter.in.gradle.GenerateInputAdapte
 import com.pragma.archetype.infrastructure.adapter.in.gradle.GenerateOutputAdapterTask;
 import com.pragma.archetype.infrastructure.adapter.in.gradle.GenerateUseCaseTask;
 import com.pragma.archetype.infrastructure.adapter.in.gradle.InitCleanArchTask;
+import com.pragma.archetype.infrastructure.adapter.in.gradle.ListComponentsTask;
 import com.pragma.archetype.infrastructure.adapter.in.gradle.UpdateTemplatesTask;
+import com.pragma.archetype.infrastructure.adapter.in.gradle.ValidateStructureTask;
 import com.pragma.archetype.infrastructure.adapter.in.gradle.ValidateTemplatesTask;
 
 /**
@@ -68,7 +70,16 @@ public class CleanArchPlugin implements Plugin<Project> {
       task.setDescription("Validate architecture and adapter templates");
     });
 
-    // Future tasks will be registered here:
-    // - listComponents
+    // Register validateStructure task
+    project.getTasks().register("validateStructure", ValidateStructureTask.class, task -> {
+      task.setGroup("clean architecture");
+      task.setDescription("Validate project architecture by copying ArchUnit tests from templates and running them");
+    });
+
+    // Register listComponents task
+    project.getTasks().register("listComponents", ListComponentsTask.class, task -> {
+      task.setGroup("clean architecture");
+      task.setDescription("List all generated components (adapters, entities, use cases)");
+    });
   }
 }

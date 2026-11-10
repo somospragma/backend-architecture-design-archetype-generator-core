@@ -57,13 +57,20 @@ public class InputAdapterValidator {
         errors.addAll(packageValidation.errors());
       }
 
-      // Additional adapter-specific package validation
-      if (config.packageName().contains(".adapter.out.")) {
-        errors.add(
-            "Invalid package structure: use 'driven-adapters' instead of 'adapter.out'. Example: com.company.infrastructure.driven-adapters.redis");
-      } else if (config.packageName().contains(".adapter.in.")) {
-        errors.add(
-            "Invalid package structure: use 'entry-points' instead of 'adapter.in'. Example: com.company.infrastructure.entry-points.rest");
+      // Additional adapter-specific package validation (architecture-aware)
+      var projectConfigOpt2 = configurationPort.readConfiguration(projectPath);
+      String architecture = projectConfigOpt2.map(pc -> pc.architecture().getValue()).orElse("hexagonal");
+
+      // Only validate package structure for hexagonal architecture
+      // Onion architecture uses adapter.in/adapter.out convention
+      if (architecture.toLowerCase().contains("hexagonal")) {
+        if (config.packageName().contains(".adapter.out.")) {
+          errors.add(
+              "Invalid package structure: use 'driven-adapters' instead of 'adapter.out'. Example: com.company.infrastructure.driven-adapters.redis");
+        } else if (config.packageName().contains(".adapter.in.")) {
+          errors.add(
+              "Invalid package structure: use 'entry-points' instead of 'adapter.in'. Example: com.company.infrastructure.entry-points.rest");
+        }
       }
 
       // Validate base package consistency if project config is available
@@ -85,19 +92,43 @@ public class InputAdapterValidator {
       errors.add("Adapter type is required");
     }
 
-    // Validate use case name
-    if (config.useCaseName() == null || config.useCaseName().isBlank()) {
-      errors.add("Use case name is required");
+    // Validate use case name (only required for certain adapter types)
+    boolean requiresUseCase = requiresUseCase();
+    if (requiresUseCase && (config.useCaseName() == null || config.useCaseName().isBlank())) {
+      errors.add("Use case name is required for " + config.type() + " adapters");
     }
 
-    // Validate endpoints
-    if (config.endpoints() == null || config.endpoints().isEmpty()) {
-      errors.add("At least one endpoint is required");
-    } else {
+    // Validate endpoints (only required for HTTP-based adapters)
+    boolean requiresEndpoints = requiresEndpoints(config.type());
+    if (requiresEndpoints && (config.endpoints() == null || config.endpoints().isEmpty())) {
+      errors.add("At least one endpoint is required for " + config.type() + " adapters");
+    } else if (config.endpoints() != null && !config.endpoints().isEmpty()) {
       validateEndpoints(config.endpoints(), errors);
     }
 
     return errors.isEmpty() ? ValidationResult.success() : ValidationResult.failure(errors);
+  }
+
+  /**
+   * Determines if the adapter type requires a use case.
+   * Use case is now optional for all adapter types since controllers
+   * can inject multiple use cases or none initially.
+   */
+  private boolean requiresUseCase() {
+    return false;
+  }
+
+  /**
+   * Determines if the adapter type requires endpoints.
+   * Only REST adapters require endpoints.
+   * GraphQL uses a schema-first approach with static examples.
+   */
+  private boolean requiresEndpoints(String type) {
+    if (type == null || type.isBlank()) {
+      return false;
+    }
+    var typeLower = type.toLowerCase();
+    return typeLower.equals("rest");
   }
 
   private void validateEndpoints(List<Endpoint> endpoints, List<String> errors) {
@@ -147,19 +178,6 @@ public class InputAdapterValidator {
     }
     for (int i = 1; i < name.length(); i++) {
       if (!Character.isJavaIdentifierPart(name.charAt(i))) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  private boolean isValidPackageName(String packageName) {
-    if (packageName == null || packageName.isEmpty()) {
-      return false;
-    }
-    String[] parts = packageName.split("\\.");
-    for (String part : parts) {
-      if (!isValidJavaIdentifier(part)) {
         return false;
       }
     }

@@ -1,0 +1,135 @@
+# Every Monday: active security scan of the plugin on main, so a vulnerability
+# disclosed after a merge is found even when nobody opens a PR. Findings open or
+# update an issue labelled `security-weekly`; a clean run closes it.
+# The generated projects are scanned by the templates repository the same day.
+name: Security weekly
+
+on:
+  schedule:
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  CORE_DIR: backend-architecture-design-archetype-generator-core
+  TEMPLATES_DIR: backend-architecture-design-archetype-generator-templates
+  TEMPLATES_REPOSITORY: somospragma/backend-architecture-design-archetype-generator-templates
+  FAIL_ON_CVSS: '7.0'
+
+jobs:
+  code:
+    name: Security · Code (CodeQL)
+    uses: ./.github/workflows/codeql.yml
+    permissions:
+      contents: read
+      security-events: write
+
+  dependencies:
+    name: Security · Vulnerable dependencies (OSV)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write # OSV results in the Security tab
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: ${{ env.CORE_DIR }}
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.TEMPLATES_REPOSITORY }}
+          ref: main
+          path: ${{ env.TEMPLATES_DIR }}
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-read-only: true
+      - run: '"$TEMPLATES_DIR/scripts/ci/install-tools.sh" "$RUNNER_TEMP/bin" osv-scanner'
+      - run: |
+          "$TEMPLATES_DIR/scripts/ci/scan-dependencies.sh" --project "$CORE_DIR" \
+            --fail-on-cvss "$FAIL_ON_CVSS" --out scan-results
+      - name: Publish to the Security tab
+        # Fork PRs get no security-events permission
+        if: >-
+          always() && hashFiles('scan-results/osv.sarif') != ''
+          && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          sarif_file: scan-results/osv.sarif
+          category: osv-dependencies
+          checkout_path: ${{ github.workspace }}/${{ env.CORE_DIR }}
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dependencies
+          path: scan-results
+          if-no-files-found: ignore
+          retention-days: 30
+
+  secrets:
+    name: Security · Secrets (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: ${{ env.CORE_DIR }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.TEMPLATES_REPOSITORY }}
+          ref: main
+          path: ${{ env.TEMPLATES_DIR }}
+          persist-credentials: false
+      - run: '"$TEMPLATES_DIR/scripts/ci/install-tools.sh" "$RUNNER_TEMP/bin" gitleaks'
+      - run: gitleaks git --redact --no-banner --verbose --exit-code 1 "$CORE_DIR"
+
+  report:
+    name: Report
+    needs: [code, dependencies, secrets]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RESULTS: >-
+            code=${{ needs.code.result }}
+            dependencies=${{ needs.dependencies.result }}
+            secrets=${{ needs.secrets.result }}
+        run: |
+          title="Security weekly: findings in the plugin"
+          label=security-weekly
+          issue=$(gh issue list --label "$label" --state open --json number --jq '.[0].number // empty')
+          table=$(for r in $RESULTS; do echo "| ${r%%=*} | ${r#*=} |"; done)
+          body=$(printf '%s\n\n| Scan | Result |\n|---|---|\n%s\n\nDetails: %s (CodeQL alerts in the Security tab)\n' \
+            "Weekly security scan of the plugin on main." "$table" "$RUN_URL")
+          echo "$body" >> "$GITHUB_STEP_SUMMARY"
+          if grep -q '| failure |' <<< "$table"; then
+            if [[ -n $issue ]]; then
+              gh issue comment "$issue" --body "$body"
+            else
+              gh label create "$label" --color B60205 --description "Weekly security scan" 2>/dev/null || true
+              gh issue create --title "$title" --label "$label" --body "$body"
+            fi
+            exit 1
+          elif [[ -n $issue ]]; then
+            gh issue close "$issue" --comment "Clean run: $RUN_URL"
+          fi

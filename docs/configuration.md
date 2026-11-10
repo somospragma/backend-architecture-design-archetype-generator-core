@@ -19,7 +19,8 @@ adaptersAsModules: false
 templates:
   mode: production  # or developer
   repository: https://github.com/somospragma/backend-architecture-design-archetype-generator-templates
-  branch: main
+  version: v1.2.0  # optional: pin a templates release; default is the latest v<plugin major>.x.y
+  branch: null     # optional: read a branch instead (e.g. main to try templates not tagged yet)
   localPath: null  # Set path for developer mode
   cache: true
 
@@ -56,7 +57,8 @@ dependencyOverrides:
   - `production`: Download templates from remote repository (default)
   - `developer`: Use local templates for development
 - **repository**: GitHub repository URL for templates
-- **branch**: Branch or tag to use (default: `main`)
+- **version**: Templates release tag to use, such as `v1.2.0`. By default the plugin reads the latest release of its major (plugin 1.x reads the newest `v1.x.y` tag), so new templates reach you without updating the plugin. Pin it to keep a project on a fixed release.
+- **branch**: Branch to read instead of a release, such as `main` to try templates that are not tagged yet. `version` wins when both are set.
 - **localPath**: Path to local templates (for developer mode)
 - **cache**: Whether to cache downloaded templates (default: `true`)
 

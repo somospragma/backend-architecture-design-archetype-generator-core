@@ -18,8 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.pragma.archetype.domain.model.adapter.AdapterConfig;
-import com.pragma.archetype.domain.model.adapter.AdapterType;
+import com.pragma.archetype.domain.model.adapter.OutputAdapterConfig;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.ConfigurationPort;
 import com.pragma.archetype.domain.port.out.FileSystemPort;
@@ -34,20 +33,23 @@ class AdapterValidatorTest {
   @Mock
   private ConfigurationPort configurationPort;
 
+  @Mock
+  private com.pragma.archetype.domain.port.out.TemplateRepository templateRepository;
+
   private AdapterValidator validator;
   private Path projectPath;
-  private AdapterConfig validConfig;
+  private OutputAdapterConfig validConfig;
 
   @BeforeEach
   void setUp() {
     PackageValidator packageValidator = new PackageValidator();
-    validator = new AdapterValidator(fileSystemPort, configurationPort, packageValidator);
+    validator = new AdapterValidator(fileSystemPort, configurationPort, packageValidator, templateRepository);
     projectPath = Paths.get("/test/project");
 
-    validConfig = AdapterConfig.builder()
+    validConfig = OutputAdapterConfig.builder()
         .name("MongoDB")
         .packageName("com.company.infrastructure.driven.adapters.mongodb")
-        .type(AdapterType.MONGODB)
+        .type("mongodb")
         .entityName("User")
         .methods(List.of())
         .build();
@@ -104,10 +106,10 @@ class AdapterValidatorTest {
   @DisplayName("Should fail when adapter name is blank")
   void shouldFailWhenAdapterNameIsBlank() {
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
-    AdapterConfig invalidConfig = AdapterConfig.builder()
+    OutputAdapterConfig invalidConfig = OutputAdapterConfig.builder()
         .name("")
         .packageName("com.company.infrastructure.driven.adapters.mongodb")
-        .type(AdapterType.MONGODB)
+        .type("mongodb")
         .entityName("User")
         .methods(List.of())
         .build();
@@ -123,10 +125,10 @@ class AdapterValidatorTest {
   @DisplayName("Should fail when adapter name is not a valid Java identifier")
   void shouldFailWhenAdapterNameIsNotValidJavaIdentifier() {
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
-    AdapterConfig invalidConfig = AdapterConfig.builder()
+    OutputAdapterConfig invalidConfig = OutputAdapterConfig.builder()
         .name("Mongo-DB")
         .packageName("com.company.infrastructure.driven.adapters.mongodb")
-        .type(AdapterType.MONGODB)
+        .type("mongodb")
         .entityName("User")
         .methods(List.of())
         .build();
@@ -142,10 +144,10 @@ class AdapterValidatorTest {
   @DisplayName("Should fail when package name is blank")
   void shouldFailWhenPackageNameIsBlank() {
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
-    AdapterConfig invalidConfig = AdapterConfig.builder()
+    OutputAdapterConfig invalidConfig = OutputAdapterConfig.builder()
         .name("MongoDB")
         .packageName("")
-        .type(AdapterType.MONGODB)
+        .type("mongodb")
         .entityName("User")
         .methods(List.of())
         .build();
@@ -161,10 +163,10 @@ class AdapterValidatorTest {
   @DisplayName("Should fail when package name is invalid")
   void shouldFailWhenPackageNameIsInvalid() {
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
-    AdapterConfig invalidConfig = AdapterConfig.builder()
+    OutputAdapterConfig invalidConfig = OutputAdapterConfig.builder()
         .name("MongoDB")
         .packageName("com.company.123invalid")
-        .type(AdapterType.MONGODB)
+        .type("mongodb")
         .entityName("User")
         .methods(List.of())
         .build();
@@ -180,10 +182,10 @@ class AdapterValidatorTest {
   @DisplayName("Should not check for duplicate when adapter name is blank")
   void shouldNotCheckForDuplicateWhenAdapterNameIsBlank() {
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
-    AdapterConfig invalidConfig = AdapterConfig.builder()
+    OutputAdapterConfig invalidConfig = OutputAdapterConfig.builder()
         .name("")
         .packageName("com.company.infrastructure.driven.adapters.mongodb")
-        .type(AdapterType.MONGODB)
+        .type("mongodb")
         .entityName("User")
         .methods(List.of())
         .build();
@@ -198,10 +200,10 @@ class AdapterValidatorTest {
   @DisplayName("Should not check for duplicate when package name is blank")
   void shouldNotCheckForDuplicateWhenPackageNameIsBlank() {
     when(fileSystemPort.directoryExists(projectPath)).thenReturn(true);
-    AdapterConfig invalidConfig = AdapterConfig.builder()
+    OutputAdapterConfig invalidConfig = OutputAdapterConfig.builder()
         .name("MongoDB")
         .packageName("")
-        .type(AdapterType.MONGODB)
+        .type("mongodb")
         .entityName("User")
         .methods(List.of())
         .build();

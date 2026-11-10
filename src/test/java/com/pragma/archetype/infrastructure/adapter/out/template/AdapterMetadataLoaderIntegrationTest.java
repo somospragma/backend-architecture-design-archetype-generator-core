@@ -30,9 +30,8 @@ class AdapterMetadataLoaderIntegrationTest {
 
   @BeforeEach
   void setUp() throws IOException {
-    // Create adapter directory structure
-    Path adaptersDir = tempDir.resolve("adapters");
-    Path mongoAdapterDir = adaptersDir.resolve("mongodb-adapter");
+    // Create framework-aware adapter directory structure
+    Path mongoAdapterDir = tempDir.resolve("frameworks/spring/reactive/adapters/driven-adapters/mongodb-adapter");
     Files.createDirectories(mongoAdapterDir);
 
     // Create metadata.yml with all new fields
@@ -71,34 +70,34 @@ class AdapterMetadataLoaderIntegrationTest {
   @DisplayName("Should load adapter metadata through FreemarkerTemplateRepository")
   void shouldLoadAdapterMetadataThroughRepository() {
     // When
-    AdapterMetadata metadata = repository.loadAdapterMetadata("mongodb-adapter");
+    AdapterMetadata metadata = repository.loadAdapterMetadata("mongodb-adapter", "spring", "reactive", "driven-adapters");
 
     // Then
     assertNotNull(metadata);
-    assertEquals("mongodb-adapter", metadata.name());
-    assertEquals("driven", metadata.type());
-    assertEquals("MongoDB database adapter using Spring Data Reactive", metadata.description());
+    assertEquals("mongodb-adapter", metadata.getName());
+    assertEquals(com.pragma.archetype.domain.model.adapter.AdapterDirection.OUTPUT, metadata.getDirection());
+    assertEquals("MongoDB database adapter using Spring Data Reactive", metadata.getDescription());
 
     // Verify dependencies
-    assertEquals(1, metadata.dependencies().size());
-    assertEquals("org.springframework.boot", metadata.dependencies().get(0).group());
+    assertEquals(1, metadata.getRuntimeDependencies().size());
+    assertEquals("org.springframework.boot", metadata.getRuntimeDependencies().get(0).group());
 
     // Verify test dependencies
     assertTrue(metadata.hasTestDependencies());
-    assertEquals(1, metadata.testDependencies().size());
-    assertEquals("de.flapdoodle.embed", metadata.testDependencies().get(0).group());
-    assertEquals("test", metadata.testDependencies().get(0).scope());
+    assertEquals(1, metadata.getTestDependencies().size());
+    assertEquals("de.flapdoodle.embed", metadata.getTestDependencies().get(0).group());
+    assertEquals("test", metadata.getTestDependencies().get(0).scope());
 
     // Verify application properties template
     assertTrue(metadata.hasApplicationProperties());
-    assertEquals("application-properties.yml.ftl", metadata.applicationPropertiesTemplate());
+    assertEquals("application-properties.yml.ftl", metadata.getEffectiveApplicationPropertiesTemplate());
 
     // Verify configuration classes
     assertTrue(metadata.hasConfigurationClasses());
-    assertEquals(1, metadata.configurationClasses().size());
-    assertEquals("MongoConfig", metadata.configurationClasses().get(0).name());
-    assertEquals("config", metadata.configurationClasses().get(0).packagePath());
-    assertEquals("MongoConfig.java.ftl", metadata.configurationClasses().get(0).templatePath());
+    assertEquals(1, metadata.getConfigurationClasses().size());
+    assertEquals("MongoConfig", metadata.getConfigurationClasses().get(0).name());
+    assertEquals("config", metadata.getConfigurationClasses().get(0).packagePath());
+    assertEquals("MongoConfig.java.ftl", metadata.getConfigurationClasses().get(0).templatePath());
   }
 
   @Test
@@ -123,7 +122,7 @@ class AdapterMetadataLoaderIntegrationTest {
 
     // When/Then
     assertThrows(Exception.class, () -> {
-      repository.loadAdapterMetadata("invalid-adapter");
+      repository.loadAdapterMetadata("invalid-adapter", "spring", "reactive", "driven-adapters");
     });
   }
 }

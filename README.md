@@ -79,6 +79,118 @@ Follow the interactive prompts to select your architecture, framework, and parad
 - gRPC (Reactive: ReactorStub | Imperative: BlockingStub)
 - SQS Consumer (Reactive: Async processing | Imperative: Sync processing)
 
+## Adding Custom Adapters
+
+The plugin uses a fully dynamic adapter discovery system. You can add new adapters without modifying any Java code.
+
+### Quick Guide
+
+To add a new adapter:
+
+1. **Create adapter directory structure:**
+   ```
+   templates/frameworks/{framework}/{paradigm}/adapters/{direction}/{adapter-name}/
+   ```
+   - `{framework}`: spring, quarkus, etc.
+   - `{paradigm}`: imperative, reactive
+   - `{direction}`: entry-points (input) or driven-adapters (output)
+   - `{adapter-name}`: your adapter name (e.g., websocket, kafka, etc.)
+
+2. **Create metadata.yml:**
+   ```yaml
+   name: my-adapter
+   type: driving  # or driven
+   description: My custom adapter description
+   suffix: "Handler"  # Class name suffix
+   requiresUseCase: true  # Does it need a use case?
+   requiresEndpoints: false  # Does it need endpoints?
+   needsMapper: false  # Does it need entity mapper?
+   dependencies:
+     - group: com.example
+       artifact: my-library
+       version: 1.0.0
+   ```
+
+3. **Create template files (*.ftl):**
+   - Main adapter class template (e.g., `Controller.java.ftl`, `Adapter.java.ftl`)
+   - Configuration templates if needed
+   - Application properties template
+
+4. **Add entry to index.json:**
+   
+   Update the index file at `templates/frameworks/{framework}/{paradigm}/adapters/{direction}/index.json`:
+   
+   ```json
+   {
+     "version": "1.0.0",
+     "lastUpdated": "2025-02-27",
+     "adapters": [
+       {
+         "name": "my-adapter",
+         "displayName": "My Custom Adapter",
+         "description": "Description of what this adapter does",
+         "type": "entry-point",
+         "status": "stable",
+         "version": "1.0.0"
+       }
+     ]
+   }
+   ```
+
+5. **Use immediately - NO code changes needed!**
+   ```bash
+   ./gradlew generateInputAdapter --name=MyHandler --type=my-adapter --useCase=MyUseCase
+   ```
+
+### Example: Adding a WebSocket Adapter
+
+```bash
+# 1. Create directory
+mkdir -p templates/frameworks/spring/imperative/adapters/entry-points/websocket
+
+# 2. Create metadata.yml
+cat > templates/frameworks/spring/imperative/adapters/entry-points/websocket/metadata.yml << 'EOF'
+name: websocket
+type: driving
+description: WebSocket handler using Spring WebSocket
+suffix: "Handler"
+requiresUseCase: true
+requiresEndpoints: false
+needsMapper: false
+dependencies:
+  - group: org.springframework.boot
+    artifact: spring-boot-starter-websocket
+    version: 3.2.0
+EOF
+
+# 3. Create template (Controller.java.ftl)
+# ... create your FreeMarker template ...
+
+# 4. Update index.json
+# ... add entry to index.json ...
+
+# 5. Use it!
+./gradlew generateInputAdapter --name=ChatHandler --type=websocket --useCase=SendMessage
+```
+
+### Validation Flags
+
+The metadata.yml validation flags control parameter requirements:
+
+- **requiresUseCase**: If `true`, the `--useCase` parameter is mandatory
+- **requiresEndpoints**: If `true`, the `--endpoints` parameter is mandatory  
+- **needsMapper**: If `true`, generates entity mapper classes
+
+### Benefits of Dynamic System
+
+- ✅ Add adapters without recompiling the plugin
+- ✅ Validation is data-driven from metadata
+- ✅ Error messages show available adapters automatically
+- ✅ Truly extensible architecture
+- ✅ Team-specific adapters without forking
+
+For more details on template creation, see [Template System Guide](docs/templates.md).
+
 ## Example
 
 ```bash
@@ -121,9 +233,8 @@ This plugin is published to:
 
 ### For Maintainers
 
-- 📦 [Publishing Guide](PUBLISHING.md) - Complete guide for publishing to Gradle Plugin Portal and Maven Central
-- 🚀 [Quick Start Publishing](PUBLISHING_QUICKSTART.md) - Quick reference for publishing
-- 🔐 [GitHub Secrets Setup](GITHUB_SECRETS_SETUP.md) - Configure automated publishing with GitHub Actions
+- 📦 [Publicación y despliegue](docs/publicacion-y-despliegue.md) - Cómo se publica el plugin y qué templates lee
+- 🔐 [CI y configuración de GitHub](docs/ci.md) - Pipelines, environments y rulesets
 
 ### Automated Publishing
 

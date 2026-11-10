@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.pragma.archetype.domain.model.file.GeneratedFile;
+import com.pragma.archetype.domain.model.structure.StructureMetadata;
 import com.pragma.archetype.domain.model.usecase.UseCaseConfig;
-import com.pragma.archetype.domain.port.out.FileSystemPort;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 
 /**
@@ -18,11 +18,11 @@ import com.pragma.archetype.domain.port.out.TemplateRepository;
 public class UseCaseGenerator {
 
   private final TemplateRepository templateRepository;
-  private final FileSystemPort fileSystemPort;
+  private final StructureMetadata structureMetadata;
 
-  public UseCaseGenerator(TemplateRepository templateRepository, FileSystemPort fileSystemPort) {
+  public UseCaseGenerator(TemplateRepository templateRepository, StructureMetadata structureMetadata) {
     this.templateRepository = templateRepository;
-    this.fileSystemPort = fileSystemPort;
+    this.structureMetadata = structureMetadata;
   }
 
   /**
@@ -34,8 +34,8 @@ public class UseCaseGenerator {
     // Prepare template data
     Map<String, Object> data = prepareTemplateData(config);
 
-    // Generate port interface if requested
-    if (config.generatePort()) {
+    // Generate port interface if requested and the architecture uses input ports
+    if (config.generatePort() && structureMetadata.generatesUseCaseInputPorts()) {
       GeneratedFile portFile = generatePort(projectPath, config, data);
       generatedFiles.add(portFile);
     }
@@ -57,22 +57,45 @@ public class UseCaseGenerator {
     // Process template with new structure
     String content = templateRepository.processTemplate(templatePath, data);
 
-    // Calculate file path: domain/port/in/{UseCaseName}UseCase.java
+    // Calculate file path using module metadata for multi-module support
     String packagePath = config.packageName().replace('.', '/');
+    
+    // Resolve module path prefix for multi-module architectures
+    String modulePath = resolveModulePath("ports");
+    
     Path filePath = projectPath
-        .resolve("src/main/java")
+        .resolve(modulePath)
+        .resolve(structureMetadata.getSourceDirectory())
         .resolve(packagePath)
-        .resolve(config.name() + "UseCase.java");
+        .resolve("I" + config.name() + "UseCase.java");
 
     return GeneratedFile.javaSource(filePath, content);
   }
 
   private GeneratedFile generateImplementation(Path projectPath, UseCaseConfig config, Map<String, Object> data) {
-    // Calculate implementation package
-    // Replace domain.port.in with application.usecase
-    String implPackage = config.packageName()
-        .replace("domain.port.in", "application.usecase");
+    // Without input ports the configured package already is the use cases package
+    if (!structureMetadata.generatesUseCaseInputPorts()) {
+      return writeImplementation(projectPath, config, data, config.packageName());
+    }
 
+    // Calculate implementation package: replace ports with usecases in the package name
+    String implPackage = config.packageName()
+        .replace("domain.ports", "domain.usecases")
+        .replace("domain.port.in", "domain.usecases");
+    
+    // For multi-module, the package won't contain "domain." prefix, so handle "ports" → "usecases" directly
+    if (!implPackage.equals(config.packageName())) {
+      // Already replaced successfully
+    } else {
+      // Multi-module case: package might be like "com.pragma.ports" → "com.pragma.usecases"
+      implPackage = config.packageName().replace(".ports", ".usecases");
+    }
+
+    return writeImplementation(projectPath, config, data, implPackage);
+  }
+
+  private GeneratedFile writeImplementation(
+      Path projectPath, UseCaseConfig config, Map<String, Object> data, String implPackage) {
     // Update data with implementation package
     data.put("implPackage", implPackage);
 
@@ -83,14 +106,27 @@ public class UseCaseGenerator {
     // Process template with new structure
     String content = templateRepository.processTemplate(templatePath, data);
 
-    // Calculate file path: application/usecase/{UseCaseName}UseCaseImpl.java
+    // Calculate file path using module metadata for multi-module support
     String packagePath = implPackage.replace('.', '/');
+    
+    // Resolve module path prefix for multi-module architectures
+    String modulePath = resolveModulePath("usecases");
+    
     Path filePath = projectPath
-        .resolve("src/main/java")
+        .resolve(modulePath)
+        .resolve(structureMetadata.getSourceDirectory())
         .resolve(packagePath)
-        .resolve(config.name() + "UseCaseImpl.java");
+        .resolve(config.name() + "UseCase.java");
 
     return GeneratedFile.javaSource(filePath, content);
+  }
+
+  /**
+   * Resolves the module filesystem path for a given package type
+   * (see {@link com.pragma.archetype.domain.model.structure.StructureMetadata#modulePathForPackageType}).
+   */
+  private String resolveModulePath(String packageType) {
+    return structureMetadata.modulePathForPackageType(packageType);
   }
 
   private Map<String, Object> prepareTemplateData(UseCaseConfig config) {
@@ -121,6 +157,7 @@ public class UseCaseGenerator {
     data.put("methods", methodMaps);
 
     data.put("generatePort", config.generatePort());
+    data.put("inputPort", structureMetadata.generatesUseCaseInputPorts());
     data.put("generateImpl", config.generateImpl());
     return data;
   }

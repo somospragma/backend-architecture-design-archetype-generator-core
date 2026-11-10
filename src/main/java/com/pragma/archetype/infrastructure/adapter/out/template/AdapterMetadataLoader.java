@@ -1,14 +1,18 @@
 package com.pragma.archetype.infrastructure.adapter.out.template;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import org.yaml.snakeyaml.Yaml;
 
+import com.pragma.archetype.domain.model.adapter.AdapterDirection;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata.ConfigurationClass;
 import com.pragma.archetype.domain.model.adapter.AdapterMetadata.Dependency;
+import com.pragma.archetype.domain.model.adapter.AdditionalResource;
+import com.pragma.archetype.domain.model.adapter.TemplateMapping;
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 import com.pragma.archetype.domain.port.out.TemplateRepository.TemplateNotFoundException;
 
@@ -20,6 +24,7 @@ import com.pragma.archetype.domain.port.out.TemplateRepository.TemplateNotFoundE
 public class AdapterMetadataLoader {
 
   private final TemplateContentProvider contentProvider;
+  private final TemplateVersionsLoader versionsLoader;
   private final Yaml yaml;
 
   /**
@@ -29,35 +34,37 @@ public class AdapterMetadataLoader {
    */
   public AdapterMetadataLoader(TemplateContentProvider contentProvider) {
     this.contentProvider = contentProvider;
+    this.versionsLoader = new TemplateVersionsLoader(contentProvider);
     this.yaml = new Yaml();
   }
 
   /**
-   * Loads adapter metadata for the specified adapter using legacy flat structure.
-   * This method is deprecated and will try both legacy and framework-aware paths.
+   * Resolves a dependency or plugin version. {@code versionRef} points to an
+   * alias under {@code libraries} in versions.yml and wins over a literal
+   * {@code version}; with neither, the version is managed by a BOM.
    *
-   * @param adapterName The name of the adapter to load metadata for
+   * @return the version, or null when a BOM manages it
+   */
+  private String resolveVersion(Map<String, Object> data) {
+    String versionRef = extractOptionalString(data, "versionRef");
+    if (versionRef != null) {
+      return versionsLoader.load().library(versionRef)
+          .orElseThrow(() -> new IllegalArgumentException(
+              "Unknown versionRef '" + versionRef + "': declare it under 'libraries' in versions.yml"));
+    }
+    return extractOptionalString(data, "version");
+  }
+
+  /**
+   * Loads adapter metadata from a specific metadata.yml path.
+   * This is useful for dynamic adapter discovery.
+   *
+   * @param metadataPath The full path to the metadata.yml file
    * @return AdapterMetadata containing parsed adapter information
    * @throws TemplateNotFoundException if metadata.yml cannot be found or parsed
-   * @deprecated Use {@link #loadAdapterMetadata(String, String, String, String)}
-   *             instead
    */
-  @Deprecated
-  public AdapterMetadata loadAdapterMetadata(String adapterName) {
-    // Try legacy path first for backward compatibility
-    String legacyPath = "adapters/" + adapterName + "/metadata.yml";
-
-    try {
-      return loadMetadataFromPath(legacyPath, adapterName);
-    } catch (Exception e) {
-      // If legacy path fails, we can't determine framework/paradigm without more
-      // context
-      throw new TemplateNotFoundException(
-          "Failed to load adapter metadata for: " + adapterName +
-              ". Legacy path not found. Use loadAdapterMetadata(adapterName, framework, paradigm, adapterType) instead. "
-              +
-              "Error: " + e.getMessage());
-    }
+  public AdapterMetadata loadMetadata(String metadataPath) {
+    return loadMetadataFromPath(metadataPath);
   }
 
   /**
@@ -88,12 +95,12 @@ public class AdapterMetadataLoader {
         adapterName.toLowerCase());
 
     try {
-      return loadMetadataFromPath(metadataPath, adapterName);
+      return loadMetadataFromPath(metadataPath);
     } catch (Exception e) {
       // Try legacy path as fallback
       String legacyPath = "adapters/" + adapterName + "/metadata.yml";
       try {
-        return loadMetadataFromPath(legacyPath, adapterName);
+        return loadMetadataFromPath(legacyPath);
       } catch (Exception legacyError) {
         throw new TemplateNotFoundException(
             "Failed to load adapter metadata for: " + adapterName +
@@ -107,7 +114,7 @@ public class AdapterMetadataLoader {
   /**
    * Loads metadata from a specific path.
    */
-  private AdapterMetadata loadMetadataFromPath(String metadataPath, String adapterName) {
+  private AdapterMetadata loadMetadataFromPath(String metadataPath) {
     try {
       String yamlContent = contentProvider.getTemplateContent(metadataPath);
       Map<String, Object> data = yaml.load(yamlContent);
@@ -119,29 +126,61 @@ public class AdapterMetadataLoader {
 
       // Extract required fields
       String name = extractName(data);
-      String type = extractType(data);
+      String typeStr = extractType(data);
+      AdapterDirection direction = parseAdapterDirection(typeStr);
+      String displayName = extractDisplayName(data);
       String description = extractDescription(data);
-      List<Dependency> dependencies = extractDependencies(data);
 
-      // Extract new optional fields
+      // Extract parameter lists
+      List<String> requiredParameters = extractRequiredParameters(data);
+      List<String> optionalParameters = extractOptionalParameters(data);
+
+      // Extract template mappings
+      List<TemplateMapping> templates = extractTemplateMappings(data);
+
+      // Extract dependencies (legacy)
+      List<Dependency> runtimeDependencies = extractDependencies(data);
       List<Dependency> testDependencies = extractTestDependencies(data);
       String applicationPropertiesTemplate = extractApplicationPropertiesTemplate(data);
       List<ConfigurationClass> configurationClasses = extractConfigurationClasses(data);
+
+      // Extract new fields
+      String suffix = extractSuffix(data);
+      String appPropsTemplate = extractAppPropsTemplate(data);
+      List<String> dependencyStrings = extractDependencyStrings(data);
+      List<AdditionalResource> additionalResources = extractAdditionalResources(data);
+      List<AdapterMetadata.BuildPlugin> buildPlugins = extractBuildPlugins(data);
+      String buildConfiguration = extractBuildConfiguration(data);
 
       // Validate referenced template files exist
       // Extract base path from metadata path (remove /metadata.yml)
       String basePath = metadataPath.substring(0, metadataPath.lastIndexOf("/metadata.yml"));
       validateReferencedTemplates(basePath, applicationPropertiesTemplate, configurationClasses);
 
-      // Create and validate the metadata
-      AdapterMetadata metadata = new AdapterMetadata(
-          name,
-          type,
-          description,
-          dependencies,
-          testDependencies,
-          applicationPropertiesTemplate,
-          configurationClasses);
+      // Extract needsMapper flag
+      boolean needsMapper = Boolean.TRUE.equals(data.get("needsMapper"));
+
+      // Create and validate the metadata using builder
+      AdapterMetadata metadata = AdapterMetadata.builder()
+          .name(name)
+          .direction(direction)
+          .displayName(displayName)
+          .description(description)
+          .requiredParameters(requiredParameters)
+          .optionalParameters(optionalParameters)
+          .templates(templates)
+          .suffix(suffix)
+          .applicationPropertiesTemplate(appPropsTemplate)
+          .dependencies(dependencyStrings)
+          .additionalResources(additionalResources)
+          .buildPlugins(buildPlugins)
+          .buildConfiguration(buildConfiguration)
+          .runtimeDependencies(runtimeDependencies)
+          .testDependencies(testDependencies)
+          .legacyApplicationPropertiesTemplate(applicationPropertiesTemplate)
+          .configurationClasses(configurationClasses)
+          .needsMapper(needsMapper)
+          .build();
 
       ValidationResult validation = metadata.validate();
       if (!validation.valid()) {
@@ -187,6 +226,98 @@ public class AdapterMetadataLoader {
   }
 
   /**
+   * Parses adapter direction from type string.
+   * Converts "input"/"driving" to INPUT, "output"/"driven" to OUTPUT.
+   */
+  private AdapterDirection parseAdapterDirection(String typeStr) {
+    if (typeStr == null || typeStr.isBlank()) {
+      throw new IllegalArgumentException("Adapter type cannot be empty");
+    }
+
+    String normalized = typeStr.toLowerCase().trim();
+    return switch (normalized) {
+      case "input", "driving" -> AdapterDirection.INPUT;
+      case "output", "driven" -> AdapterDirection.OUTPUT;
+      default -> throw new IllegalArgumentException(
+          "Invalid adapter type: " + typeStr + ". Must be 'input', 'output', 'driving', or 'driven'");
+    };
+  }
+
+  /**
+   * Extracts the display name from YAML data (optional).
+   */
+  private String extractDisplayName(Map<String, Object> data) {
+    Object displayName = data.get("displayName");
+    if (displayName == null) {
+      // Use name as fallback
+      return extractName(data);
+    }
+    if (!(displayName instanceof String)) {
+      throw new IllegalArgumentException("Field 'displayName' must be a string");
+    }
+    return (String) displayName;
+  }
+
+  /**
+   * Extracts required parameters list from YAML data (optional).
+   */
+  @SuppressWarnings("unchecked")
+  private List<String> extractRequiredParameters(Map<String, Object> data) {
+    Object params = data.get("requiredParameters");
+    if (params == null) {
+      return java.util.Collections.emptyList();
+    }
+    if (!(params instanceof List)) {
+      throw new IllegalArgumentException("Field 'requiredParameters' must be a list");
+    }
+    return (List<String>) params;
+  }
+
+  /**
+   * Extracts optional parameters list from YAML data (optional).
+   */
+  @SuppressWarnings("unchecked")
+  private List<String> extractOptionalParameters(Map<String, Object> data) {
+    Object params = data.get("optionalParameters");
+    if (params == null) {
+      return java.util.Collections.emptyList();
+    }
+    if (!(params instanceof List)) {
+      throw new IllegalArgumentException("Field 'optionalParameters' must be a list");
+    }
+    return (List<String>) params;
+  }
+
+  /**
+   * Extracts template mappings from YAML data (optional).
+   */
+  @SuppressWarnings("unchecked")
+  private List<TemplateMapping> extractTemplateMappings(Map<String, Object> data) {
+    Object templates = data.get("templates");
+    if (templates == null) {
+      return java.util.Collections.emptyList();
+    }
+    if (!(templates instanceof List)) {
+      throw new IllegalArgumentException("Field 'templates' must be a list");
+    }
+
+    List<Map<String, Object>> templatesList = (List<Map<String, Object>>) templates;
+    return templatesList.stream()
+        .map(templateMap -> {
+          // Get outputDir from template or use null to let TemplateMapping use its
+          // default
+          String outputDir = (String) templateMap.get("outputDir");
+
+          return TemplateMapping.builder()
+              .source((String) templateMap.get("source"))
+              .target((String) templateMap.get("target"))
+              .outputDir(outputDir) // Will use TemplateMapping's default if null
+              .build();
+        })
+        .toList();
+  }
+
+  /**
    * Extracts the adapter description from the YAML data (optional).
    */
   private String extractDescription(Map<String, Object> data) {
@@ -224,6 +355,18 @@ public class AdapterMetadataLoader {
     // Flat format: dependencies as list
     if (!(depsObj instanceof List)) {
       throw new IllegalArgumentException("Field 'dependencies' must be a list or map with 'gradle' key");
+    }
+
+    // Check if list contains strings (new format) or maps (legacy format)
+    List<?> rawList = (List<?>) depsObj;
+    if (rawList.isEmpty()) {
+      return List.of();
+    }
+
+    // If first element is a String, these are string-format dependencies
+    // Return empty list for legacy Dependency format — string deps are handled by extractDependencyStrings
+    if (rawList.get(0) instanceof String) {
+      return List.of();
     }
 
     List<Map<String, Object>> depsList = (List<Map<String, Object>>) depsObj;
@@ -325,7 +468,7 @@ public class AdapterMetadataLoader {
       throw new IllegalArgumentException("Required field 'artifact' or 'artifactId' is missing");
     }
 
-    String version = extractOptionalString(depData, "version");
+    String version = resolveVersion(depData);
     String scope = extractOptionalString(depData, "scope");
 
     // Use provided scope or default scope
@@ -334,14 +477,6 @@ public class AdapterMetadataLoader {
     }
 
     return new Dependency(group, artifact, version, scope);
-  }
-
-  /**
-   * @deprecated Use {@link #parseDependency(Map, String, boolean)} instead
-   */
-  @Deprecated
-  private Dependency parseDependency(Map<String, Object> depData, String defaultScope) {
-    return parseDependency(depData, defaultScope, false);
   }
 
   /**
@@ -440,5 +575,126 @@ public class AdapterMetadataLoader {
       throw new IllegalArgumentException("Field '" + key + "' must be a string");
     }
     return (String) value;
+  }
+
+  /**
+   * Extracts suffix field from metadata.
+   */
+  private String extractSuffix(Map<String, Object> data) {
+    return extractOptionalString(data, "suffix");
+  }
+
+  /**
+   * Extracts applicationPropertiesTemplate field from metadata (new field).
+   */
+  private String extractAppPropsTemplate(Map<String, Object> data) {
+    return extractOptionalString(data, "applicationPropertiesTemplate");
+  }
+
+  /**
+   * Extracts dependencies as list of strings (new format).
+   */
+  @SuppressWarnings("unchecked")
+  private List<String> extractDependencyStrings(Map<String, Object> data) {
+    Object depsObj = data.get("dependencies");
+    if (depsObj == null) {
+      return List.of();
+    }
+    if (!(depsObj instanceof List)) {
+      throw new IllegalArgumentException("Field 'dependencies' must be a list");
+    }
+
+    List<?> depsList = (List<?>) depsObj;
+    return depsList.stream()
+        .map(dep -> {
+          if (dep instanceof String) {
+            // Already in string format (group:artifact:version)
+            return (String) dep;
+          } else if (dep instanceof Map) {
+            // Parse from map format (group, artifact, version or versionRef)
+            Map<String, Object> depMap = (Map<String, Object>) dep;
+            String group = (String) depMap.get("group");
+            String artifact = (String) depMap.get("artifact");
+
+            if (group == null || artifact == null) {
+              throw new IllegalArgumentException(
+                  "Dependency must have 'group' and 'artifact' fields");
+            }
+
+            return new Dependency(group, artifact, resolveVersion(depMap), null).toCoordinate();
+          } else {
+            throw new IllegalArgumentException(
+                "Dependency must be either a String or a Map with group/artifact/version");
+          }
+        })
+        .toList();
+  }
+
+  /**
+   * Extracts additional resources from metadata.
+   * Similar to staticFiles in structure.yml.
+   */
+  @SuppressWarnings("unchecked")
+  private List<AdditionalResource> extractAdditionalResources(Map<String, Object> data) {
+    Object resourcesObj = data.get("additionalResources");
+    if (resourcesObj == null) {
+      return List.of();
+    }
+    if (!(resourcesObj instanceof List)) {
+      throw new IllegalArgumentException("Field 'additionalResources' must be a list");
+    }
+
+    List<?> resourcesList = (List<?>) resourcesObj;
+    return resourcesList.stream()
+        .map(resource -> {
+          if (!(resource instanceof Map)) {
+            throw new IllegalArgumentException("Each additional resource must be a map");
+          }
+
+          Map<String, Object> resourceMap = (Map<String, Object>) resource;
+          String name = extractRequiredString(resourceMap, "name");
+          String targetPath = extractOptionalString(resourceMap, "targetPath");
+          String templatePath = extractRequiredString(resourceMap, "templatePath");
+
+          // processAsTemplate is optional, defaults to checking if templatePath ends with
+          // .ftl
+          boolean processAsTemplate = false;
+          Object processObj = resourceMap.get("processAsTemplate");
+          if (processObj instanceof Boolean) {
+            processAsTemplate = (Boolean) processObj;
+          }
+
+          return new AdditionalResource(name, targetPath, templatePath, processAsTemplate);
+        })
+        .toList();
+  }
+
+  /**
+   * Extracts build plugins from adapter metadata.
+   */
+  @SuppressWarnings("unchecked")
+  private List<AdapterMetadata.BuildPlugin> extractBuildPlugins(Map<String, Object> data) {
+    if (!data.containsKey("buildPlugins")) {
+      return Collections.emptyList();
+    }
+
+    Object pluginsObj = data.get("buildPlugins");
+    if (!(pluginsObj instanceof List)) {
+      return Collections.emptyList();
+    }
+
+    List<Map<String, Object>> pluginsList = (List<Map<String, Object>>) pluginsObj;
+    return pluginsList.stream()
+        .map(p -> new AdapterMetadata.BuildPlugin(
+            (String) p.get("id"),
+            resolveVersion(p)))
+        .toList();
+  }
+
+  /**
+   * Extracts build configuration from adapter metadata.
+   */
+  private String extractBuildConfiguration(Map<String, Object> data) {
+    return (String) data.get("buildConfiguration");
   }
 }
