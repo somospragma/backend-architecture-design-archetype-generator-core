@@ -30,8 +30,7 @@ public final class TemplatesContract {
   /** Default branch of the templates, read when the plugin version has no major (local builds). */
   public static final String DEFAULT_BRANCH = "main";
 
-  // At most 9 digits per number, so every part fits in an int
-  private static final Pattern RELEASE_TAG = Pattern.compile("v(\\d{1,9})\\.(\\d{1,9})\\.(\\d{1,9})");
+  private static final Pattern RELEASE_TAG = Pattern.compile("v(\\d+)\\.(\\d+)\\.(\\d+)");
 
   private TemplatesContract() {
   }
@@ -46,11 +45,8 @@ public final class TemplatesContract {
     if (pluginVersion == null) {
       return OptionalInt.empty();
     }
-    String major = pluginVersion.split("\\.", 2)[0];
-    if (!major.matches("\\d{1,9}") || Integer.parseInt(major) < 1) {
-      return OptionalInt.empty();
-    }
-    return OptionalInt.of(Integer.parseInt(major));
+    int major = parse(pluginVersion.split("\\.", 2)[0]);
+    return major < 1 ? OptionalInt.empty() : OptionalInt.of(major);
   }
 
   /**
@@ -64,10 +60,22 @@ public final class TemplatesContract {
     return tags.stream()
         .map(RELEASE_TAG::matcher)
         .filter(Matcher::matches)
-        .filter(m -> Integer.parseInt(m.group(1)) == major)
-        .max(Comparator.<Matcher>comparingInt(m -> Integer.parseInt(m.group(2)))
-            .thenComparingInt(m -> Integer.parseInt(m.group(3))))
+        .filter(m -> parse(m.group(1)) == major && parse(m.group(2)) >= 0 && parse(m.group(3)) >= 0)
+        .max(Comparator.<Matcher>comparingInt(m -> parse(m.group(2)))
+            .thenComparingInt(m -> parse(m.group(3))))
         .map(Matcher::group);
+  }
+
+  /** Non-negative number, or -1 when the text is not one or does not fit in an int. */
+  private static int parse(String digits) {
+    if (!digits.matches("\\d+")) {
+      return -1;
+    }
+    try {
+      return Integer.parseInt(digits);
+    } catch (NumberFormatException e) {
+      return -1;
+    }
   }
 
   /**

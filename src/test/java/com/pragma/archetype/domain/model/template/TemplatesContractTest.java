@@ -36,6 +36,7 @@ class TemplatesContractTest {
     assertEquals(Optional.of("v1.10.0"), TemplatesContract.latestTag(1, tags));
     assertEquals(Optional.of("v2.0.0"), TemplatesContract.latestTag(2, tags));
     assertEquals(Optional.empty(), TemplatesContract.latestTag(3, tags));
+    assertEquals(Optional.empty(), TemplatesContract.latestTag(1, List.of("v1.99999999999.0")));
   }
 
   @Test
