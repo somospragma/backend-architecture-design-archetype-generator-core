@@ -58,7 +58,7 @@ dependencies {
     
     // Testing - Kotest for property-based testing
     testImplementation("io.kotest:kotest-runner-junit5:5.8.0")
-    testImplementation("io.kotest:kotest-assertions-core:5.8.0")
+    testImplementation("io.kotest:kotest-assertions-core:6.2.6")
     testImplementation("io.kotest:kotest-property:5.8.0")
     testImplementation("io.kotest:kotest-framework-datatest:5.8.0")
 }
