@@ -42,7 +42,7 @@ Las herramientas (OSV-Scanner, gitleaks, actionlint) se descargan con versión f
 ## Configuración en GitHub (una sola vez)
 
 **Environment `release`**
-- Revisores obligatorios y "Prevent self-review". La aprobación es el paso Approval del pipeline: el job Deploy queda en "Waiting for review" hasta que alguien aprueba.
+- Revisor obligatorio: dayepesb-pragma, sin "Prevent self-review" para que pueda aprobar sus propios releases. La aprobación es el paso Approval del pipeline: el job Deploy queda en "Waiting for review" hasta que alguien aprueba.
 - Deployment tags: solo `v*`.
 - Secretos: `GRADLE_PUBLISH_KEY` y `GRADLE_PUBLISH_SECRET`. Para Maven Central también `GPG_PRIVATE_KEY` (en base64), `GPG_PASSPHRASE`, `OSSRH_USERNAME` y `OSSRH_PASSWORD` (el token de usuario del Central Portal).
 - Los secretos de publicación viven solo aquí, no a nivel de repositorio.
@@ -52,7 +52,7 @@ Las herramientas (OSV-Scanner, gitleaks, actionlint) se descargan con versión f
 - `PUBLISH_MAVEN_CENTRAL=true` para activar la publicación en Maven Central.
 
 **Ruleset de `main`**
-- PR obligatorio con 1 aprobación, descartar aprobaciones viejas al haber nuevos commits y resolver conversaciones.
+- PR obligatorio, sin aprobaciones de código: la aprobación humana es la del environment `release`.
 - Check obligatorio: `ci-ok`.
 - Sin force push ni borrado.
 

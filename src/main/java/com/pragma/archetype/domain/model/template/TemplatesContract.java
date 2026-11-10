@@ -27,8 +27,8 @@ public final class TemplatesContract {
   /** Template schema this plugin understands. */
   public static final int SCHEMA_VERSION = 1;
 
-  /** Integration branch, read when the plugin version has no major (local builds). */
-  public static final String DEVELOPMENT_BRANCH = "develop";
+  /** Default branch of the templates, read when the plugin version has no major (local builds). */
+  public static final String DEFAULT_BRANCH = "main";
 
   private static final Pattern RELEASE_TAG = Pattern.compile("v(\\d+)\\.(\\d+)\\.(\\d+)");
 
@@ -37,7 +37,7 @@ public final class TemplatesContract {
 
   /**
    * Major version of a plugin version, or empty when it has none: local builds
-   * and 0.x versions read {@link #DEVELOPMENT_BRANCH}.
+   * and 0.x versions read {@link #DEFAULT_BRANCH}.
    *
    * @param pluginVersion plugin version such as "1.4.0" or "2.0.0-SNAPSHOT"
    */

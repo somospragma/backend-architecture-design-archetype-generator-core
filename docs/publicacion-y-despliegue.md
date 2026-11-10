@@ -8,9 +8,9 @@ El plugin y las plantillas se publican por separado y con tags. El plugin se pub
 |---|---|---|
 | 1.x publicado | el último tag `v1.x.y` de templates | si existen `v1.0.0`, `v1.2.0` y `v1.2.1`, lee `v1.2.1` |
 | 2.x publicado | el último tag `v2.x.y` | |
-| Build local sin mayor (`0.x` o sin versión) | la rama `develop` de templates | |
+| Build local sin mayor (`0.x` o sin versión) | la rama `main` de templates | |
 | Con `templates.version: v1.2.0` en `.cleanarch.yml` | ese tag fijo | para congelar un proyecto |
-| Con `templates.branch: develop` | esa rama | para probar plantillas sin publicar |
+| Con `templates.branch: feat/x` | esa rama | para probar plantillas sin publicar |
 
 - El plugin consulta los tags en la API de GitHub una vez por build. Guarda el resultado unos minutos, para que un daemon de Gradle vea las versiones nuevas sin reiniciarse.
 - Si no puede leer los tags (sin red o por límite de la API), falla con un mensaje que explica cómo fijar `templates.version`.
@@ -21,10 +21,9 @@ El plugin y las plantillas se publican por separado y con tags. El plugin se pub
 
 | Rama o tag | Para qué |
 |---|---|
-| `main` | trunk: todo entra por PR desde `feat/*` o `fix/*`, con `ci-ok` en verde |
+| `main` | rama por defecto y trunk: todo entra por PR desde `feat/*` o `fix/*`, con `ci-ok` en verde |
 | `vX.Y.Z` (tag) | publica la versión X.Y.Z; solo se crea sobre `main` (o `release/X.x`) |
 | `release/X.x` | solo si hay que parchear un mayor viejo después de sacar el siguiente |
-| `develop` | sobra con este modelo: se puede archivar |
 
 `gradle.properties` guarda la siguiente versión con `-SNAPSHOT`; la versión publicada sale siempre del tag.
 

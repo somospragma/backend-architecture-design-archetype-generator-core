@@ -90,7 +90,7 @@ public record TemplateConfig(
 
   /**
    * Gets the git ref to read: the pinned version (a tag), the configured branch,
-   * or the development branch for local plugin builds.
+   * or the default branch for local plugin builds.
    *
    * @throws IllegalStateException when the latest tag has not been resolved yet
    */
@@ -105,7 +105,7 @@ public record TemplateConfig(
       throw new IllegalStateException(
           "The latest templates tag has not been resolved; use TemplateRepositoryFactory");
     }
-    return TemplatesContract.DEVELOPMENT_BRANCH;
+    return TemplatesContract.DEFAULT_BRANCH;
   }
 
   /**
