@@ -30,7 +30,8 @@ public final class TemplatesContract {
   /** Default branch of the templates, read when the plugin version has no major (local builds). */
   public static final String DEFAULT_BRANCH = "main";
 
-  private static final Pattern RELEASE_TAG = Pattern.compile("v(\\d+)\\.(\\d+)\\.(\\d+)");
+  // At most 9 digits per number, so every part fits in an int
+  private static final Pattern RELEASE_TAG = Pattern.compile("v(\\d{1,9})\\.(\\d{1,9})\\.(\\d{1,9})");
 
   private TemplatesContract() {
   }
@@ -46,7 +47,7 @@ public final class TemplatesContract {
       return OptionalInt.empty();
     }
     String major = pluginVersion.split("\\.", 2)[0];
-    if (!major.matches("\\d+") || Integer.parseInt(major) < 1) {
+    if (!major.matches("\\d{1,9}") || Integer.parseInt(major) < 1) {
       return OptionalInt.empty();
     }
     return OptionalInt.of(Integer.parseInt(major));

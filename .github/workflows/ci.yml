@@ -156,7 +156,9 @@ jobs:
 
   dependency-review:
     name: Security (CI) · Dependency review
-    if: github.event_name == 'pull_request'
+    # Needs the Dependency graph (Settings → Advanced Security); turn it on with
+    # the repository variable DEPENDENCY_REVIEW=true. OSV covers the full tree meanwhile
+    if: github.event_name == 'pull_request' && vars.DEPENDENCY_REVIEW == 'true'
     needs: [tests, dead-code]
     runs-on: ubuntu-latest
     timeout-minutes: 5

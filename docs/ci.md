@@ -50,6 +50,7 @@ Las herramientas (OSV-Scanner, gitleaks, actionlint) se descargan con versión f
 **Secretos y variables del repositorio**
 - `SONAR_TOKEN` (opcional; sin él, el paso de Sonar se salta).
 - `PUBLISH_MAVEN_CENTRAL=true` para activar la publicación en Maven Central.
+- `DEPENDENCY_REVIEW=true` una vez encendido el Dependency graph (Settings → Advanced Security); sin él, dependency review no corre y OSV cubre las dependencias.
 - `TEMPLATES_REF`: solo mientras un cambio toca los dos repos a la vez. El CI prueba contra esa rama de templates en vez del último tag. Se borra al mergear.
 
 **Ruleset de `main`**

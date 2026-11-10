@@ -211,7 +211,7 @@ public abstract class AbstractGenerateAdapterUseCase {
         }
       } catch (Exception rollbackError) {
         logger.error("Rollback failed! Project may be in inconsistent state. Backup ID: {}",
-            backup != null ? backup.id() : "unknown", rollbackError);
+            backup.id(), rollbackError);
       }
       return GenerationResult.failure(List.of(
           "Failed to generate adapter: " + e.getMessage()));
