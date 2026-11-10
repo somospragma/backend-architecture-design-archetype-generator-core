@@ -35,7 +35,7 @@ dependencies {
     implementation("org.freemarker:freemarker:2.3.35")
     
     // YAML processing for configuration
-    implementation("org.yaml:snakeyaml:2.2")
+    implementation("org.yaml:snakeyaml:2.7")
     
     // HTTP client for downloading templates
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
