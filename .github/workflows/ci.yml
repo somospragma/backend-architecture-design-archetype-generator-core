@@ -99,8 +99,11 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: echo "enabled=${SONAR_TOKEN:+true}" >> "$GITHUB_OUTPUT"
       - name: SonarCloud
-        # Skipped on forks and until SONAR_TOKEN is configured
+        # Skipped on forks and until SONAR_TOKEN is configured. Informative: an
+        # expired token or a SonarCloud outage must not block the pipeline, the
+        # gates are the tests, coverage and the security stage
         if: steps.sonar.outputs.enabled == 'true'
+        continue-on-error: true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
