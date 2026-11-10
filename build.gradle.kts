@@ -44,7 +44,7 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.22.4")
     
     // Logging
-    implementation("org.slf4j:slf4j-api:2.0.9")
+    implementation("org.slf4j:slf4j-api:2.0.20")
     implementation("ch.qos.logback:logback-classic:1.5.38")
     
     // Testing - JUnit
