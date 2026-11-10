@@ -7,7 +7,8 @@
 #
 # Tests and the smoke generation run against the templates this plugin major
 # reads: the latest templates tag v<major>.x.y, falling back to templates main
-# until the first one exists.
+# until the first one exists. While both repos change together, the repository
+# variable TEMPLATES_REF points every job at a templates branch instead.
 name: CI
 
 on:
@@ -45,7 +46,14 @@ jobs:
         with:
           persist-credentials: false
       - id: ref
+        env:
+          OVERRIDE: ${{ vars.TEMPLATES_REF }}
         run: |
+          if [[ -n $OVERRIDE ]]; then
+            echo "::warning::Testing against templates $OVERRIDE (repository variable TEMPLATES_REF)"
+            echo "ref=$OVERRIDE" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           version=$(sed -n 's/^version=//p' gradle.properties)
           major=${version%%.*}
           ref=$(git ls-remote --tags --refs "https://github.com/$TEMPLATES_REPOSITORY" "refs/tags/v$major.*" \
