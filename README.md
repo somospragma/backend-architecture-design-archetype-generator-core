@@ -233,9 +233,8 @@ This plugin is published to:
 
 ### For Maintainers
 
-- 📦 [Publishing Guide](PUBLISHING.md) - Complete guide for publishing to Gradle Plugin Portal and Maven Central
-- 🚀 [Quick Start Publishing](PUBLISHING_QUICKSTART.md) - Quick reference for publishing
-- 🔐 [GitHub Secrets Setup](GITHUB_SECRETS_SETUP.md) - Configure automated publishing with GitHub Actions
+- 📦 [Publicación y despliegue](docs/publicacion-y-despliegue.md) - Cómo se publica el plugin y qué templates lee
+- 🔐 [CI y configuración de GitHub](docs/ci.md) - Pipelines, environments y rulesets
 
 ### Automated Publishing
 

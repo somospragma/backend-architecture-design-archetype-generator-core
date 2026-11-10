@@ -1,10 +1,10 @@
 # Publishes the plugin when a vX.Y.Z tag is pushed. The tag version is the
 # release version (gradle.properties keeps the next -SNAPSHOT).
 #
-# Quality (CI)   the tag is on main (or release/X.x), the templates branch vX
-#                exists with the schemaVersion this plugin reads, and check is green.
-#                Templates go first: a plugin that reads a missing branch fails
-#                for every user.
+# Quality (CI)   the tag is on main (or release/X.x), a templates release
+#                vX.y.z exists and its latest one has the schemaVersion this
+#                plugin reads, and check is green against it. Templates go
+#                first: a plugin without a templates release fails for every user.
 # Security (CI)  vulnerable dependencies (OSV, with the SBOM) and secrets on the
 #                tagged commit
 # Build          the jars that will be published, with build provenance
@@ -39,7 +39,7 @@ jobs:
       contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
-      templates: ${{ steps.templates.outputs.branch }}
+      templates: ${{ steps.templates.outputs.tag }}
     defaults:
       run:
         working-directory: ${{ env.CORE_DIR }}
@@ -60,22 +60,25 @@ jobs:
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
       - id: templates
-        name: Templates v{major} exists with this plugin's schema
+        name: Latest templates release v{major}.x.y has this plugin's schema
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          branch="v${VERSION%%.*}"
+          major=${VERSION%%.*}
+          tag=$(git ls-remote --tags --refs "https://github.com/$TEMPLATES_REPOSITORY" "refs/tags/v$major.*" \
+            | sed 's#.*refs/tags/##' | grep -E "^v$major\.[0-9]+\.[0-9]+$" | sort -V | tail -n 1)
+          [[ -n $tag ]] || { echo "::error::No templates release v$major.x.y. Publish the templates first."; exit 1; }
           expected=$(sed -n 's/.*SCHEMA_VERSION = \([0-9]*\);.*/\1/p' "$CONTRACT")
-          index=$(curl -fsSL "https://raw.githubusercontent.com/$TEMPLATES_REPOSITORY/$branch/templates/architectures/index.yml") \
-            || { echo "::error::Templates branch $branch not found. Publish the templates first."; exit 1; }
-          actual=$(yq '.schemaVersion' <<< "$index")
+          actual=$(curl -fsSL "https://raw.githubusercontent.com/$TEMPLATES_REPOSITORY/$tag/templates/architectures/index.yml" \
+            | yq '.schemaVersion')
           [[ $actual == "$expected" ]] \
-            || { echo "::error::Templates $branch has schemaVersion $actual, this plugin reads $expected"; exit 1; }
-          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+            || { echo "::error::Templates $tag has schemaVersion $actual, this plugin reads $expected"; exit 1; }
+          echo "Templates release: $tag" >> "$GITHUB_STEP_SUMMARY"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ env.TEMPLATES_REPOSITORY }}
-          ref: ${{ steps.templates.outputs.branch }}
+          ref: ${{ steps.templates.outputs.tag }}
           path: ${{ env.TEMPLATES_DIR }}
           persist-credentials: false
       - uses: gradle/actions/wrapper-validation@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0

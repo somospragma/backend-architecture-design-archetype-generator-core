@@ -5,9 +5,9 @@
 #                tree), CodeQL and security lint of the workflows
 # Build          the plugin of this PR generates and builds real projects
 #
-# Tests and the smoke generation run against the templates branch of this
-# plugin major (v1 for 1.x), falling back to templates develop (the integration
-# branch) until that branch exists. Templates main is frozen for the 1.0.x plugins.
+# Tests and the smoke generation run against the templates this plugin major
+# reads: the latest templates tag v<major>.x.y, falling back to templates
+# develop (the integration branch) until the first one exists.
 name: CI
 
 on:
@@ -33,7 +33,7 @@ env:
 
 jobs:
   templates-ref:
-    name: Quality (CI) · Templates branch
+    name: Quality (CI) · Templates release
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -47,12 +47,12 @@ jobs:
       - id: ref
         run: |
           version=$(sed -n 's/^version=//p' gradle.properties)
-          branch="v${version%%.*}"
-          if git ls-remote --exit-code --heads "https://github.com/$TEMPLATES_REPOSITORY" "$branch" > /dev/null; then
-            ref=$branch
-          else
+          major=${version%%.*}
+          ref=$(git ls-remote --tags --refs "https://github.com/$TEMPLATES_REPOSITORY" "refs/tags/v$major.*" \
+            | sed 's#.*refs/tags/##' | grep -E "^v$major\.[0-9]+\.[0-9]+$" | sort -V | tail -n 1)
+          if [[ -z $ref ]]; then
             ref=develop
-            echo "::warning::Templates branch $branch does not exist yet, testing against develop"
+            echo "::warning::No templates release v$major.x.y yet, testing against develop"
           fi
           echo "Templates ref: $ref"
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
@@ -163,6 +163,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
+      security-events: write # OSV results in the Security tab
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -182,12 +183,22 @@ jobs:
       - run: '"$TEMPLATES_DIR/scripts/ci/install-tools.sh" "$RUNNER_TEMP/bin" osv-scanner'
       - run: |
           "$TEMPLATES_DIR/scripts/ci/scan-dependencies.sh" --project "$CORE_DIR" \
-            --fail-on-cvss "$FAIL_ON_CVSS" --out "$RUNNER_TEMP/scan"
+            --fail-on-cvss "$FAIL_ON_CVSS" --out scan-results
+      - name: Publish to the Security tab
+        # Fork PRs get no security-events permission
+        if: >-
+          always() && hashFiles('scan-results/osv.sarif') != ''
+          && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          sarif_file: scan-results/osv.sarif
+          category: osv-dependencies
+          checkout_path: ${{ github.workspace }}/${{ env.CORE_DIR }}
       - if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: dependencies
-          path: ${{ runner.temp }}/scan
+          path: scan-results
           if-no-files-found: ignore
           retention-days: 30
 

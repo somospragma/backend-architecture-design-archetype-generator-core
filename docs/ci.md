@@ -7,8 +7,8 @@ Los pipelines van por etapas: **Quality (CI) → Security (CI) → Build → Dep
 | Workflow | Cuándo corre | Etapas |
 |---|---|---|
 | `ci.yml` | PR a `main` o `release/**`, push a `main` | Quality: tests con cobertura ≥ 60 % (y Sonar si hay `SONAR_TOKEN`), código muerto (PMD). Security: gitleaks, dependency review, dependencias vulnerables (OSV, árbol completo), CodeQL, actionlint y zizmor. Build: genera y compila 2 proyectos con el plugin del PR |
-| `release.yml` | push de un tag `vX.Y.Z` | Quality: tag sobre `main`, rama `vX` de templates con su `schemaVersion`, `check`. Security: OSV (con SBOM) y gitleaks. Build: jars y su atestación de procedencia. Deploy: espera aprobación en el environment `release` y publica esos mismos jars |
-| `security-weekly.yml` | cada lunes a las 07:00 UTC | CodeQL, OSV y gitleaks sobre `main`. Si encuentra algo, abre o actualiza un issue `security-weekly`; una corrida limpia lo cierra |
+| `release.yml` | push de un tag `vX.Y.Z` | Quality: tag sobre `main`, último tag de templates `vX.y.z` con su `schemaVersion`, `check`. Security: OSV (con SBOM) y gitleaks. Build: jars y su atestación de procedencia. Deploy: espera aprobación en el environment `release` y publica esos mismos jars |
+| `security-weekly.yml` | cada lunes a las 07:00 UTC | CodeQL, OSV y gitleaks sobre `main`. CodeQL y OSV publican en la pestaña Security; si algo falla, abre o actualiza un issue `security-weekly` y una corrida limpia lo cierra |
 | `codeql.yml` | lo llaman `ci.yml` y `security-weekly.yml` | SAST con `security-and-quality`; las alertas van a la pestaña Security |
 
 El job `ci-ok` resume el CI: es el único check que hay que marcar como obligatorio.
@@ -21,7 +21,8 @@ Los proyectos generados se escanean en el repo de templates (`security-weekly.ym
 1. Gradle bloquea todas las configuraciones (`lock-dependencies.init.gradle`), así que se escanean también las transitivas.
 2. OSV-Scanner las cruza con OSV, que incluye los avisos de GitHub y de Maven.
 3. Falla si alguna vulnerabilidad llega a CVSS 7.0 (`FAIL_ON_CVSS`). Las menores salen en el resumen del job, sin bloquear.
-4. Deja un SBOM CycloneDX; el release lo adjunta y lo incluye en la atestación.
+4. Publica todos los hallazgos en la pestaña Security (code scanning, categoría `osv-dependencies`), en cada PR y cada lunes.
+5. Deja un SBOM CycloneDX; el release lo adjunta y lo incluye en la atestación.
 
 Las herramientas (OSV-Scanner, gitleaks, actionlint) se descargan con versión fija y se verifican contra su checksum.
 
@@ -33,7 +34,7 @@ Las herramientas (OSV-Scanner, gitleaks, actionlint) se descargan con versión f
 
 ## Publicar una versión
 
-1. La rama `vX` de templates ya existe con el `schemaVersion` que lee el plugin. El release lo verifica y se detiene si no es así, porque un plugin que no encuentra sus templates falla para todos los usuarios.
+1. Ya existe un tag de templates `vX.y.z` con el `schemaVersion` que lee el plugin. El release lo verifica y se detiene si no es así, porque un plugin que no encuentra sus templates falla para todos los usuarios. El detalle está en [publicacion-y-despliegue.md](publicacion-y-despliegue.md).
 2. `git tag vX.Y.Z && git push origin vX.Y.Z` sobre un commit de `main`.
 3. Corren Quality, Security y Build. Build deja los jars atestados como artefacto.
 4. Deploy espera la aprobación en el environment `release`. Al aprobar, publica en el Gradle Plugin Portal esos mismos jars (no los recompila), crea el release de GitHub con los jars y el SBOM y, si `PUBLISH_MAVEN_CENTRAL=true`, sube el bundle firmado a Maven Central.
@@ -59,7 +60,8 @@ Las herramientas (OSV-Scanner, gitleaks, actionlint) se descargan con versión f
 - Solo los maintainers pueden crearlos; nadie puede moverlos ni borrarlos.
 
 **Seguridad del repositorio**
-- Secret scanning con push protection, Dependabot alerts y code scanning.
+- Dependabot alerts y Dependabot security updates (activas desde el 2026-11-10).
+- Secret scanning con push protection y code scanning.
 - Actions: permisos del `GITHUB_TOKEN` en solo lectura y "Require approval for all outside collaborators".
 
 ## Herramientas
