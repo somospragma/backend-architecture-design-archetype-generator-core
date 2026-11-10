@@ -5,10 +5,14 @@ import java.nio.file.Path;
 
 import org.gradle.api.logging.Logger;
 
+import com.pragma.archetype.domain.model.config.PluginVersion;
 import com.pragma.archetype.domain.model.config.TemplateConfig;
+import com.pragma.archetype.domain.model.template.TemplatesContract;
 import com.pragma.archetype.domain.port.out.TemplateRepository;
 import com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter;
+import com.pragma.archetype.infrastructure.adapter.out.http.OkHttpClientAdapter;
 import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTemplateRepository;
+import com.pragma.archetype.infrastructure.adapter.out.template.GitHubTemplateTagResolver;
 
 /**
  * Factory for creating TemplateRepository instances.
@@ -16,8 +20,10 @@ import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTempla
  *
  * Resolution order:
  * 1. .cleanarch.yml with localPath → local filesystem
- * 2. .cleanarch.yml with repository/branch → remote GitHub with custom config
- * 3. No .cleanarch.yml or no templates section → default GitHub repo (main branch)
+ * 2. .cleanarch.yml with repository and templates.version (a tag) or
+ *    templates.branch → that ref of the remote repository
+ * 3. Otherwise → the latest release tag v{major}.x.y of this plugin's major
+ *    in the configured (or default) GitHub repository
  */
 public final class TemplateRepositoryFactory {
 
@@ -49,8 +55,14 @@ public final class TemplateRepositoryFactory {
     }
 
     // Remote mode — download from GitHub repository
+    if (templateConfig.needsLatestTag()) {
+      int major = TemplatesContract.majorOf(PluginVersion.current()).getAsInt();
+      String tag = new GitHubTemplateTagResolver(new OkHttpClientAdapter())
+          .latestTag(templateConfig.repository(), major);
+      templateConfig = templateConfig.withVersion(tag);
+    }
     logger.lifecycle("✓ Using remote templates from: {}", templateConfig.repository());
-    logger.lifecycle("  Branch: {}", templateConfig.getEffectiveBranch());
+    logger.lifecycle("  Ref: {}", templateConfig.getEffectiveBranch());
     return new FreemarkerTemplateRepository(templateConfig);
   }
 }

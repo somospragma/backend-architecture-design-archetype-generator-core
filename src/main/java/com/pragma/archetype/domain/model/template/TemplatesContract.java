@@ -1,13 +1,21 @@
 package com.pragma.archetype.domain.model.template;
 
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Compatibility contract between the plugin and the template repository.
  *
  * <ul>
- * <li>Each plugin major version reads its own living templates branch:
- * plugin 1.x reads {@code v1}, plugin 2.x reads {@code v2}. Fixes and new
- * architectures reach users without a plugin release, and a breaking template
- * change goes to the next branch without affecting older plugins.</li>
+ * <li>Each plugin major version reads the newest templates release of that
+ * major: plugin 1.x reads the latest {@code v1.x.y} tag, plugin 2.x the latest
+ * {@code v2.x.y}. Fixes and new architectures reach users with a new templates
+ * tag, without a plugin release, and a breaking template change goes to the
+ * next major without affecting older plugins.</li>
  * <li>{@code architectures/index.yml} declares the {@code schemaVersion} of the
  * templates: the shape of structure.yml, metadata.yml and the variables passed
  * to FreeMarker. The plugin refuses templates of a schema it does not
@@ -19,24 +27,46 @@ public final class TemplatesContract {
   /** Template schema this plugin understands. */
   public static final int SCHEMA_VERSION = 1;
 
-  /** Branch used when the plugin version cannot be parsed (local builds). */
-  static final String FALLBACK_BRANCH = "develop";
+  /** Integration branch, read when the plugin version has no major (local builds). */
+  public static final String DEVELOPMENT_BRANCH = "develop";
+
+  private static final Pattern RELEASE_TAG = Pattern.compile("v(\\d+)\\.(\\d+)\\.(\\d+)");
 
   private TemplatesContract() {
   }
 
   /**
-   * Templates branch for a plugin version: {@code v<major>}, or {@code develop}
-   * (the integration branch) when the version has no numeric major.
+   * Major version of a plugin version, or empty when it has none: local builds
+   * and 0.x versions read {@link #DEVELOPMENT_BRANCH}.
    *
    * @param pluginVersion plugin version such as "1.4.0" or "2.0.0-SNAPSHOT"
    */
-  public static String branchFor(String pluginVersion) {
+  public static OptionalInt majorOf(String pluginVersion) {
     if (pluginVersion == null) {
-      return FALLBACK_BRANCH;
+      return OptionalInt.empty();
     }
     String major = pluginVersion.split("\\.", 2)[0];
-    return major.matches("\\d+") ? "v" + major : FALLBACK_BRANCH;
+    if (!major.matches("\\d+") || Integer.parseInt(major) < 1) {
+      return OptionalInt.empty();
+    }
+    return OptionalInt.of(Integer.parseInt(major));
+  }
+
+  /**
+   * Newest release tag {@code v<major>.<minor>.<patch>} of a major among the
+   * given tag names. Other majors and any other tag name are ignored.
+   *
+   * @param major plugin major version
+   * @param tags  tag names, such as "v1.2.0"
+   */
+  public static Optional<String> latestTag(int major, Collection<String> tags) {
+    return tags.stream()
+        .map(RELEASE_TAG::matcher)
+        .filter(Matcher::matches)
+        .filter(m -> Integer.parseInt(m.group(1)) == major)
+        .max(Comparator.<Matcher>comparingInt(m -> Integer.parseInt(m.group(2)))
+            .thenComparingInt(m -> Integer.parseInt(m.group(3))))
+        .map(Matcher::group);
   }
 
   /**
@@ -52,8 +82,8 @@ public final class TemplatesContract {
     }
     String advice = templatesSchema > SCHEMA_VERSION
         ? "Update the plugin to a version that supports schema " + templatesSchema + "."
-        : "Point the plugin to newer templates (remove templates.branch from .cleanarch.yml "
-            + "to use the default branch).";
+        : "Point the plugin to newer templates (remove templates.version and templates.branch "
+            + "from .cleanarch.yml to use the latest release).";
     throw new IncompatibleTemplatesException(String.format(
         "Templates at %s use schema %d, but this plugin understands schema %d. %s",
         source, templatesSchema, SCHEMA_VERSION, advice));

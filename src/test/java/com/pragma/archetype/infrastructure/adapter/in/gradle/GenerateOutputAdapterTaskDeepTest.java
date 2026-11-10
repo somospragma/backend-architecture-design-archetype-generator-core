@@ -193,6 +193,9 @@ class GenerateOutputAdapterTaskDeepTest {
 
   @Test
   void testCreateTemplateRepository() throws Exception {
+    // Given - only the templates release, so the test does not ask GitHub for the latest tag
+    Files.writeString(tempDir.resolve(".cleanarch.yml"), "templates:\n  version: v1.0.0\n");
+
     // When
     Object repository = invokeCreateTemplateRepository();
 
@@ -254,6 +257,8 @@ class GenerateOutputAdapterTaskDeepTest {
           paradigm: reactive
           framework: spring
           adaptersAsModules: false
+        templates:
+          version: v1.0.0
         """;
     Files.writeString(tempDir.resolve(".cleanarch.yml"), yamlContent);
   }

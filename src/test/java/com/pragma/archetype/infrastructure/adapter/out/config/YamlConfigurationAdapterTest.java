@@ -95,9 +95,9 @@ class YamlConfigurationAdapterTest {
     assertNotNull(config);
     assertEquals(TemplateMode.PRODUCTION, config.mode());
     assertEquals("https://github.com/test/templates", config.repository());
-    // No branch configured: the plugin reads the branch of its major version
+    // No branch or version configured: the plugin reads the latest tag of its major
     assertNull(config.branch());
-    assertEquals(TemplatesContract.branchFor(PluginVersion.current()), config.getEffectiveBranch());
+    assertEquals(TemplatesContract.majorOf(PluginVersion.current()).isPresent(), config.needsLatestTag());
     assertNull(config.version());
     assertNull(config.localPath());
     assertTrue(config.cache());
@@ -131,9 +131,9 @@ class YamlConfigurationAdapterTest {
     assertEquals(TemplateMode.PRODUCTION, config.mode());
     assertEquals("https://github.com/somospragma/backend-architecture-design-archetype-generator-templates",
         config.repository());
-    // No branch configured: the plugin reads the branch of its major version
+    // No branch or version configured: the plugin reads the latest tag of its major
     assertNull(config.branch());
-    assertEquals(TemplatesContract.branchFor(PluginVersion.current()), config.getEffectiveBranch());
+    assertEquals(TemplatesContract.majorOf(PluginVersion.current()).isPresent(), config.needsLatestTag());
     assertNull(config.version());
     assertNull(config.localPath());
     assertTrue(config.cache());
@@ -152,9 +152,9 @@ class YamlConfigurationAdapterTest {
     assertEquals(TemplateMode.PRODUCTION, config.mode());
     assertEquals("https://github.com/somospragma/backend-architecture-design-archetype-generator-templates",
         config.repository());
-    // No branch configured: the plugin reads the branch of its major version
+    // No branch or version configured: the plugin reads the latest tag of its major
     assertNull(config.branch());
-    assertEquals(TemplatesContract.branchFor(PluginVersion.current()), config.getEffectiveBranch());
+    assertEquals(TemplatesContract.majorOf(PluginVersion.current()).isPresent(), config.needsLatestTag());
     assertNull(config.version());
     assertNull(config.localPath());
     assertTrue(config.cache());

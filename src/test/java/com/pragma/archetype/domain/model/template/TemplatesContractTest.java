@@ -5,21 +5,35 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
+
 import org.junit.jupiter.api.Test;
 
 class TemplatesContractTest {
 
   @Test
-  void shouldUseTheBranchOfThePluginMajorVersion() {
-    assertEquals("v1", TemplatesContract.branchFor("1.4.0"));
-    assertEquals("v2", TemplatesContract.branchFor("2.0.0-SNAPSHOT"));
-    assertEquals("v10", TemplatesContract.branchFor("10.1"));
+  void shouldReadTheMajorOfThePluginVersion() {
+    assertEquals(OptionalInt.of(1), TemplatesContract.majorOf("1.4.0"));
+    assertEquals(OptionalInt.of(2), TemplatesContract.majorOf("2.0.0-SNAPSHOT"));
+    assertEquals(OptionalInt.of(10), TemplatesContract.majorOf("10.1"));
   }
 
   @Test
-  void shouldFallBackToMainWhenTheVersionHasNoNumericMajor() {
-    assertEquals("develop", TemplatesContract.branchFor(null));
-    assertEquals("develop", TemplatesContract.branchFor("0.0.0-unknown".replace("0.0.0", "dev")));
+  void shouldHaveNoMajorForLocalBuilds() {
+    assertTrue(TemplatesContract.majorOf(null).isEmpty());
+    assertTrue(TemplatesContract.majorOf("0.0.0-unknown").isEmpty());
+    assertTrue(TemplatesContract.majorOf("dev").isEmpty());
+  }
+
+  @Test
+  void shouldPickTheNewestReleaseTagOfTheMajor() {
+    var tags = List.of("v1.2.0", "v1.10.0", "v1.9.3", "v2.0.0", "v1.11.0-rc1", "phase-1-complete");
+
+    assertEquals(Optional.of("v1.10.0"), TemplatesContract.latestTag(1, tags));
+    assertEquals(Optional.of("v2.0.0"), TemplatesContract.latestTag(2, tags));
+    assertEquals(Optional.empty(), TemplatesContract.latestTag(3, tags));
   }
 
   @Test
