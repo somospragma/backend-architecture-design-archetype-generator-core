@@ -32,7 +32,7 @@ dependencies {
     testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
     
     // Freemarker for template processing
-    implementation("org.freemarker:freemarker:2.3.32")
+    implementation("org.freemarker:freemarker:2.3.35")
     
     // YAML processing for configuration
     implementation("org.yaml:snakeyaml:2.2")
@@ -41,17 +41,17 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     
     // JSON processing
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.16.0")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.22.4")
     
     // Logging
     implementation("org.slf4j:slf4j-api:2.0.9")
-    implementation("ch.qos.logback:logback-classic:1.4.14")
+    implementation("ch.qos.logback:logback-classic:1.5.38")
     
     // Testing - JUnit
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
     testImplementation("org.mockito:mockito-core:5.8.0")
     testImplementation("org.mockito:mockito-junit-jupiter:5.8.0")
-    testImplementation("org.assertj:assertj-core:3.24.2")
+    testImplementation("org.assertj:assertj-core:3.27.7")
     
     // Testing - MockWebServer for HTTP tests
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
