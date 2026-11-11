@@ -54,8 +54,6 @@ public class ValidateTemplatesTask extends DefaultTask {
 
   @TaskAction
   public void validateTemplates() {
-    Path projectPath = Paths.get(getProject().getProjectDir().getAbsolutePath());
-
     try {
       // Setup dependencies
       TemplateRepository templateRepository = createTemplateRepository();
@@ -76,7 +74,7 @@ public class ValidateTemplatesTask extends DefaultTask {
       } else {
         // Validate all templates
         getLogger().lifecycle("Validating all templates...");
-        result = useCase.validateAll(projectPath);
+        result = useCase.validateAll();
       }
 
       // Display results

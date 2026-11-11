@@ -9,7 +9,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
-import java.nio.file.Path;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +43,7 @@ class ValidateTemplateUseCaseImplTest {
         .thenReturn(ValidationResult.success());
 
     // When
-    ValidationResult result = useCase.validateAll(Path.of("/test"));
+    ValidationResult result = useCase.validateAll();
 
     // Then
     assertTrue(result.valid());
@@ -66,7 +65,7 @@ class ValidateTemplateUseCaseImplTest {
         .thenReturn(ValidationResult.success());
 
     // When
-    ValidationResult result = useCase.validateAll(Path.of("/test"));
+    ValidationResult result = useCase.validateAll();
 
     // Then
     assertNotNull(result, "ValidationResult should not be null");
@@ -134,7 +133,7 @@ class ValidateTemplateUseCaseImplTest {
         .thenReturn(ValidationResult.successWithWarnings(List.of("Warning message")));
 
     // When
-    ValidationResult result = useCase.validateAll(Path.of("/test"));
+    ValidationResult result = useCase.validateAll();
 
     // Then
     assertTrue(result.valid());

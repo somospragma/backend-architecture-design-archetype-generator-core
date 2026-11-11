@@ -1,6 +1,5 @@
 package com.pragma.archetype.application.usecase;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,7 +25,7 @@ public class ValidateTemplateUseCaseImpl implements ValidateTemplateUseCase {
   }
 
   @Override
-  public ValidationResult validateAll(Path projectPath) {
+  public ValidationResult validateAll() {
     logger.info("Validating all templates...");
 
     List<String> allErrors = new ArrayList<>();
