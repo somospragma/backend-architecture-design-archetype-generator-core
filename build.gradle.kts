@@ -38,7 +38,7 @@ dependencies {
     implementation("org.yaml:snakeyaml:2.7")
     
     // HTTP client for downloading templates
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.1")
     
     // JSON processing
     implementation("com.fasterxml.jackson.core:jackson-databind:2.22.4")
