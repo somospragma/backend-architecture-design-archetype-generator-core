@@ -48,7 +48,7 @@ Las herramientas (OSV-Scanner, gitleaks, actionlint) se descargan con versión f
 - Los secretos de publicación viven solo aquí, no a nivel de repositorio.
 
 **Secretos y variables del repositorio**
-- `SONAR_TOKEN` (opcional; sin él, el paso de Sonar se salta).
+- SonarCloud: `SONAR_TOKEN` y `SONAR_ORGANIZATION` vienen de los secretos de la organización, y `SONAR_PROJECT_KEY` es secreto del repositorio. Sin `SONAR_TOKEN`, el paso de Sonar se salta. La configuración del análisis está en el bloque `sonar {}` de `build.gradle.kts`, porque el scanner de Gradle no lee `sonar-project.properties`.
 - `PUBLISH_MAVEN_CENTRAL=true` para activar la publicación en Maven Central.
 - `DEPENDENCY_REVIEW=true` una vez encendido el Dependency graph (Settings → Advanced Security); sin él, dependency review no corre y OSV cubre las dependencias.
 - `TEMPLATES_REF`: solo mientras un cambio toca los dos repos a la vez. El CI prueba contra esa rama de templates en vez del último tag. Se borra al mergear.

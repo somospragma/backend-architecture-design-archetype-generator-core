@@ -215,13 +215,33 @@ signing {
 }
 
 
-// SonarQube Configuration
-// Note: Most configuration is in sonar-project.properties to avoid type casting issues
+// SonarCloud. The Gradle scanner ignores sonar-project.properties, so the whole
+// configuration lives here. Organization and project key come from the CI
+// secrets SONAR_ORGANIZATION and SONAR_PROJECT_KEY.
 sonar {
     properties {
-        // Only set essential properties that need dynamic values
+        System.getenv("SONAR_ORGANIZATION")?.takeIf { it.isNotBlank() }
+            ?.let { property("sonar.organization", it) }
+        System.getenv("SONAR_PROJECT_KEY")?.takeIf { it.isNotBlank() }
+            ?.let { property("sonar.projectKey", it) }
+        property("sonar.projectName", "Archetype Generator Core")
         property("sonar.projectVersion", version.toString())
         property("sonar.gradle.skipCompile", "true")
+        property(
+            "sonar.coverage.jacoco.xmlReportPaths",
+            layout.buildDirectory.file("reports/jacoco/test/jacocoTestReport.xml").get().asFile.path
+        )
+        property(
+            "sonar.coverage.exclusions",
+            listOf(
+                "**/config/**",
+                "**/infrastructure/config/**",
+                "**/*Plugin.java",
+                "**/*Task.java",
+                "**/domain/model/**",
+                "**/domain/port/**"
+            ).joinToString(",")
+        )
     }
 }
 
