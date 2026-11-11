@@ -11,7 +11,7 @@ basePackage: com.example.myservice
 architecture: hexagonal-single
 paradigm: reactive
 framework: spring
-pluginVersion: 1.0.0
+pluginVersion: 1.1.1
 createdAt: 2024-01-15T10:30:00
 adaptersAsModules: false
 

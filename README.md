@@ -5,7 +5,7 @@ A Gradle plugin for generating clean architecture projects with hexagonal and on
 ## Features
 
 - 🏗️ **Multiple Architecture Patterns**: Hexagonal (single/multi-module) and Onion architectures
-- 🚀 **Framework Support**: Spring Boot and Quarkus
+- 🚀 **Framework Support**: Spring Boot
 - ⚡ **Reactive & Imperative**: Support for both programming paradigms
 - 🔌 **Adapter Generation**: Quick generation of adapters for MongoDB, PostgreSQL, REST, Redis, and more
 - 📝 **Template System**: Flexible FreeMarker-based templates with local development mode
@@ -19,10 +19,21 @@ A Gradle plugin for generating clean architecture projects with hexagonal and on
 Add the plugin to your `build.gradle`:
 
 ```gradle
+// build.gradle
 plugins {
-    id 'com.pragma.archetype' version '1.0.0'
+    id 'co.com.pragma.archetype-generator' version '1.1.1'
 }
 ```
+
+With the Kotlin DSL (`build.gradle.kts`):
+
+```kotlin
+plugins {
+    id("co.com.pragma.archetype-generator") version "1.1.1"
+}
+```
+
+The plugin reads its templates from the latest `v1.x.y` release of the [templates repository](https://github.com/somospragma/backend-architecture-design-archetype-generator-templates), so new templates reach you without a plugin update. To freeze a project on one templates release, set `templates.version` in `.cleanarch.yml` (see [Configuration](docs/configuration.md)).
 
 ### Initialize a Project
 
@@ -91,7 +102,7 @@ To add a new adapter:
    ```
    templates/frameworks/{framework}/{paradigm}/adapters/{direction}/{adapter-name}/
    ```
-   - `{framework}`: spring, quarkus, etc.
+   - `{framework}`: spring
    - `{paradigm}`: imperative, reactive
    - `{direction}`: entry-points (input) or driven-adapters (output)
    - `{adapter-name}`: your adapter name (e.g., websocket, kafka, etc.)
@@ -227,33 +238,18 @@ See [Contributing Guide](CONTRIBUTING.md) for details.
 
 ## Publishing
 
-This plugin is published to:
-- **Gradle Plugin Portal**: https://plugins.gradle.org/plugin/com.pragma.archetype-generator
-- **Maven Central**: https://search.maven.org/artifact/com.pragma/archetype-generator
+The plugin is published to the [Gradle Plugin Portal](https://plugins.gradle.org/plugin/co.com.pragma.archetype-generator) as `co.com.pragma.archetype-generator`. Every version is listed in the [GitHub releases](https://github.com/somospragma/backend-architecture-design-archetype-generator-core/releases) with its jars and SBOM, and the changes in the [changelog](CHANGELOG.md).
 
 ### For Maintainers
+
+A version is released by pushing a `vX.Y.Z` tag on `main`. The release workflow verifies, scans and builds it, waits for approval in the `release` environment and then publishes it.
 
 - 📦 [Publicación y despliegue](docs/publicacion-y-despliegue.md) - Cómo se publica el plugin y qué templates lee
 - 🔐 [CI y configuración de GitHub](docs/ci.md) - Pipelines, environments y rulesets
 
-### Automated Publishing
-
-The plugin is automatically published when you create a tag:
-
-```bash
-git tag v1.0.0-PRERELEASE
-git push origin v1.0.0-PRERELEASE
-```
-
-The GitHub Actions workflow will:
-1. Build and test the project
-2. Publish to Gradle Plugin Portal
-3. Publish to Maven Central (if configured)
-4. Create a GitHub Release
-
 ## License
 
-[Add your license here]
+[Apache License 2.0](LICENSE)
 
 ## Contributing
 
