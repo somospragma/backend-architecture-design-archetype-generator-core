@@ -45,7 +45,7 @@ dependencies {
     
     // Logging
     implementation("org.slf4j:slf4j-api:2.0.20")
-    implementation("ch.qos.logback:logback-classic:1.5.38")
+    implementation("ch.qos.logback:logback-classic:1.6.6")
     
     // Testing - JUnit
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
