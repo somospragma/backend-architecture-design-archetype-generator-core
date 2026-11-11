@@ -29,6 +29,26 @@ class ValidateTemplatesTaskFullTest {
         .build();
 
     task = project.getTasks().create("validateTemplates", ValidateTemplatesTask.class);
+    writeConfig("");
+  }
+
+  /**
+   * Points the templates at an empty local folder, so every validation fails
+   * on missing templates without reaching the network.
+   */
+  private void writeConfig(String projectSection) {
+    writeConfig(tempDir, projectSection);
+  }
+
+  private void writeConfig(Path projectDir, String projectSection) {
+    try {
+      Path emptyTemplates = Files.createDirectories(tempDir.resolve("empty-templates"));
+      Files.createDirectories(projectDir);
+      Files.writeString(projectDir.resolve(".cleanarch.yml"), projectSection
+          + "templates:\n  mode: developer\n  localPath: " + emptyTemplates + "\n  cache: false\n");
+    } catch (java.io.IOException e) {
+      throw new java.io.UncheckedIOException(e);
+    }
   }
 
   @Test
@@ -50,7 +70,7 @@ class ValidateTemplatesTaskFullTest {
 
   @Test
   void testValidateTemplates_all_noConfiguration() {
-    // Given - no configuration file
+    // Given - only the templates section
     task.setArchitecture("");
     task.setAdapter("");
 
@@ -96,7 +116,7 @@ class ValidateTemplatesTaskFullTest {
           framework: spring
           adaptersAsModules: false
         """;
-    Files.writeString(tempDir.resolve(".cleanarch.yml"), yamlContent);
+    writeConfig(yamlContent);
 
     // When/Then - will still fail due to missing templates
     assertThrows(GradleException.class, () -> task.validateTemplates());
@@ -164,6 +184,7 @@ class ValidateTemplatesTaskFullTest {
 
     for (String arch : architectures) {
       // Given
+      writeConfig(tempDir.resolve("arch-" + arch), "");
       Project testProject = ProjectBuilder.builder()
           .withProjectDir(tempDir.resolve("arch-" + arch).toFile())
           .withName("test-" + arch)
@@ -190,6 +211,7 @@ class ValidateTemplatesTaskFullTest {
 
     for (String adapter : adapters) {
       // Given
+      writeConfig(tempDir.resolve("adapter-" + adapter), "");
       Project testProject = ProjectBuilder.builder()
           .withProjectDir(tempDir.resolve("adapter-" + adapter).toFile())
           .withName("test-" + adapter)

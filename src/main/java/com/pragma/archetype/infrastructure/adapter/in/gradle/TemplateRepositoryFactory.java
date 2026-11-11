@@ -12,6 +12,7 @@ import com.pragma.archetype.domain.port.out.TemplateRepository;
 import com.pragma.archetype.infrastructure.adapter.out.config.YamlConfigurationAdapter;
 import com.pragma.archetype.infrastructure.adapter.out.http.OkHttpClientAdapter;
 import com.pragma.archetype.infrastructure.adapter.out.template.FreemarkerTemplateRepository;
+import com.pragma.archetype.infrastructure.adapter.out.template.GitHubTemplateArchive;
 import com.pragma.archetype.infrastructure.adapter.out.template.GitHubTemplateTagResolver;
 
 /**
@@ -24,6 +25,10 @@ import com.pragma.archetype.infrastructure.adapter.out.template.GitHubTemplateTa
  *    templates.branch → that ref of the remote repository
  * 3. Otherwise → the latest release tag v{major}.x.y of this plugin's major
  *    in the configured (or default) GitHub repository
+ *
+ * A GitHub ref is downloaded once as a zip archive into
+ * ~/.cleanarch/templates-cache/archives and read from disk; a tag is reused
+ * from there, also offline.
  */
 public final class TemplateRepositoryFactory {
 
@@ -63,6 +68,12 @@ public final class TemplateRepositoryFactory {
     }
     logger.lifecycle("✓ Using remote templates from: {}", templateConfig.repository());
     logger.lifecycle("  Ref: {}", templateConfig.getEffectiveBranch());
+    if (GitHubTemplateArchive.ownerAndName(templateConfig.repository()).isPresent()) {
+      boolean tag = templateConfig.version() != null && !templateConfig.version().isBlank();
+      Path templates = new GitHubTemplateArchive()
+          .templatesDir(templateConfig.repository(), templateConfig.getEffectiveBranch(), tag);
+      return new FreemarkerTemplateRepository(templates);
+    }
     return new FreemarkerTemplateRepository(templateConfig);
   }
 }

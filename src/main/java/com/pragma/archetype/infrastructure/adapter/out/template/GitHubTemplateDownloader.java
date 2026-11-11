@@ -9,6 +9,9 @@ import com.pragma.archetype.domain.port.out.HttpClientPort;
  */
 public class GitHubTemplateDownloader {
 
+  /** Folder of the templates repository that holds the templates. */
+  static final String TEMPLATES_DIR = "templates";
+
   private final HttpClientPort httpClient;
   private final TemplateCache cache;
 
@@ -22,7 +25,7 @@ public class GitHubTemplateDownloader {
    *
    * @param config       template configuration
    * @param templatePath relative path to template (e.g.,
-   *                     "templates/frameworks/spring/...")
+   *                     "frameworks/spring/...", inside the templates folder)
    * @return template content
    * @throws HttpClientPort.HttpDownloadException if download fails or branch
    *                                              doesn't exist
@@ -40,7 +43,7 @@ public class GitHubTemplateDownloader {
     }
 
     // Download from remote
-    String url = buildRawUrl(config.repository(), config.getEffectiveBranch(), templatePath);
+    String url = templateUrl(config, templatePath);
     try {
       String content = httpClient.downloadContent(url);
 
@@ -78,7 +81,7 @@ public class GitHubTemplateDownloader {
     }
 
     // Check remote
-    String url = buildRawUrl(config.repository(), config.getEffectiveBranch(), templatePath);
+    String url = templateUrl(config, templatePath);
     return httpClient.isAccessible(url);
   }
 
@@ -105,6 +108,12 @@ public class GitHubTemplateDownloader {
    */
   public TemplateCache getCache() {
     return cache;
+  }
+
+  /** Raw URL of a template: templates live in the templates folder of the repository. */
+  private String templateUrl(TemplateConfig config, String templatePath) {
+    String path = templatePath.startsWith("/") ? templatePath.substring(1) : templatePath;
+    return buildRawUrl(config.repository(), config.getEffectiveBranch(), TEMPLATES_DIR + "/" + path);
   }
 
   /**
