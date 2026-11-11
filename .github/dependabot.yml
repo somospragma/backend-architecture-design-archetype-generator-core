@@ -36,3 +36,8 @@ updates:
       # Gradle 9 needs Kotlin 2 to compile the Kotlin tests (see #32)
       - dependency-name: 'gradle-wrapper'
         update-types: ['version-update:semver-major']
+      # Kotlin 2 is a hand-made migration together with kotest 6, OkHttp 5 and Gradle 9 (see #35)
+      - dependency-name: 'org.jetbrains.kotlin*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'jvm'
+        update-types: ['version-update:semver-major']
