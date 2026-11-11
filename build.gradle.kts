@@ -3,7 +3,7 @@ plugins {
     `maven-publish`
     signing
     id("com.gradle.plugin-publish") version "2.2.1"
-    id("org.sonarqube") version "4.4.1.3373"
+    id("org.sonarqube") version "7.5.0.8588"
     jacoco
     pmd
     kotlin("jvm") version "1.9.21"
