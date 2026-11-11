@@ -160,12 +160,8 @@ public class TemplateSourceResolver {
   public void validateSource() {
     TemplateSource source = resolveSource();
 
-    switch (source) {
-      case LOCAL_CONFIGURED, LOCAL_AUTO_DETECTED:
-        // Already validated during resolution
-        break;
-
-      case REMOTE:
+    // Local sources are already validated during resolution
+    if (source == TemplateSource.REMOTE) {
         if (config.repository() == null || config.repository().isEmpty()) {
           throw new TemplateSourceException(
               "Remote mode requires a repository URL. " +
@@ -178,7 +174,6 @@ public class TemplateSourceResolver {
               "Remote mode requires a branch name. " +
                   "Please configure 'templates.branch' in .cleanarch.yml");
         }
-        break;
     }
   }
 

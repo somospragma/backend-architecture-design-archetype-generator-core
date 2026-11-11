@@ -1,6 +1,5 @@
 package com.pragma.archetype.domain.port.in;
 
-import java.nio.file.Path;
 
 import com.pragma.archetype.domain.model.validation.ValidationResult;
 
@@ -12,11 +11,9 @@ public interface ValidateTemplateUseCase {
 
   /**
    * Validates all templates (architectures and adapters).
-   * 
-   * @param projectPath the project root path (optional, for context)
    * @return ValidationResult with success status and any error messages
    */
-  ValidationResult validateAll(Path projectPath);
+  ValidationResult validateAll();
 
   /**
    * Validates templates for a specific architecture.

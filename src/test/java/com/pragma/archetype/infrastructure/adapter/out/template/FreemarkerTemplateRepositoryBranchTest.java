@@ -20,15 +20,6 @@ class FreemarkerTemplateRepositoryBranchTest {
   Path tempDir;
 
   @Test
-  void shouldHandleEmbeddedTemplates() {
-    // When
-    FreemarkerTemplateRepository repository = new FreemarkerTemplateRepository("embedded");
-
-    // Then
-    assertNotNull(repository);
-  }
-
-  @Test
   void shouldHandleLocalTemplates() throws Exception {
     // Given
     Path templatesDir = tempDir.resolve("templates");

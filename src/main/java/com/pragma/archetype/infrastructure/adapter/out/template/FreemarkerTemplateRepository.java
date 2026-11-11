@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -111,25 +110,6 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
       logger.info("Remote mode active - caching enabled");
     }
 
-    this.freemarkerConfig = createFreemarkerConfiguration();
-    this.structureMetadataLoader = new StructureMetadataLoader(this);
-    this.versionsLoader = new TemplateVersionsLoader(this);
-    this.architectureIndexLoader = new ArchitectureIndexLoader(this);
-  }
-
-  /**
-   * Creates a repository with templates from a URL.
-   * For Phase 1, we'll use local templates. Remote loading will be added later.
-   *
-   * @param templatesUrl URL to templates repository
-   */
-  public FreemarkerTemplateRepository(String templatesUrl) {
-    // For now, assume templates are in a local directory
-    // In future phases, we'll download from GitHub
-    this.templatesBasePath = Paths.get("templates");
-    this.templateConfig = null;
-    this.downloader = null;
-    this.sourceResolver = null;
     this.freemarkerConfig = createFreemarkerConfiguration();
     this.structureMetadataLoader = new StructureMetadataLoader(this);
     this.versionsLoader = new TemplateVersionsLoader(this);
@@ -333,6 +313,7 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
    * @param templatePath path to the template file
    * @return ValidationResult indicating if template is valid
    */
+  @Override
   public ValidationResult validateTemplate(String templatePath) {
     try {
       // Check if template exists
@@ -370,6 +351,7 @@ public class FreemarkerTemplateRepository implements TemplateRepository, Templat
    * @param templatePath path to the template file
    * @return set of variable names used in the template
    */
+  @Override
   public Set<String> extractRequiredVariables(String templatePath) {
     Set<String> variables = new HashSet<>();
 
