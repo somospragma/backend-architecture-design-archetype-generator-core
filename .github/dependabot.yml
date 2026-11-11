@@ -26,3 +26,6 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: 'com.squareup.okhttp3:*'
         update-types: ['version-update:semver-major']
+      # JUnit 6 breaks the test suite (see #22); upgrade it by hand
+      - dependency-name: 'org.junit*'
+        update-types: ['version-update:semver-major']
