@@ -20,6 +20,10 @@ updates:
       # kotest modules only work together at the same version
       kotest:
         patterns: ['io.kotest:*']
+      # minor and patch bumps land in a single weekly PR
+      minor-and-patch:
+        patterns: ['*']
+        update-types: ['minor', 'patch']
     ignore:
       # kotest 6 and OkHttp 5 need Kotlin 2; the build is still on Kotlin 1.9
       - dependency-name: 'io.kotest:*'
@@ -28,4 +32,7 @@ updates:
         update-types: ['version-update:semver-major']
       # JUnit 6 breaks the test suite (see #22); upgrade it by hand
       - dependency-name: 'org.junit*'
+        update-types: ['version-update:semver-major']
+      # Gradle 9 needs Kotlin 2 to compile the Kotlin tests (see #32)
+      - dependency-name: 'gradle-wrapper'
         update-types: ['version-update:semver-major']
