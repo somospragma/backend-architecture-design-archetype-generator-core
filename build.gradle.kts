@@ -6,7 +6,7 @@ plugins {
     id("org.sonarqube") version "7.5.0.8588"
     jacoco
     pmd
-    kotlin("jvm") version "1.9.21"
+    kotlin("jvm") version "1.9.25"
 }
 
 group = "co.com.pragma"
