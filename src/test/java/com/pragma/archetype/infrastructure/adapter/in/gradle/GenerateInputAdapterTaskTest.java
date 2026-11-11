@@ -191,6 +191,9 @@ class GenerateInputAdapterTaskTest {
           framework: spring
           adaptersAsModules: false
         """;
+    // Empty local templates: generation fails on missing templates without reaching the network
+    Path emptyTemplates = Files.createDirectories(tempDir.resolve("empty-templates"));
+    yamlContent += "templates:\n  mode: developer\n  localPath: " + emptyTemplates + "\n  cache: false\n";
     Files.writeString(tempDir.resolve(".cleanarch.yml"), yamlContent);
   }
 }

@@ -301,10 +301,55 @@ jobs:
           path: ${{ runner.temp }}/generated/logs
           retention-days: 7
 
+  remote-templates:
+    # What users run: no localPath, so the plugin downloads the templates from
+    # GitHub. The smoke builds read a local checkout and cannot catch a broken
+    # download.
+    name: Build · remote templates
+    needs: [templates-ref, secrets, dependency-review, dependencies, codeql, workflows]
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: ${{ env.CORE_DIR }}
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - name: Publish plugin to mavenLocal
+        working-directory: ${{ env.CORE_DIR }}
+        run: ./gradlew publishToMavenLocal -x test -x javadoc --console=plain
+      - name: Generate from GitHub and build
+        env:
+          REF: ${{ needs.templates-ref.outputs.ref }}
+          REPOSITORY: https://github.com/${{ env.TEMPLATES_REPOSITORY }}
+        run: |
+          version=$(sed -n 's/^version=//p' "$CORE_DIR/gradle.properties")
+          if [[ $REF =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then key=version; else key=branch; fi
+          project="$RUNNER_TEMP/remote-demo"
+          mkdir -p "$project" && cd "$project"
+          cp -R "$GITHUB_WORKSPACE/$CORE_DIR/gradle" "$GITHUB_WORKSPACE/$CORE_DIR/gradlew" .
+          printf 'pluginManagement { repositories { mavenLocal(); gradlePluginPortal() } }\nrootProject.name = "remote-demo"\n' > settings.gradle.kts
+          printf 'plugins { id("co.com.pragma.archetype-generator") version "%s" }\n' "$version" > build.gradle.kts
+          printf 'templates:\n  repository: %s\n  %s: %s\n' "$REPOSITORY" "$key" "$REF" > .cleanarch.yml
+          ./gradlew --console=plain initCleanArch --package=com.example.demo --architecture=hexagonal-single --paradigm=reactive
+          ./gradlew --console=plain generateEntity --name=Product --fields=name:String,price:Double
+          ./gradlew --console=plain generateUseCase --name=CreateProduct --methods=execute:Product:product:Product
+          ./gradlew --console=plain generateOutputAdapter --name=Product --entity=Product --type=mongodb
+          ./gradlew --console=plain generateInputAdapter --name=Product --type=rest --useCase=CreateProduct \
+            --endpoints=/products:POST:execute:Product:product:BODY:Product
+          ./gradlew --console=plain build -x pitest -x dependencyCheckAnalyze
+
   ci-ok:
     # Single required check for rulesets
     if: always()
-    needs: [templates-ref, tests, dead-code, secrets, dependency-review, dependencies, codeql, workflows, smoke]
+    needs: [templates-ref, tests, dead-code, secrets, dependency-review, dependencies, codeql, workflows, smoke, remote-templates]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     permissions: {}

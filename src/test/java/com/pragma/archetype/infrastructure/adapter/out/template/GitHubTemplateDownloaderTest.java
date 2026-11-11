@@ -479,7 +479,7 @@ class GitHubTemplateDownloaderTest {
 
       // Then
       verify(httpClient).downloadContent(
-          "https://raw.githubusercontent.com/owner/repo/main/path/to/file.ftl");
+          "https://raw.githubusercontent.com/owner/repo/main/templates/path/to/file.ftl");
     }
 
     @Test
@@ -501,7 +501,7 @@ class GitHubTemplateDownloaderTest {
 
       // Then
       verify(httpClient).downloadContent(
-          "https://gitlab.com/owner/repo/-/raw/develop/path/to/file.ftl");
+          "https://gitlab.com/owner/repo/-/raw/develop/templates/path/to/file.ftl");
     }
 
     @Test
@@ -523,7 +523,7 @@ class GitHubTemplateDownloaderTest {
 
       // Then
       verify(httpClient).downloadContent(
-          "https://bitbucket.org/owner/repo/raw/master/path/to/file.ftl");
+          "https://bitbucket.org/owner/repo/raw/master/templates/path/to/file.ftl");
     }
   }
 
