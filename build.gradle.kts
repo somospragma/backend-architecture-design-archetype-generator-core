@@ -48,7 +48,7 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.5.38")
     
     // Testing - JUnit
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
     testImplementation("org.mockito:mockito-core:5.8.0")
     testImplementation("org.mockito:mockito-junit-jupiter:5.8.0")
     testImplementation("org.assertj:assertj-core:3.27.7")
