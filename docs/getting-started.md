@@ -8,7 +8,7 @@ Add the plugin to your Gradle project:
 
 ```gradle
 plugins {
-    id 'co.com.pragma.archetype-generator' version '1.1.0'
+    id 'co.com.pragma.archetype-generator' version '1.1.1'
 }
 ```
 

@@ -125,7 +125,7 @@ dependencyOverrides:
 1. Ensure plugin is in `build.gradle`:
 ```gradle
 plugins {
-    id 'co.com.pragma.archetype-generator' version '1.1.0'
+    id 'co.com.pragma.archetype-generator' version '1.1.1'
 }
 ```
 2. Run `./gradlew tasks` to verify plugin is loaded

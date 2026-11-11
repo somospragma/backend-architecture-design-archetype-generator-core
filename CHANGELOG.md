@@ -2,7 +2,16 @@
 
 Cambios del plugin `co.com.pragma.archetype-generator`. Las plantillas tienen sus propias versiones en el [repositorio de templates](https://github.com/somospragma/backend-architecture-design-archetype-generator-templates/tags).
 
+## 1.1.1 — 2026-11-11
+
+### Corregido
+
+- El plugin genera con las plantillas de GitHub. Descarga el zip del tag una vez, lo guarda en `~/.cleanarch/templates-cache/archives/` y lo lee desde disco. La 1.1.0 buscaba los archivos fuera de la carpeta `templates/` y no podía listar los archivos de un adaptador, así que fallaba al crear el proyecto y al generar adaptadores.
+- Un tag ya descargado se usa sin conexión si lo fijas con `templates.version`.
+
 ## 1.1.0 — 2026-11-11
+
+No la uses: no puede generar con las plantillas de GitHub. Actualiza a 1.1.1.
 
 ### Cambiado
 
@@ -21,5 +30,5 @@ Cambios del plugin `co.com.pragma.archetype-generator`. Las plantillas tienen su
 
 ### Al actualizar desde 1.0.x
 
-- Cambia la versión del plugin a `1.1.0`. El plugin 1.0.x leía la rama `main` de templates, que ya no es compatible con él.
+- Cambia la versión del plugin a `1.1.1`. El plugin 1.0.x leía la rama `main` de templates, que ya no es compatible con él.
 - El plugin consulta los tags de templates en la API de GitHub. Sin red, o si se alcanza el límite de la API, fija `templates.version`.

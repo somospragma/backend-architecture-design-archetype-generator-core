@@ -21,7 +21,7 @@ Add the plugin to your `build.gradle`:
 ```gradle
 // build.gradle
 plugins {
-    id 'co.com.pragma.archetype-generator' version '1.1.0'
+    id 'co.com.pragma.archetype-generator' version '1.1.1'
 }
 ```
 
@@ -29,7 +29,7 @@ With the Kotlin DSL (`build.gradle.kts`):
 
 ```kotlin
 plugins {
-    id("co.com.pragma.archetype-generator") version "1.1.0"
+    id("co.com.pragma.archetype-generator") version "1.1.1"
 }
 ```
 
