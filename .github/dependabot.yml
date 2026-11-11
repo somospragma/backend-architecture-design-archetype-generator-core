@@ -16,3 +16,13 @@ updates:
     cooldown:
       default-days: 14
     open-pull-requests-limit: 5
+    groups:
+      # kotest modules only work together at the same version
+      kotest:
+        patterns: ['io.kotest:*']
+    ignore:
+      # kotest 6 and OkHttp 5 need Kotlin 2; the build is still on Kotlin 1.9
+      - dependency-name: 'io.kotest:*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'com.squareup.okhttp3:*'
+        update-types: ['version-update:semver-major']
