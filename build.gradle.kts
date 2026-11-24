@@ -41,7 +41,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.1")
     
     // JSON processing
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.22.4")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.23.0")
     
     // Logging
     implementation("org.slf4j:slf4j-api:2.0.20")
